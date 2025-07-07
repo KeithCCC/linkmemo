@@ -1,15 +1,18 @@
 import { Routes, Route } from 'react-router-dom';
 import NoteDetailScreen from './screens/NoteDetailScreen';
-import HomeScreen from "./screens/HomeScreen"; // ← これを追加
-// 他の画面も...
+import HomeScreen from './screens/HomeScreen';
+import Navigation from './components/Navigation'; // ← 追加！
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomeScreen />} /> {/* ← これが必要！ */}
-      <Route path="/note/:id" element={<NoteDetailScreen />} />
-      {/* 他のルート */}
-    </Routes>
+    <>
+      <Navigation /> {/* ← ここで表示！ */}
+      <Routes>
+        <Route path="/" element={<HomeScreen />} />
+        <Route path="/note/:id" element={<NoteDetailScreen />} />
+        {/* 他のルート */}
+      </Routes>
+    </>
   );
 }
 
