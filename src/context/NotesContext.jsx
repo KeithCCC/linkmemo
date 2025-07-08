@@ -1,32 +1,43 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const NotesContext = createContext();
 
 export const useNotesContext = () => useContext(NotesContext);
 
-export const NotesProvider = ({ children }) => {
-  const [notes, setNotes] = useState([
-    { id: "1", title: "初めてのメモ", content: "これは最初のメモです。" },
-    { id: "2", title: "2つ目のノート", content: "Reactメモ帳アプリ作成中！" },
-  ]);
+const STORAGE_KEY = "notes";
 
-  // ノート取得
+export const NotesProvider = ({ children }) => {
+  // 初期読み込み：localStorage → state
+  const [notes, setNotes] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [
+      { id: "1", title: "初めてのメモ", content: "これは最初のメモです。" },
+    ];
+  });
+
+  // notesが更新されたときlocalStorageにも保存
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  }, [notes]);
+
   const getNoteById = (id) => notes.find((note) => note.id === id);
 
-  // ノート追加
   const addNote = (note) => {
     const newNote = {
       ...note,
-      id: Date.now().toString(), // 一意のIDを生成
+      id: Date.now().toString(),
     };
     setNotes((prev) => [...prev, newNote]);
   };
 
-  // ノート更新
   const updateNote = (id, updated) => {
     setNotes((prev) =>
       prev.map((note) => (note.id === id ? { ...note, ...updated } : note))
     );
+  };
+
+  const deleteNote = (id) => {
+    setNotes((prev) => prev.filter((note) => note.id !== id));
   };
 
   return (
@@ -36,6 +47,7 @@ export const NotesProvider = ({ children }) => {
         getNoteById,
         addNote,
         updateNote,
+        deleteNote,
       }}
     >
       {children}

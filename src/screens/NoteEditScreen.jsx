@@ -6,7 +6,7 @@ export default function NoteEditScreen() {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
-  const { addNote, updateNote, getNoteById } = useNotesContext();
+  const { addNote, updateNote, deleteNote, getNoteById } = useNotesContext();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -33,6 +33,33 @@ export default function NoteEditScreen() {
     navigate("/");
   };
 
+  const handleDelete = () => {
+    const confirmDelete = window.confirm("このノートを本当に削除しますか？");
+    if (confirmDelete) {
+      deleteNote(id);
+      navigate("/");
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob(
+      [`${title}\n\n${content}`],
+      { type: "text/plain;charset=utf-8" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${title || "note"}.txt`; // タイトルをファイル名に
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+
   return (
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">
@@ -54,12 +81,30 @@ export default function NoteEditScreen() {
         className="border px-3 py-2 w-full h-40 mb-4"
       />
 
-      <button
-        onClick={handleSave}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        保存
-      </button>
+      <div className="flex gap-4">
+        <button
+          onClick={handleSave}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          保存
+        </button>
+
+        {!isNew && (
+          <button
+            onClick={handleDelete}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            削除
+          </button>
+        )}
+
+        <button
+          onClick={handleDownload}
+          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+        >
+          ファイルとして保存
+        </button>
+      </div>
     </div>
   );
 }
