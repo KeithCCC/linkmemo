@@ -1,47 +1,65 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useNotesContext } from '../context/NotesContext'
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNotesContext } from "../context/NotesContext";
 
 export default function NoteEditScreen() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { createNote, updateNote, getNoteById } = useNotesContext()
+  const { id } = useParams();
+  const isNew = id === "new";
+  const navigate = useNavigate();
+  const { addNote, updateNote, getNoteById } = useNotesContext();
 
-  const [note, setNote] = useState({ title: '', content: '' })
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
   useEffect(() => {
-    if (id === 'new') {
-      const newId = createNote()
-      navigate(`/edit/${newId}`, { replace: true })
-    } else {
-      const existing = getNoteById(id)
-      if (existing) setNote(existing)
+    if (!isNew) {
+      const existingNote = getNoteById(id);
+      if (existingNote) {
+        setTitle(existingNote.title);
+        setContent(existingNote.content);
+      } else {
+        alert("ノートが見つかりませんでした");
+        navigate("/");
+      }
     }
-  }, [id])
+  }, [id, isNew, getNoteById, navigate]);
 
   const handleSave = () => {
-    updateNote(id, note)
-    navigate(`/note/${id}`)
-  }
+    if (isNew) {
+      addNote({ title, content });
+    } else {
+      updateNote(id, { title, content });
+    }
+    navigate("/");
+  };
 
   return (
-    <div className="p-4">
+    <div className="p-6">
+      <h1 className="text-xl font-bold mb-4">
+        {isNew ? "新規ノート作成" : `ノート編集（ID: ${id}）`}
+      </h1>
+
       <input
         type="text"
         placeholder="タイトル"
-        className="border p-2 w-full"
-        value={note.title}
-        onChange={(e) => setNote({ ...note, title: e.target.value })}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="border px-3 py-2 w-full mb-4"
       />
+
       <textarea
-        className="border p-2 w-full mt-2 h-40"
-        placeholder="本文"
-        value={note.content}
-        onChange={(e) => setNote({ ...note, content: e.target.value })}
+        placeholder="内容"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        className="border px-3 py-2 w-full h-40 mb-4"
       />
-      <button onClick={handleSave} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+
+      <button
+        onClick={handleSave}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
         保存
       </button>
     </div>
-  )
+  );
 }
