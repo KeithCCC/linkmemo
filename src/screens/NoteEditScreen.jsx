@@ -1,4 +1,5 @@
-import { useParams, useNavigate } from "react-router-dom";
+// src/screens/NoteEditScreen.jsx
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useNotesContext } from "../context/NotesContext";
 
@@ -6,7 +7,7 @@ export default function NoteEditScreen() {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
-  const { addNote, updateNote, deleteNote, getNoteById } = useNotesContext();
+  const { addNote, updateNote, deleteNote, getNoteById, notes } = useNotesContext();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -51,7 +52,7 @@ export default function NoteEditScreen() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${title || "note"}.txt`; // タイトルをファイル名に
+    link.download = `${title || "note"}.txt`;
 
     document.body.appendChild(link);
     link.click();
@@ -59,10 +60,31 @@ export default function NoteEditScreen() {
     URL.revokeObjectURL(url);
   };
 
+  // 🔹 プレビュー用：[[リンク]]をLink化
+  const parseLinks = (text) => {
+    const parts = text.split(/\[\[|\]\]/);
+    return parts.map((part, i) => {
+      if (i % 2 === 0) return <span key={i}>{part}</span>;
+      const target = notes.find(n => n.title === part);
+      return target ? (
+        <Link key={i} to={`/edit/${target.id}`} className="text-blue-600 underline mx-1">
+          {part}
+        </Link>
+      ) : (
+        <span key={i} className="text-gray-500 mx-1">[[{part}]]</span>
+      );
+    });
+  };
+
+  const extractTags = (text) => {
+    const matches = text.match(/#(\w+)/g) || [];
+    return [...new Set(matches.map(tag => tag.slice(1)))]; // '#タグ' → 'タグ'
+  };
+
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">
+    <div className="p-6 space-y-6">
+      <h1 className="text-xl font-bold">
         {isNew ? "新規ノート作成" : `ノート編集（ID: ${id}）`}
       </h1>
 
@@ -71,40 +93,51 @@ export default function NoteEditScreen() {
         placeholder="タイトル"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="border px-3 py-2 w-full mb-4"
+        className="border px-3 py-2 w-full"
       />
 
       <textarea
         placeholder="内容"
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="border px-3 py-2 w-full h-40 mb-4"
+        className="border px-3 py-2 w-full h-40"
       />
 
       <div className="flex gap-4">
-        <button
-          onClick={handleSave}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
+        <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           保存
         </button>
-
         {!isNew && (
-          <button
-            onClick={handleDelete}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
+          <button onClick={handleDelete} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
             削除
           </button>
         )}
-
-        <button
-          onClick={handleDownload}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-        >
+        <button onClick={handleDownload} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
           ファイルとして保存
         </button>
       </div>
+
+          {/* 🪞 リアルタイムプレビュー表示 */}
+      <div className="mt-8 border-t pt-4">
+        <h2 className="text-lg font-semibold mb-2">🔍 リンクプレビュー</h2>
+        <div className="prose whitespace-pre-wrap">
+          {parseLinks(content)}
+        </div>
+
+        {/* 🏷️ タグ表示 */}
+        {extractTags(content).length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-gray-600 mb-1">タグ:</h3>
+            <div className="flex flex-wrap gap-2">
+              {extractTags(content).map((tag) => (
+                <span key={tag} className="bg-gray-200 text-sm px-2 py-1 rounded">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  );
+ );
 }
