@@ -6,7 +6,7 @@ export default function Navigation() {
     <nav className="bg-white shadow-sm px-8 py-4 flex justify-between items-center border-b">
       {/* Left: Logo */}
       <div className="text-2xl font-bold text-gray-800 tracking-tight">
-        <span className="text-blue-600">📝 Linkmemo</span>
+        <span className="text-blue-600">📝 ASUKA</span>
       </div>
 
       {/* Right: Menu */}
