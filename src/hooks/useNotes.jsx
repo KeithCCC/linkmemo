@@ -34,10 +34,16 @@ export function useNotes() {
   const oldNote = notes.find(n => n.id === numericId);
   if (!oldNote) return;
 
-  const extractLinkedTitles = (content) => {
-    const matches = content.match(/\[\[([^\]]+)\]\]/g) || [];
-    return matches.map(m => m.slice(2, -2)); // [[title]] → title
-  };
+const extractHashtags = (text) => {
+  const matches = text.match(/#([^\s#]+)/gu);  // ← Unicode対応版
+  return matches ? matches.map(t => t.slice(1)) : [];
+};
+
+// updateNoteやcreateNote内で使用：
+const tags = extractHashtags(content);
+
+
+
 
   const oldLinks = extractLinkedTitles(oldNote.content);
   const newLinks = extractLinkedTitles(updated.content);
