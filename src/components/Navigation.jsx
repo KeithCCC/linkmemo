@@ -13,7 +13,7 @@ export default function Navigation({ collapsed, setCollapsed }) {
     <nav className={`fixed left-0 top-0 h-full ${navWidth} bg-white border-r shadow-sm px-4 py-6 flex flex-col text-gray-700 text-sm font-medium transition-all duration-300`}>
       {/* ヘッダーエリア */}
       <div className="flex items-center justify-between mb-8">
-        <span className={`text-xl font-bold text-blue-600 ${labelClass}`}>📝 Linkmemo</span>
+        <span className={`text-xl font-bold text-blue-600 ${labelClass}`}>📝 ASUKA</span>
         <button onClick={() => setCollapsed(!collapsed)} className="text-gray-400 hover:text-gray-700 text-xs">
           {collapsed ? "»" : "«"}
         </button>
