@@ -147,21 +147,6 @@ export default function NoteEditScreen() {
             className="border px-3 py-2 w-full"
             placeholder="内容"
           />
-           <div className="flex items-center gap-2 text-sm mb-1">
-            <span className="text-gray-500">高さ:</span>
-            <input
-              type="range"
-              min="100"
-              max="800"
-              value={textareaHeight}
-              onChange={(e) => {
-                setTextareaHeight(e.target.value);
-                localStorage.setItem("textareaHeight", e.target.value);
-              }}
-              className="w-40"
-            />
-            <span>{textareaHeight}px</span>
-          </div>
         </>
       )}
 
@@ -181,21 +166,6 @@ export default function NoteEditScreen() {
               onChange={(e) => setContent(e.target.value)}
               style={{ height: `${textareaHeight}px` }}
               className="border px-3 py-2 w-full"
-            />
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500">高さ:</span>
-              <span>{textareaHeight}px</span>
-            </div>
-            <input
-              type="range"
-              min="100"
-              max="800"
-              value={textareaHeight}
-              onChange={(e) => {
-                setTextareaHeight(e.target.value);
-                localStorage.setItem("textareaHeight", e.target.value);
-              }}
-              className="w-32"
             />
           </div>
           <div
@@ -219,21 +189,6 @@ export default function NoteEditScreen() {
             className="prose prose-sm max-w-none border p-3 rounded bg-white"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500">高さ:</span>
-            <input
-              type="range"
-              min="100"
-              max="800"
-              value={textareaHeight}
-              onChange={(e) => {
-                setTextareaHeight(e.target.value);
-                localStorage.setItem("textareaHeight", e.target.value);
-              }}
-              className="w-40"
-            />
-            <span>{textareaHeight}px</span>
-          </div>
         </div>
       )}
 
