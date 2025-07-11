@@ -2,6 +2,8 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useNotesContext } from "../context/NotesContext";
+import MarkdownIt from "markdown-it";
+const md = new MarkdownIt();
 
 export default function NoteEditScreen() {
   const { id } = useParams();
@@ -24,6 +26,18 @@ export default function NoteEditScreen() {
       }
     }
   }, [id, isNew, getNoteById, navigate]);
+
+  const renderMarkdown = (text) => {
+    // [[Wiki]] をリンクに変換
+    const replaced = text.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
+      const target = notes.find(n => n.title === p1);
+      return target
+        ? `<a href="/edit/${target.id}" class="text-blue-600 underline">${p1}</a>`
+        : `<span class="text-gray-400">[[${p1}]]</span>`;
+    });
+
+    return md.render(replaced);
+  };
 
   const handleSave = () => {
     if (isNew) {
@@ -117,11 +131,18 @@ export default function NoteEditScreen() {
         </button>
       </div>
 
-          {/* 🪞 リアルタイムプレビュー表示 */}
+      {/* 🪞 リアルタイムプレビュー表示 */}
       <div className="mt-8 border-t pt-4">
         <h2 className="text-lg font-semibold mb-2">🔍 リンクプレビュー</h2>
         <div className="prose whitespace-pre-wrap">
-          {parseLinks(content)}
+          {/* 🪞 リアルタイムプレビュー表示 */}
+
+            <h2 className="text-lg font-semibold mb-2">📝 Markdown プレビュー</h2>
+            <div className="prose prose-sm max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+            </div>
+
+
         </div>
 
         {/* 🏷️ タグ表示 */}
@@ -139,5 +160,5 @@ export default function NoteEditScreen() {
         )}
       </div>
     </div>
- );
+  );
 }

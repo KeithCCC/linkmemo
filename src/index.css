@@ -1,3 +1,86 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* src/index.css など */
+.prose p {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  line-height: 1.4;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin-top: 0.5em;
+  margin-bottom: 0.25em;
+  line-height: 1.2;
+}
+
+.prose ul, .prose ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose > *:last-child {
+  margin-bottom: 0;
+}
+
+/* 🛠 リストの行間調整 */
+.prose ol li,
+.prose ul li {
+  margin-bottom: 0.25em; /* ← ここで詰めます */
+  line-height: 1.4;       /* 行の高さもややタイトに */
+}
+
+/* 📘 Markdownプレビュー調整（proseカスタマイズ） */
+.prose {
+  --tw-prose-body: #111827;
+  --tw-prose-headings: #1f2937;
+  --tw-prose-links: #2563eb;
+  --tw-prose-bold: #000;
+  --tw-prose-bullets: #6b7280;
+  --tw-prose-quotes: #6b7280;
+  --tw-prose-code: #d6336c;
+  --tw-prose-pre-bg: #f9fafb;
+  --tw-prose-pre-code: #374151;
+  --tw-prose-th-borders: #d1d5db;
+  --tw-prose-td-borders: #e5e7eb;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin-top: 0.5em;
+  margin-bottom: 0.3em;
+  line-height: 1.25;
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+}
+
+.prose ol li,
+.prose ul li {
+  margin-bottom: 0.25em;
+  line-height: 1.4;
+}
+
+.prose a {
+  text-decoration: underline;
+  color: #2563eb;
+}
+
+.prose .tag {
+  background-color: #f3f4f6;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
