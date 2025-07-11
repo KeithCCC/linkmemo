@@ -77,7 +77,7 @@ export default function NoteEditScreen() {
   };
 
   const extractTags = (text) => {
-    const matches = text.match(/#([^\s#]+)/g) || []
+    const matches = text.match(/[＃#]([^\s#]+)/g) || []
     return [...new Set(matches.map(tag => tag.slice(1)))]; // '#タグ' → 'タグ'
   };
 

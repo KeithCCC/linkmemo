@@ -1,4 +1,4 @@
-## ✅ Linkmemo MVP ToDoリスト（テーブル形式）
+## ✅ ASUKA MVP ToDoリスト（テーブル形式）
 
 ### 🛠 Phase 1：検索・並び替え機能
 
