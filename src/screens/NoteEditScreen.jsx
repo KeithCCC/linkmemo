@@ -138,7 +138,7 @@ export default function NoteEditScreen() {
           {/* 🪞 リアルタイムプレビュー表示 */}
 
             <h2 className="text-lg font-semibold mb-2">📝 Markdown プレビュー</h2>
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-xs max-w-none">
               <div dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
             </div>
 

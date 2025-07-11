@@ -2,38 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* src/index.css など */
-.prose p {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
-  line-height: 1.4;
-}
-
-.prose h1,
-.prose h2,
-.prose h3 {
-  margin-top: 0.5em;
-  margin-bottom: 0.25em;
-  line-height: 1.2;
-}
-
-.prose ul, .prose ol {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
-}
-
-.prose > *:last-child {
-  margin-bottom: 0;
-}
-
-/* 🛠 リストの行間調整 */
-.prose ol li,
-.prose ul li {
-  margin-bottom: 0.25em; /* ← ここで詰めます */
-  line-height: 1.4;       /* 行の高さもややタイトに */
-}
-
-/* 📘 Markdownプレビュー調整（proseカスタマイズ） */
+/* 🌿 Markdown プレビュー全体設定（密度感・色味） */
 .prose {
   --tw-prose-body: #111827;
   --tw-prose-headings: #1f2937;
@@ -46,36 +15,67 @@
   --tw-prose-pre-code: #374151;
   --tw-prose-th-borders: #d1d5db;
   --tw-prose-td-borders: #e5e7eb;
+
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.5;
+  max-width: none;
 }
 
-.prose h1,
-.prose h2,
-.prose h3 {
-  margin-top: 0.5em;
-  margin-bottom: 0.3em;
-  line-height: 1.25;
-}
-
+/* ✍ 本文・リストの余白を最小化 */
 .prose p,
 .prose ul,
 .prose ol {
-  margin-top: 0.3em;
-  margin-bottom: 0.3em;
+  margin-top: 0 !important;
+  margin-bottom: 0.15rem !important;
+  line-height: 1.4;
+}
+
+/* 🔠 見出し類（密に・コンパクトに） */
+.prose h1 {
+  margin-top: 0 !important;
+  margin-bottom: 0.15rem !important;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.prose h2 {
+  margin-top: 0 !important;
+  margin-bottom: 0.15rem !important;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.prose h3 {
+  margin-top: 0 !important;
+  margin-bottom: 0.15rem !important;
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+/* 📋 リスト（番号付き・箇条書き）を詰める */
+.prose ol,
+.prose ul {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-left: 1.25rem; /* 必要に応じて */
 }
 
 .prose ol li,
 .prose ul li {
-  margin-bottom: 0.25em;
-  line-height: 1.4;
+  margin-bottom: 0 !important;
+  line-height: 1.3 !important;
 }
 
+/* 🔗 リンク */
 .prose a {
   text-decoration: underline;
   color: #2563eb;
 }
 
+/* 🏷️ タグ表示（#abc など） */
 .prose .tag {
   background-color: #f3f4f6;
   padding: 0.15rem 0.5rem;
@@ -83,4 +83,12 @@
   font-size: 0.85rem;
   font-weight: 500;
   color: #374151;
+  margin-right: 0.25rem;
+  margin-bottom: 0 !important;
+  display: inline-block;
+}
+
+/* 📦 最終要素のマージン除去（下部詰め） */
+.prose > *:last-child {
+  margin-bottom: 0 !important;
 }
