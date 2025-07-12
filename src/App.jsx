@@ -8,18 +8,23 @@ import HomeScreen from './screens/HomeScreen';
 import Navigation from './components/Navigation';
 
 function App() {
-  const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem("navCollapsed") === "true";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("navCollapsed", collapsed);
-  }, [collapsed]);
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
     <>
+      {/* モバイル用ハンバーガー */}
+      <button
+        className="fixed top-4 left-4 z-50 sm:hidden bg-white shadow px-3 py-1 rounded"
+        onClick={() => setCollapsed(false)}
+      >
+        ☰
+      </button>
+
+      {/* ナビゲーション */}
       <Navigation collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className={`transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-56'}`}>
+
+      {/* メインコンテンツ */}
+      <div className={`transition-all duration-300 sm:ml-56 ${collapsed ? '' : 'ml-64'}`}>
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/note/:id" element={<NoteDetailScreen />} />
