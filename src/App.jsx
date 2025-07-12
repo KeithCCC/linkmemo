@@ -11,28 +11,28 @@ function App() {
   const [collapsed, setCollapsed] = useState(true);
 
   return (
-    <>
-      {/* モバイル用ハンバーガー */}
-      <button
-        className="fixed top-4 left-4 z-50 sm:hidden bg-white shadow px-3 py-1 rounded"
-        onClick={() => setCollapsed(false)}
-      >
-        ☰
-      </button>
-
-      {/* ナビゲーション */}
+    <div className="flex min-h-screen">
       <Navigation collapsed={collapsed} setCollapsed={setCollapsed} />
 
-      {/* メインコンテンツ */}
-      <div className={`transition-all duration-300 sm:ml-56 ${collapsed ? '' : 'ml-64'}`}>
-        <Routes>
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="/note/:id" element={<NoteDetailScreen />} />
-          <Route path="/edit/:id" element={<NoteEditScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-        </Routes>
+      <div className="flex-1 relative">
+        {/* モバイル用ハンバーガー */}
+        <button
+          className="fixed top-4 left-4 z-50 sm:hidden bg-white shadow px-3 py-1 rounded"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          ☰
+        </button>
+
+        <div className="px-4 pt-12">
+          <Routes>
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="/note/:id" element={<NoteDetailScreen />} />
+            <Route path="/edit/:id" element={<NoteEditScreen />} />
+            <Route path="/settings" element={<SettingsScreen />} />
+          </Routes>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 
