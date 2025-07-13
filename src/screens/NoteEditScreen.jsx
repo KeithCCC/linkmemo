@@ -1,9 +1,11 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNotesContext } from "../context/NotesContext";
 import MarkdownIt from "markdown-it";
 
-const md = new MarkdownIt();
+const md = new MarkdownIt({
+  breaks: true, // ← これで改行を <br> に変換！
+});
 
 export default function NoteEditScreen() {
   const { id } = useParams();
@@ -13,10 +15,41 @@ export default function NoteEditScreen() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [mode, setMode] = useState("edit");
-  const [textareaHeight, setTextareaHeight] = useState(() => {
-    return localStorage.getItem("textareaHeight") || "200";
+  const textareaRef = useRef(null);
+  const [previewHeight, setPreviewHeight] = useState(() => {
+    return parseInt(localStorage.getItem("textareaHeight")) || 200;
   });
+
+  const [textareaHeight, setTextareaHeight] = useState(() => {
+    return parseInt(localStorage.getItem("textareaHeight")) || 200;
+  });
+
+  const [mode, setMode] = useState(() => {
+    if (id === "new") return "edit"; // 新規ノート時は強制的に編集モード
+    return localStorage.getItem("noteViewMode") || "edit-only";
+  });
+
+  const changeMode = (newMode) => {
+    setMode(newMode);
+    localStorage.setItem("noteViewMode", newMode);
+  };
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      if (textareaRef.current) {
+        const newHeight = textareaRef.current.offsetHeight;
+        setPreviewHeight(newHeight); // プレビューに反映
+        localStorage.setItem("textareaHeight", newHeight); // ← 保存！
+      }
+    });
+
+    if (textareaRef.current) {
+      observer.observe(textareaRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
 
   useEffect(() => {
     if (!isNew) {
@@ -36,19 +69,19 @@ export default function NoteEditScreen() {
       if (e.ctrlKey) {
         switch (e.key) {
           case "1":
-            setMode("edit");
+            changeMode("edit");
             e.preventDefault();
             break;
           case "2":
-            setMode("preview");
+            changeMode("preview");
             e.preventDefault();
             break;
           case "3":
-            setMode("split-right");
+            changeMode("split-right");
             e.preventDefault();
             break;
           case "4":
-            setMode("split-bottom");
+            changeMode("split-bottom");
             e.preventDefault();
             break;
           default:
@@ -112,81 +145,86 @@ export default function NoteEditScreen() {
         {isNew ? "新規ノート作成" : `ノート編集（ID: ${id}）`}
       </h1>
 
-      <input
-        type="text"
-        placeholder="タイトル"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="border px-3 py-2 w-full"
-      />
-
       {/* モード切替ボタン */}
       <div className="flex gap-3 text-sm mb-2">
-        <button onClick={() => setMode("edit")} className={mode === "edit" ? "font-bold underline" : ""}>
+        <button onClick={() => changeMode("edit")} className={mode === "edit" ? "font-bold underline" : ""}>
           ✏️ 編集 (Ctrl+1)
         </button>
-        <button onClick={() => setMode("preview")} className={mode === "preview" ? "font-bold underline" : ""}>
+        <button onClick={() => changeMode("preview")} className={mode === "preview" ? "font-bold underline" : ""}>
           👁 プレビュー (Ctrl+2)
         </button>
-        <button onClick={() => setMode("split-right")} className={mode === "split-right" ? "font-bold underline" : ""}>
+        <button onClick={() => changeMode("split-right")} className={mode === "split-right" ? "font-bold underline" : ""}>
           ↔ 横 (Ctrl+3)
         </button>
-        <button onClick={() => setMode("split-bottom")} className={mode === "split-bottom" ? "font-bold underline" : ""}>
+        <button onClick={() => changeMode("split-bottom")} className={mode === "split-bottom" ? "font-bold underline" : ""}>
           ↕ 縦 (Ctrl+4)
         </button>
       </div>
 
-      {/* 各モードの内容 */}
-      {mode === "edit" && (
-        <>
-         
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            style={{ height: `${textareaHeight}px` }}
-            className="border px-3 py-2 w-full"
-            placeholder="内容"
-          />
-        </>
-      )}
-
-      {mode === "preview" && (
-        <div
-          className="prose prose-sm max-w-none border p-3 rounded bg-white"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+      <div className="space-y-2">
+        <input
+          type="text"
+          placeholder="タイトル"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="border px-3 py-2 w-full border-gray-500"
         />
-      )}
 
-      {mode === "split-right" && (
-        <div className="flex gap-4 items-start">
-          <div className="flex-1 space-y-2">
+        {/* 各モードの内容 */}
+        {mode === "edit" && (
+          <>
 
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               style={{ height: `${textareaHeight}px` }}
-              className="border px-3 py-2 w-full"
+              className="border px-3 py-2 w-full border-gray-500"
+              placeholder="内容"
+            />
+          </>
+        )}
+
+      </div>
+
+      {mode === "preview" && (
+        <div
+          className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+        />
+      )}
+
+      {mode === "split-right" && (
+        <div className="flex h-full gap-4">
+          
+          <div className="flex-1 space-y-2 h-full border-gray-500">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="border px-3 py-2 w-full resize-y border-gray-500"
+              style={{ height: `${previewHeight}px` }}
             />
           </div>
           <div
-            className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto"
-            style={{ height: `${textareaHeight}px` }}
+            className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto border-gray-500"
+            style={{ height: `${previewHeight}px` }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
         </div>
       )}
 
+
       {mode === "split-bottom" && (
         <div className="flex flex-col gap-2">
-          
+
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             style={{ height: `${textareaHeight}px` }}
-            className="border px-3 py-2 w-full"
+            className="border px-3 py-2 w-full border-gray-500"
           />
           <div
-            className="prose prose-sm max-w-none border p-3 rounded bg-white"
+            className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
         </div>
