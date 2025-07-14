@@ -22,13 +22,13 @@ export default function Navigation({ collapsed, setCollapsed }) {
 
       <nav
         className={`
-          h-screen bg-white border-r shadow-sm px-2 py-6 overflow-hidden
-          text-gray-700 text-sm font-medium transition-all duration-300
-          ${collapsed ? "hidden sm:block w-14" : "w-64"}
-        `}
+    h-screen bg-white border-r shadow-sm px-2 py-2 overflow-hidden
+    text-gray-700 text-sm font-medium transition-all duration-300
+    ${collapsed ? "hidden sm:block w-14" : "w-40"}
+  `}
       >
         {/* ヘッダー */}
-        <div className={`flex items-center justify-between mb-6 sm:mb-8`}>
+        <div className={`flex items-center justify-between mb-0`}>
           {!collapsed && (
             <span className="text-xl font-bold text-blue-600 pl-2">
               📝 ASUKA
@@ -45,31 +45,25 @@ export default function Navigation({ collapsed, setCollapsed }) {
         {/* メニューリンク */}
         <Link
           to="/"
-          className={`mb-2 flex items-center ${
-            collapsed ? "justify-center" : "gap-2 pl-2"
-          } hover:text-blue-600 ${
-            isActive("/") ? "text-blue-600 font-bold" : ""
-          }`}
+          className={`mb-1 flex items-center ${collapsed ? "justify-center" : "gap-1 pl-1"
+            } hover:text-blue-600 ${isActive("/") ? "text-blue-600 font-bold" : ""
+            }`}
         >
           📁 {!collapsed && <span>一覧</span>}
         </Link>
         <Link
           to="/edit/new"
-          className={`mb-2 flex items-center ${
-            collapsed ? "justify-center" : "gap-2 pl-2"
-          } hover:text-blue-600 ${
-            isActive("/edit/new") ? "text-blue-600 font-bold" : ""
-          }`}
+          className={`mb-1 flex items-center ${collapsed ? "justify-center" : "gap-1 pl-1"
+            } hover:text-blue-600 ${isActive("/edit/new") ? "text-blue-600 font-bold" : ""
+            }`}
         >
           ✏️ {!collapsed && <span>新規作成</span>}
         </Link>
         <Link
           to="/settings"
-          className={`flex items-center ${
-            collapsed ? "justify-center" : "gap-2 pl-2"
-          } hover:text-blue-600 ${
-            isActive("/settings") ? "text-blue-600 font-bold" : ""
-          }`}
+          className={`flex items-center ${collapsed ? "justify-center" : "gap-1 pl-1"
+            } hover:text-blue-600 ${isActive("/settings") ? "text-blue-600 font-bold" : ""
+            }`}
         >
           ⚙️ {!collapsed && <span>設定</span>}
         </Link>
