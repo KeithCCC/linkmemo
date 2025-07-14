@@ -9,14 +9,14 @@ export default function HomeScreen() {
     setSortBy,
     sortOrder,
     setSortOrder,
-    getSortedNotes,
+      getSortedNotes,
   } = useNotesContext();
 
   const notes = getSortedNotes();
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">ノート一覧 🗂️</h1>
+    <div className="p-4 py-1">
+      <h1 className="text-xl font-bold mb-2">ノート一覧 🗂️</h1>
 
       {/* 🔍 検索バー */}
       <input

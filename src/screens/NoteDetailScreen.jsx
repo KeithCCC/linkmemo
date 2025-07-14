@@ -33,7 +33,7 @@ export default function NoteDetailScreen() {
   const backlinks = notes.filter(n => n.backlinks?.includes(note.id));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 py-2 space-y-6">
       <div>
         <h1 className="text-2xl font-bold mb-2">{note.title}</h1>
         <Link

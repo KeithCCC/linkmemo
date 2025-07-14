@@ -140,7 +140,7 @@ export default function NoteEditScreen() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       <h1 className="text-xl font-bold">
         {isNew ? "新規ノート作成" : `ノート編集（ID: ${id}）`}
       </h1>
@@ -232,15 +232,15 @@ export default function NoteEditScreen() {
 
       {/* 操作ボタン */}
       <div className="flex gap-4 mt-4 flex-wrap">
-        <button onClick={handleSave} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button onClick={handleSave} className="bg-blue-600 text-white  px-3 py-1 text-sm roundedhover:bg-blue-700">
           保存
         </button>
         {!isNew && (
-          <button onClick={handleDelete} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+          <button onClick={handleDelete} className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700">
             削除
           </button>
         )}
-        <button onClick={handleDownload} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+        <button onClick={handleDownload} className="bg-gray-600 text-white  px-3 py-1 text-sm rounded hover:bg-gray-700">
           ファイルとして保存
         </button>
       </div>
