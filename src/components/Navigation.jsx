@@ -22,7 +22,7 @@ export default function Navigation({ collapsed, setCollapsed }) {
       {!collapsed && (
         <div className="pt-16 px-2 space-y-2">
           {/* ヘッダー */}
-          <div className="text-xl font-bold text-blue-600 pl-2">📝 ASUKA</div>
+          <div className="text-xl font-bold text-blue-600 pl-2">📝 ASUKA2</div>
 
           {/* メニューリンク */}
           <Link
