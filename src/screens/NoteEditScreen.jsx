@@ -100,14 +100,23 @@ export default function NoteEditScreen() {
         ? `<a href="/edit/${target.id}" class="text-blue-600 underline">${p1}</a>`
         : `<span class="text-gray-400">[[${p1}]]</span>`;
     });
-    return md.render(replaced);
+
+    const lines = replaced.split("\n");
+    if (lines.length > 0 && lines[0].trim() !== "") {
+      lines[0] = `**${lines[0]}**`;
+    }
+
+    return md.render(lines.join("\n"));
   };
 
   const handleSave = () => {
+    const firstLine = content.split("\n")[0].trim(); // ← 1行目を抽出
+    const noteTitle = firstLine || "無題ノート";
+
     if (isNew) {
-      addNote({ title, content });
+      addNote({ title: noteTitle, content });
     } else {
-      updateNote(id, { title, content });
+      updateNote(id, { title: noteTitle, content });
     }
     navigate("/");
   };
@@ -162,13 +171,6 @@ export default function NoteEditScreen() {
       </div>
 
       <div className="space-y-2">
-        <input
-          type="text"
-          placeholder="タイトル"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="border px-3 py-2 w-full border-gray-500"
-        />
 
         {/* 各モードの内容 */}
         {mode === "edit" && (
@@ -195,7 +197,7 @@ export default function NoteEditScreen() {
 
       {mode === "split-right" && (
         <div className="flex h-full gap-4">
-          
+
           <div className="flex-1 space-y-2 h-full border-gray-500">
             <textarea
               ref={textareaRef}

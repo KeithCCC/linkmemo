@@ -17,7 +17,7 @@ function App() {
       <div className="flex-1 relative">
         {/* モバイル用ハンバーガー */}
         <button
-          className="fixed top-4 left-4 z-50 sm:hidden bg-white shadow px-3 py-1 rounded"
+          className="fixed top-2 left-2 sm:left-1 z-50 sm:hidden bg-white shadow px-3 py-1 rounded"
           onClick={() => setCollapsed(!collapsed)}
         >
           ☰
