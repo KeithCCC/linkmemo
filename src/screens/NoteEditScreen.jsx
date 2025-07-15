@@ -149,8 +149,8 @@ export default function NoteEditScreen() {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold">
+    <div className="p-4 space-y-4 text-base sm:text-sm">
+      <h1 className="text-lg sm:text-base font-bold">
         {isNew ? "新規ノート作成" : `ノート編集（ID: ${id}）`}
       </h1>
 
