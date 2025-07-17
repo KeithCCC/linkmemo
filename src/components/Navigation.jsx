@@ -65,7 +65,7 @@ export default function Navigation({ collapsed, setCollapsed }) {
             ✏️ <span>新規作成</span>
           </Link>
           <Link to="/settings" className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/settings") ? "text-blue-600 font-bold" : ""}`}>
-            ⚙️ <span>設定</span>
+            ⚙️ <span>設定(使い方)</span>
           </Link>
 
           {/* 📤 JSONエクスポート */}
