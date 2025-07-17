@@ -200,8 +200,10 @@ export default function NoteEditScreen() {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              style={{ height: `${textareaHeight}px` }}
-              className="border px-3 py-2 w-full border-gray-500"
+              className="w-full border resize-none px-3 py-2 border-gray-500"
+              style={{ height: "calc(100vh - 220px)" }} // ← 上部ヘッダーやボタン分を引く
+              // style={{ height: `${textareaHeight}px` }}
+              // className="border px-3 py-2 w-full border-gray-500"
               placeholder="内容"
             />
           </>
@@ -211,29 +213,48 @@ export default function NoteEditScreen() {
 
       {mode === "preview" && (
         <div
-          className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500"
+          // className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500"
+          // dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+          className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500 overflow-auto"
+          style={{ height: "calc(100vh - 200px)" }}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
       )}
 
       {mode === "split-right" && (
         <div className="flex h-full gap-4">
-
-          <div className="flex-1 space-y-2 h-full border-gray-500">
+          <div className="flex-1">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="border px-3 py-2 w-full resize-y border-gray-500"
-              style={{ height: `${previewHeight}px` }}
+              style={{ height: "calc(100vh - 200px)" }}
             />
           </div>
           <div
             className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto border-gray-500"
-            style={{ height: `${previewHeight}px` }}
+            style={{ height: "calc(100vh - 200px)" }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
         </div>
+        // <div className="flex h-full gap-4">
+
+        //   <div className="flex-1 space-y-2 h-full border-gray-500">
+        //     <textarea
+        //       ref={textareaRef}
+        //       value={content}
+        //       onChange={(e) => setContent(e.target.value)}
+        //       className="border px-3 py-2 w-full resize-y border-gray-500"
+        //       style={{ height: `${previewHeight}px` }}
+        //     />
+        //   </div>
+        //   <div
+        //     className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto border-gray-500"
+        //     style={{ height: `${previewHeight}px` }}
+        //     dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+        //   />
+        // </div>
       )}
 
 
