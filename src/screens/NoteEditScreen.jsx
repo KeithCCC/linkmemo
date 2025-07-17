@@ -54,15 +54,22 @@ export default function NoteEditScreen() {
   useEffect(() => {
     if (!isNew) {
       const existingNote = getNoteById(id);
-      if (existingNote) {
-        setTitle(existingNote.title);
-        setContent(existingNote.content);
-      } else {
-        alert("ノートが見つかりませんでした");
-        navigate("/");
+
+      if (!existingNote) {
+        // アラートなしで静かにリダイレクト（推奨）
+        // どうしてもアラートを残したければ中に書く
+        setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 0);
+        return; // ← 以降の処理を止める
       }
+
+      // ノートが存在するときのみセット
+      setTitle(existingNote.title);
+      setContent(existingNote.content);
     }
   }, [id, isNew, getNoteById, navigate]);
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -125,7 +132,7 @@ export default function NoteEditScreen() {
     const confirmDelete = window.confirm("このノートを本当に削除しますか？");
     if (confirmDelete) {
       deleteNote(id);
-      navigate("/");
+      navigate("/", { replace: true });
     }
   };
 
@@ -142,6 +149,20 @@ export default function NoteEditScreen() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  const handleExportMarkdown = () => {
+    const filename = (content.split("\n")[0] || "note") + ".md";
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
 
   const extractTags = (text) => {
     const matches = text.match(/[＃#]([^\s#]+)/g) || [];
@@ -245,6 +266,13 @@ export default function NoteEditScreen() {
         <button onClick={handleDownload} className="bg-gray-600 text-white  px-3 py-1 text-sm rounded hover:bg-gray-700">
           ファイルとして保存
         </button>
+        <button
+          onClick={handleExportMarkdown}
+          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+        >
+          Markdownとして保存
+        </button>
+
       </div>
 
       {/* タグ表示 */}
