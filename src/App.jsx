@@ -8,13 +8,13 @@ import HomeScreen from './screens/HomeScreen';
 import Navigation from './components/Navigation';
 
 function App() {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* ✅ 上部ヘッダー帯 */}
       <div className="bg-green-600 h-10 w-full flex items-center px-4 text-white font-semibold shadow-sm">
-        📝 ASUKA ノートアプリ
+        📝 ASUKA TEXT EDITOR BETA
       </div>
 
       {/* ✅ 本体エリア（サイドバー＋ページ） */}

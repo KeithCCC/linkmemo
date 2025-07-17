@@ -56,8 +56,6 @@ export default function Navigation({ collapsed, setCollapsed }) {
 
       {!collapsed && (
         <div className="pt-16 px-2 space-y-3">
-          <div className="text-xl font-bold text-blue-600 pl-2">📝 ASUKA2</div>
-
           <Link to="/" className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/") ? "text-blue-600 font-bold" : ""}`}>
             📁 <span>一覧</span>
           </Link>
