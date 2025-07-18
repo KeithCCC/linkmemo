@@ -13,7 +13,7 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ✅ 上部ヘッダー帯 */}
-      <div className="bg-green-600 h-10 w-full flex items-center px-4 text-white font-semibold shadow-sm">
+      <div className="bg-red-500 h-10 w-full flex items-center px-4 text-white font-semibold shadow-sm">
         📝 ASUKA TEXT EDITOR BETA
       </div>
 

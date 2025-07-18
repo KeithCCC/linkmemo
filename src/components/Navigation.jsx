@@ -42,7 +42,7 @@ export default function Navigation({ collapsed, setCollapsed }) {
   };
 
   return (
-    <aside className="relative h-screen bg-white border-r shadow-sm text-gray-700 text-sm font-medium">
+    <aside className="relative h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium">
       {/* ハンバーガー */}
       <div className="absolute top-4 left-4 z-50">
         <button
