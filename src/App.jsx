@@ -7,6 +7,10 @@ import NoteEditScreen from './screens/NoteEditScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import HomeScreen from './screens/HomeScreen';
 import Navigation from './components/Navigation';
+import NoteListScreen from './screens/NoteListScreen';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebase'; // ← Firebase初期化済みのdbインスタンス
+
 
 
 function App() {
@@ -15,6 +19,21 @@ function App() {
   const [user, setUser] = useState(null);
 
   const [authChecked, setAuthChecked] = useState(false);
+
+  // useEffect(() => {
+  //   const fetchNotes = async () => {
+  //     const uid = user?.uid;
+  //     if (!uid) return;
+
+  //     const snapshot = await getDocs(collection(db, 'users', uid, 'notes'));
+  //     const fetchedNotes = snapshot.docs.map(doc => ({
+  //       id: doc.id,
+  //       ...doc.data(),
+  //     }));
+  //   };
+
+  //   fetchNotes();
+  // }, [user]);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
@@ -60,13 +79,18 @@ function App() {
           >
             ☰
           </button>
-
+          https://link-memo-e7515.web.app/
           <div className="px-4 pt-6 sm:pt-8">
             <Routes>
-              <Route path="/" element={<HomeScreen  user={user} />} />
+              {/* <Route path="/" element={<HomeScreen  user={user} />} /> */}
+              <Route path="/" element={<NoteListScreen />} />
               <Route path="/note/:id" element={<NoteDetailScreen />} />
               <Route path="/edit/:id" element={<NoteEditScreen user={user} />} />
               <Route path="/settings" element={<SettingsScreen />} />
+              <Route
+                path="/new"
+                element={<NoteEditScreen user={user} />}
+              />
             </Routes>
           </div>
         </div>

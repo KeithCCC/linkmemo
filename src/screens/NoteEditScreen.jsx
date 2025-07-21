@@ -6,7 +6,8 @@ import { createNote, updateNote } from "../notesService";
 import { auth } from "../firebase";
 import { getNoteById } from "../notesService";
 import { deleteNote } from "../notesService";
-
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 
 
@@ -14,11 +15,13 @@ const md = new MarkdownIt({
   breaks: true, // ← これで改行を <br> に変換！
 });
 
-export default function NoteEditScreen({ user }) {
+export default function NoteEditScreen({ user, onSave }) {
+  const { notes, addNote } = useNotesContext(); // ← ✅ここだけ！
+
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
-  const { notes } = useNotesContext();
+  // const { notes } = useNotesContext();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -161,20 +164,29 @@ export default function NoteEditScreen({ user }) {
 
     const firstLine = content.split("\n")[0].trim();
     const noteTitle = firstLine || "無題ノート";
+    const tags = extractTags(content);
 
-    const noteData = {
+    const docRef = await addDoc(collection(db, 'users', uid, 'notes'), {
       title: noteTitle,
       content,
+      updatedAt: new Date().toISOString().slice(0, 10),
+      tags,
+    });
+
+    const newNote = {
+      id: docRef.id,
+      title: noteTitle,
+      content,
+      updatedAt: new Date().toISOString().slice(0, 10),
+      tags,
     };
 
-    if (isNew) {
-      await createNote(uid, noteData);
-    } else {
-      await updateNote(uid, id, noteData);
-    }
+    // ✅ NotesContextに追加
+    addNote(newNote);
 
-    navigate("/");
+    navigate('/');
   };
+
 
 
   useEffect(() => {

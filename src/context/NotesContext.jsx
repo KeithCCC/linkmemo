@@ -1,4 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { db } from '../firebase'; // ← 必要に応じてパス調整
+import { collection, getDocs } from 'firebase/firestore';
+import { useAuthContext } from './AuthContext'; // ← ログイン中のユーザーを使う前提
 
 const NotesContext = createContext();
 export const useNotesContext = () => useContext(NotesContext);
@@ -6,6 +9,7 @@ export const useNotesContext = () => useContext(NotesContext);
 const STORAGE_KEY = "notes";
 
 export const NotesProvider = ({ children }) => {
+  const { user } = useAuthContext(); // ← これを追加！ 🔥
   const [notes, setNotes] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = stored ? JSON.parse(stored) : [];
@@ -47,6 +51,11 @@ export const NotesProvider = ({ children }) => {
     return sorted;
   };
 
+  useEffect(() => {
+    if (user) return; // Firestore優先時はローカル保存しない
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  }, [notes, user]);
+
   const addNote = (note) => {
     const now = new Date().toISOString();
     const newNote = {
@@ -70,6 +79,22 @@ export const NotesProvider = ({ children }) => {
   const deleteNote = (id) => {
     setNotes((prev) => prev.filter((note) => note.id !== id));
   };
+
+  useEffect(() => {
+    const fetchNotesFromFirestore = async () => {
+      if (!user) return;
+
+      const snapshot = await getDocs(collection(db, 'users', user.uid, 'notes'));
+      const fetched = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setNotes(fetched);
+    };
+
+    fetchNotesFromFirestore();
+  }, [user]);
 
   return (
     <NotesContext.Provider

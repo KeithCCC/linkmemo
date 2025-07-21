@@ -1,17 +1,21 @@
+// src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import { NotesProvider } from './context/NotesContext.jsx';
-import { BrowserRouter } from 'react-router-dom'; // ✅ ここだけでOK
-import './index.css'; // ✅ これがないと Tailwind は読み込まれません
+import App from './App';
+import { BrowserRouter } from 'react-router-dom'; // ✅ 追加
+import { AuthProvider } from './context/AuthContext';
+import { NotesProvider } from './context/NotesContext';
+import './index.css'; // ← これがないとTailwind効きません！
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <NotesProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </NotesProvider>
+    <BrowserRouter> {/* ✅ Routerの外枠を追加！ */}
+      <AuthProvider>
+        <NotesProvider>
+          <App />
+        </NotesProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
