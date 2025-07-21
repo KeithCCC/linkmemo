@@ -15,15 +15,15 @@ const md = new MarkdownIt({
   breaks: true, // ← これで改行を <br> に変換！
 });
 
+
 export default function NoteEditScreen({ user, onSave }) {
   const { notes, addNote } = useNotesContext(); // ← ✅ここだけ！
 
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
-  // const { notes } = useNotesContext();
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const textareaRef = useRef(null);
   const [previewHeight, setPreviewHeight] = useState(() => {
@@ -123,9 +123,10 @@ export default function NoteEditScreen({ user, onSave }) {
 
 
   const handleDownload = () => {
-    const blob = new Blob([`${title}\n\n${content}`], {
+    const blob = new Blob([`${safeTitle}\n\n${content}`], {
       type: "text/plain;charset=utf-8",
     });
+    link.download = `${safeTitle}.txt`;
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -166,27 +167,42 @@ export default function NoteEditScreen({ user, onSave }) {
     const noteTitle = firstLine || "無題ノート";
     const tags = extractTags(content);
 
-    const docRef = await addDoc(collection(db, 'users', uid, 'notes'), {
-      title: noteTitle,
-      content,
-      updatedAt: new Date().toISOString().slice(0, 10),
-      tags,
-    });
+    if (!noteTitle || !content.trim()) {
+      alert("ノートの内容が空です。何か入力してください！");
+      return;
+    }
 
-    const newNote = {
-      id: docRef.id,
+
+
+    const noteData = {
       title: noteTitle,
       content,
       updatedAt: new Date().toISOString().slice(0, 10),
       tags,
     };
 
-    // ✅ NotesContextに追加
-    addNote(newNote);
+    try {
+      if (isNew) {
+        // 🔵 新規ノート → 追加だけして遷移しない
+        const docRef = await addDoc(collection(db, 'users', uid, 'notes'), noteData);
+        const newNote = { id: docRef.id, ...noteData };
 
-    navigate('/');
+        addNote(newNote);
+        // URLを置き換えることで「/note/new」ではなくなるが画面はそのまま
+        navigate(`/edit/${docRef.id}`, { replace: true });
+      } else {
+        // 🟢 既存ノート → 上書き
+        await updateNote(uid, id, noteData);
+        addNote({ id, ...noteData });
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error("保存エラー", error);
+      alert("ノートの保存に失敗しました。");
+    }
   };
-
 
 
   useEffect(() => {
@@ -198,7 +214,7 @@ export default function NoteEditScreen({ user, onSave }) {
             navigate("/", { replace: true });
             return;
           }
-          setTitle(note.title || "");
+          // setTitle(note.title || ""); ← 不要なので削除！
           setContent(note.content || "");
         } catch (error) {
           console.error("ノート読み込みエラー", error);
@@ -208,6 +224,7 @@ export default function NoteEditScreen({ user, onSave }) {
     };
     loadNote();
   }, [id, isNew, user]);
+
 
 
   return (
@@ -227,12 +244,9 @@ export default function NoteEditScreen({ user, onSave }) {
         <button onClick={() => changeMode("split-right")} className={mode === "split-right" ? "font-bold underline" : ""}>
           ↔ 横 (Ctrl+3)
         </button>
-        <button onClick={() => changeMode("split-bottom")} className={mode === "split-bottom" ? "font-bold underline" : ""}>
+        {/* <button onClick={() => changeMode("split-bottom")} className={mode === "split-bottom" ? "font-bold underline" : ""}>
           ↕ 縦 (Ctrl+4)
-        </button>
-        <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded">
-          保存する
-        </button>
+        </button> */}
 
       </div>
 
@@ -324,6 +338,7 @@ export default function NoteEditScreen({ user, onSave }) {
         <button onClick={handleSave} className="bg-blue-600 text-white  px-3 py-1 text-sm roundedhover:bg-blue-700">
           保存
         </button>
+
         {!isNew && (
           <button onClick={handleDelete} className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700">
             削除
@@ -338,6 +353,10 @@ export default function NoteEditScreen({ user, onSave }) {
         >
           Markdownとして保存
         </button>
+        {/* ✅ ここに追加！ */}
+        {saveSuccess && (
+          <span className="text-green-600 text-sm ml-2">✅ 保存しました！</span>
+        )}
 
       </div>
 

@@ -1,6 +1,8 @@
 // src/screens/NoteDetailScreen.jsx
 import { useParams, Link } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
+import React from "react";
+import MarkdownIt from "markdown-it";
 
 export default function NoteDetailScreen() {
   const { id } = useParams();
@@ -11,23 +13,25 @@ export default function NoteDetailScreen() {
     return <h2 className="p-4 text-red-500">ノートが見つかりませんでした（ID: {id}）</h2>;
   }
 
-  // 🔹 [[リンク]] → <Link> に変換
-  const parseLinks = (text) => {
-    const parts = text.split(/\[\[|\]\]/);
-    return parts.map((part, i) => {
-      if (i % 2 === 0) return <span key={i}>{part}</span>;
-
-      // リンク先ノートを探す（タイトル一致）
-      const target = notes.find(n => n.title === part);
-      return target ? (
-        <Link key={i} to={`/note/${target.id}`} className="text-blue-600 underline mx-1">
-          {part}
-        </Link>
-      ) : (
-        <span key={i} className="text-gray-500 mx-1">[[{part}]]</span>
-      );
+  // 🔹 [[リンク]] を <a> に差し替える
+  const convertWikiLinksToHTML = (text) => {
+    return text.replace(/\[\[([^\]]+)\]\]/g, (match, title) => {
+      const target = notes.find(n => n.title === title);
+      if (target) {
+        return `<a href="/note/${target.id}" class="text-blue-600 underline">${title}</a>`;
+      } else {
+        return `<span class="text-gray-500">[[${title}]]</span>`;
+      }
     });
   };
+
+  // 🔧 Markdownパーサー
+  const md = new MarkdownIt({
+    breaks: true,         // 改行有効
+    linkify: true,        // URL自動リンク
+  });
+
+  const contentHTML = md.render(convertWikiLinksToHTML(note.content));
 
   // 🔁 被リンクノートを抽出
   const backlinks = notes.filter(n => n.backlinks?.includes(note.id));
@@ -35,7 +39,7 @@ export default function NoteDetailScreen() {
   return (
     <div className="p-4 py-2 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-2">{note.title}</h1>
+        <h1 className="text-2xl font-bold mb-2">{note.title} {note.id}</h1>
         <Link
           to={`/edit/${note.id}`}
           className="inline-block mt-2 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
@@ -43,7 +47,11 @@ export default function NoteDetailScreen() {
           ✏️ 編集する
         </Link>
 
-        <div className="prose whitespace-pre-wrap">{parseLinks(note.content)}</div>
+        <div
+          className="prose prose-sm max-w-none border p-3 mt-4 rounded bg-white border-gray-500 overflow-auto"
+          style={{ height: "calc(100vh - 300px)" }}
+          dangerouslySetInnerHTML={{ __html: contentHTML }}
+        />
       </div>
 
       {backlinks.length > 0 && (

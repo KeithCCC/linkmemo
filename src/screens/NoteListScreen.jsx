@@ -39,7 +39,7 @@ export default function NoteListScreen() {
           {filteredNotes.map((note) => (
             <li key={note.id} className="p-3 border rounded hover:bg-gray-50">
               <div className="font-semibold">
-                <Link className="text-blue-600" to={`/note/${note.id}`}>{note.title}</Link>
+                <Link className="text-blue-600" to={`/edit/${note.id}`}>{note.title}<br /> {note.id}</Link>
               </div>
               <div className="text-sm text-gray-500">更新日: {note.updatedAt}</div>
               {Array.isArray(note.tags) && note.tags.length > 0 && (

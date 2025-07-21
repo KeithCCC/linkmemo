@@ -15,25 +15,8 @@ import { db } from './firebase'; // ← Firebase初期化済みのdbインスタ
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
-
   const [user, setUser] = useState(null);
-
   const [authChecked, setAuthChecked] = useState(false);
-
-  // useEffect(() => {
-  //   const fetchNotes = async () => {
-  //     const uid = user?.uid;
-  //     if (!uid) return;
-
-  //     const snapshot = await getDocs(collection(db, 'users', uid, 'notes'));
-  //     const fetchedNotes = snapshot.docs.map(doc => ({
-  //       id: doc.id,
-  //       ...doc.data(),
-  //     }));
-  //   };
-
-  //   fetchNotes();
-  // }, [user]);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
@@ -47,7 +30,6 @@ function App() {
     return <div className="p-4">ログイン確認中...</div>;
   }
 
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* ✅ 上部ヘッダー帯 */}
@@ -55,10 +37,10 @@ function App() {
         📝 ASUKA2 TEXT EDITOR BETA
       </div>
 
-      <div className="ml-auto flex gap-2 items-center">
+      <div className="ml-0 flex gap-2 items-center bg-gray-200">
         {user ? (
           <>
-            <span className="text-sm">{user.displayName}</span>
+            <span className="text-sm">[{user.displayName}]</span>
             <button onClick={logout} className="bg-white text-red-500 px-2 py-1 rounded">ログアウト</button>
           </>
         ) : (
@@ -79,7 +61,6 @@ function App() {
           >
             ☰
           </button>
-          https://link-memo-e7515.web.app/
           <div className="px-4 pt-6 sm:pt-8">
             <Routes>
               {/* <Route path="/" element={<HomeScreen  user={user} />} /> */}
