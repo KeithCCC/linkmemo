@@ -2,16 +2,23 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useNotesContext } from "../context/NotesContext";
 import MarkdownIt from "markdown-it";
+import { createNote, updateNote } from "../notesService";
+import { auth } from "../firebase";
+import { getNoteById } from "../notesService";
+import { deleteNote } from "../notesService";
+
+
+
 
 const md = new MarkdownIt({
   breaks: true, // ← これで改行を <br> に変換！
 });
 
-export default function NoteEditScreen() {
+export default function NoteEditScreen({ user }) {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
-  const { addNote, updateNote, deleteNote, getNoteById, notes } = useNotesContext();
+  const { notes } = useNotesContext();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -50,25 +57,6 @@ export default function NoteEditScreen() {
     return () => observer.disconnect();
   }, []);
 
-
-  useEffect(() => {
-    if (!isNew) {
-      const existingNote = getNoteById(id);
-
-      if (!existingNote) {
-        // アラートなしで静かにリダイレクト（推奨）
-        // どうしてもアラートを残したければ中に書く
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 0);
-        return; // ← 以降の処理を止める
-      }
-
-      // ノートが存在するときのみセット
-      setTitle(existingNote.title);
-      setContent(existingNote.content);
-    }
-  }, [id, isNew, getNoteById, navigate]);
 
 
   useEffect(() => {
@@ -116,25 +104,20 @@ export default function NoteEditScreen() {
     return md.render(lines.join("\n"));
   };
 
-  const handleSave = () => {
-    const firstLine = content.split("\n")[0].trim(); // ← 1行目を抽出
-    const noteTitle = firstLine || "無題ノート";
 
-    if (isNew) {
-      addNote({ title: noteTitle, content });
-    } else {
-      updateNote(id, { title: noteTitle, content });
-    }
-    navigate("/");
-  };
-
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const confirmDelete = window.confirm("このノートを本当に削除しますか？");
-    if (confirmDelete) {
-      deleteNote(id);
+    if (!confirmDelete || !user?.uid) return;
+
+    try {
+      await deleteNote(user.uid, id);
       navigate("/", { replace: true });
+    } catch (error) {
+      console.error("ノート削除エラー", error);
+      alert("削除に失敗しました。");
     }
   };
+
 
   const handleDownload = () => {
     const blob = new Blob([`${title}\n\n${content}`], {
@@ -169,6 +152,52 @@ export default function NoteEditScreen() {
     return [...new Set(matches.map((tag) => tag.slice(1)))];
   };
 
+  const handleSave = async () => {
+    const uid = user?.uid;
+    if (!uid) {
+      alert("ログインしてください");
+      return;
+    }
+
+    const firstLine = content.split("\n")[0].trim();
+    const noteTitle = firstLine || "無題ノート";
+
+    const noteData = {
+      title: noteTitle,
+      content,
+    };
+
+    if (isNew) {
+      await createNote(uid, noteData);
+    } else {
+      await updateNote(uid, id, noteData);
+    }
+
+    navigate("/");
+  };
+
+
+  useEffect(() => {
+    const loadNote = async () => {
+      if (!isNew && user?.uid) {
+        try {
+          const note = await getNoteById(user.uid, id);
+          if (!note) {
+            navigate("/", { replace: true });
+            return;
+          }
+          setTitle(note.title || "");
+          setContent(note.content || "");
+        } catch (error) {
+          console.error("ノート読み込みエラー", error);
+          navigate("/", { replace: true });
+        }
+      }
+    };
+    loadNote();
+  }, [id, isNew, user]);
+
+
   return (
     <div className="p-4 space-y-4 text-base sm:text-sm">
       <h1 className="text-lg sm:text-base font-bold">
@@ -189,6 +218,10 @@ export default function NoteEditScreen() {
         <button onClick={() => changeMode("split-bottom")} className={mode === "split-bottom" ? "font-bold underline" : ""}>
           ↕ 縦 (Ctrl+4)
         </button>
+        <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded">
+          保存する
+        </button>
+
       </div>
 
       <div className="space-y-2">
@@ -201,7 +234,7 @@ export default function NoteEditScreen() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full border resize-none px-3 py-2 border-gray-500"
-              style={{ height: "calc(100vh - 220px)" }} // ← 上部ヘッダーやボタン分を引く
+              style={{ height: "calc(100vh - 300px)" }} // ← 上部ヘッダーやボタン分を引く
               // style={{ height: `${textareaHeight}px` }}
               // className="border px-3 py-2 w-full border-gray-500"
               placeholder="内容"
@@ -216,7 +249,7 @@ export default function NoteEditScreen() {
           // className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500"
           // dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500 overflow-auto"
-          style={{ height: "calc(100vh - 200px)" }}
+          style={{ height: "calc(100vh - 300px)" }}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
       )}
@@ -229,12 +262,12 @@ export default function NoteEditScreen() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="border px-3 py-2 w-full resize-y border-gray-500"
-              style={{ height: "calc(100vh - 200px)" }}
+              style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
           <div
             className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto border-gray-500"
-            style={{ height: "calc(100vh - 200px)" }}
+            style={{ height: "calc(100vh - 300px)" }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
         </div>
