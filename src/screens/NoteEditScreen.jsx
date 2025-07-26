@@ -44,6 +44,26 @@ export default function NoteEditScreen({ user, onSave }) {
     setMode(newMode);
     localStorage.setItem("noteViewMode", newMode);
   };
+  const previewRef = useRef(null);
+  const isSyncingScroll = useRef(false); // ← ループ防止
+
+  const syncScroll = (source, target) => {
+    if (!source.current || !target.current) return;
+
+    const sourceEl = source.current;
+    const targetEl = target.current;
+
+    if (isSyncingScroll.current) return;
+
+    isSyncingScroll.current = true;
+
+    const ratio = sourceEl.scrollTop / (sourceEl.scrollHeight - sourceEl.clientHeight);
+    targetEl.scrollTop = ratio * (targetEl.scrollHeight - targetEl.clientHeight);
+
+    setTimeout(() => {
+      isSyncingScroll.current = false;
+    }, 10);
+  };
 
   useEffect(() => {
     const observer = new ResizeObserver(() => {
@@ -205,6 +225,16 @@ export default function NoteEditScreen({ user, onSave }) {
     }
   };
 
+  // 🆕 新規ノート作成時は内容を初期化
+  useEffect(() => {
+    if (isNew) {
+      setContent(""); // ← ここで前のノートの残りを消す！
+      localStorage.removeItem("noteViewMode"); // 前回の表示モードをリセット
+      setMode("edit"); // 明示的に編集モードに戻す
+    }
+  }, [id]);
+
+
 
   useEffect(() => {
     const loadNote = async () => {
@@ -312,34 +342,19 @@ export default function NoteEditScreen({ user, onSave }) {
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onScroll={() => syncScroll(textareaRef, previewRef)}
               className="border px-3 py-2 w-full resize-y border-gray-500"
               style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
           <div
-            className="flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto"
+            ref={previewRef}
+            onScroll={() => syncScroll(previewRef, textareaRef)}
+            className="flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded"
             style={{ height: "calc(100vh - 300px)" }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
-
         </div>
-        // <div className="flex h-full gap-4">
-
-        //   <div className="flex-1 space-y-2 h-full border-gray-500">
-        //     <textarea
-        //       ref={textareaRef}
-        //       value={content}
-        //       onChange={(e) => setContent(e.target.value)}
-        //       className="border px-3 py-2 w-full resize-y border-gray-500"
-        //       style={{ height: `${previewHeight}px` }}
-        //     />
-        //   </div>
-        //   <div
-        //     className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto border-gray-500"
-        //     style={{ height: `${previewHeight}px` }}
-        //     dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-        //   />
-        // </div>
       )}
 
 

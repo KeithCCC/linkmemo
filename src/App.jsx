@@ -1,5 +1,5 @@
 // App.jsx
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './auth';
 import NoteDetailScreen from './screens/NoteDetailScreen';
@@ -29,6 +29,13 @@ function App() {
   if (!authChecked) {
     return <div className="p-4">ログイン確認中...</div>;
   }
+
+  const NoteEditScreenWrapper = () => {
+    const { id } = useParams();
+    return <NoteEditScreen key={id || "new"} user={user} />;
+  };
+
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -63,16 +70,13 @@ function App() {
           </button>
           <div className="px-4 pt-6 sm:pt-8">
             <Routes>
-              {/* <Route path="/" element={<HomeScreen  user={user} />} /> */}
               <Route path="/" element={<NoteListScreen />} />
               <Route path="/note/:id" element={<NoteDetailScreen />} />
-              <Route path="/edit/:id" element={<NoteEditScreen user={user} />} />
+              <Route path="/edit/:id" element={<NoteEditScreenWrapper />} />
+              <Route path="/new" element={<NoteEditScreenWrapper />} />
               <Route path="/settings" element={<SettingsScreen />} />
-              <Route
-                path="/new"
-                element={<NoteEditScreen user={user} />}
-              />
             </Routes>
+
           </div>
         </div>
       </div>
