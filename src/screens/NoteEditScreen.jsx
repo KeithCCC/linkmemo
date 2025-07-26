@@ -250,7 +250,32 @@ export default function NoteEditScreen({ user, onSave }) {
         </button> */}
 
       </div>
+      {/* 操作ボタン */}
+      <div className="flex gap-4 mt-4 flex-wrap">
+        <button onClick={handleSave} className="bg-blue-600 text-white  px-3 py-0.5 text-sm roundedhover:bg-blue-700">
+          保存
+        </button>
 
+        {!isNew && (
+          <button onClick={handleDelete} className="bg-red-600 text-white px-3 py-0.5 text-sm rounded hover:bg-red-700">
+            削除
+          </button>
+        )}
+        <button onClick={handleDownload} className="bg-gray-600 text-white  px-3 py-0.5 text-sm rounded hover:bg-gray-700">
+          ファイルとして保存
+        </button>
+        <button
+          onClick={handleExportMarkdown}
+          className="bg-orange-500 text-white px-4 py-0.5 rounded hover:bg-orange-600"
+        >
+          Markdownとして保存
+        </button>
+        {/* ✅ ここに追加！ */}
+        {saveSuccess && (
+          <span className="text-green-600 text-sm ml-2">✅ 保存しました！</span>
+        )}
+
+      </div>
       <div className="space-y-2">
 
         {/* 各モードの内容 */}
@@ -334,32 +359,7 @@ export default function NoteEditScreen({ user, onSave }) {
         </div>
       )}
 
-      {/* 操作ボタン */}
-      <div className="flex gap-4 mt-4 flex-wrap">
-        <button onClick={handleSave} className="bg-blue-600 text-white  px-3 py-1 text-sm roundedhover:bg-blue-700">
-          保存
-        </button>
 
-        {!isNew && (
-          <button onClick={handleDelete} className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700">
-            削除
-          </button>
-        )}
-        <button onClick={handleDownload} className="bg-gray-600 text-white  px-3 py-1 text-sm rounded hover:bg-gray-700">
-          ファイルとして保存
-        </button>
-        <button
-          onClick={handleExportMarkdown}
-          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-        >
-          Markdownとして保存
-        </button>
-        {/* ✅ ここに追加！ */}
-        {saveSuccess && (
-          <span className="text-green-600 text-sm ml-2">✅ 保存しました！</span>
-        )}
-
-      </div>
 
       {/* タグ表示 */}
       {extractTags(content).length > 0 && (
