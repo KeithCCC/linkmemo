@@ -56,16 +56,23 @@ export const NotesProvider = ({ children }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   }, [notes, user]);
 
-  const addNote = (note) => {
-    const now = new Date().toISOString();
-    const newNote = {
-      ...note,
-      id: Date.now().toString(),
-      createdAt: now,
-      updatedAt: now,
-    };
-    setNotes((prev) => [...prev, newNote]);
+const addNote = (note) => {
+  const now = new Date().toISOString();
+  const newNote = {
+    ...note,
+    id: note.id, // ← Firebaseから渡されたIDを使う
+    createdAt: note.createdAt || now,
+    updatedAt: now,
   };
+  setNotes((prev) => {
+    // 既存IDのノートがあれば更新、なければ追加
+    const exists = prev.some(n => n.id === newNote.id);
+    return exists
+      ? prev.map(n => (n.id === newNote.id ? newNote : n))
+      : [...prev, newNote];
+  });
+};
+
 
   const updateNote = (id, updated) => {
     const now = new Date().toISOString();

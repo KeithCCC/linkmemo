@@ -1,5 +1,5 @@
 {
-  "name": "ASUKA2",
+  "name": "asuka2",
   "version": "0.0.1",
   "type": "module",
   "scripts": {
@@ -26,5 +26,20 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.6.3",
     "remark-gfm": "^4.0.1"
-  }
+  },
+  "description": "",
+  "main": "postcss.config.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KeithCCC/linkmemo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KeithCCC/linkmemo/issues"
+  },
+  "homepage": "https://github.com/KeithCCC/linkmemo#readme"
 }

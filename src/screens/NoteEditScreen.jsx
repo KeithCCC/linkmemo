@@ -22,9 +22,10 @@ export default function NoteEditScreen({ user, onSave }) {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [Success, setSuccess] = useState(false);
 
   const [content, setContent] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false); // ← ここに追加！
   const textareaRef = useRef(null);
   const [previewHeight, setPreviewHeight] = useState(() => {
     return parseInt(localStorage.getItem("textareaHeight")) || 200;
@@ -35,8 +36,8 @@ export default function NoteEditScreen({ user, onSave }) {
   });
 
   const [mode, setMode] = useState(() => {
-    if (id === "new") return "edit"; // 新規ノート時は強制的に編集モード
-    return localStorage.getItem("noteViewMode") || "edit-only";
+    if (id === "new") return "edit"; // 新規ノートは常に edit
+    return localStorage.getItem("noteViewMode") || "preview"; // ここを変更
   });
 
   const changeMode = (newMode) => {
@@ -272,13 +273,12 @@ export default function NoteEditScreen({ user, onSave }) {
 
       {mode === "preview" && (
         <div
-          // className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500"
-          // dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-          className="prose prose-sm max-w-none border p-3 rounded bg-white border-gray-500 overflow-auto"
+          className="prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto"
           style={{ height: "calc(100vh - 300px)" }}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
       )}
+
 
       {mode === "split-right" && (
         <div className="flex h-full gap-4">
@@ -292,10 +292,11 @@ export default function NoteEditScreen({ user, onSave }) {
             />
           </div>
           <div
-            className="flex-1 prose prose-sm max-w-none border p-3 rounded bg-white overflow-auto border-gray-500"
+            className="flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto"
             style={{ height: "calc(100vh - 300px)" }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
+
         </div>
         // <div className="flex h-full gap-4">
 

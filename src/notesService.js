@@ -29,12 +29,13 @@ export const createNote = async (uid, note) => {
 
 // ノートを更新
 export const updateNote = async (uid, noteId, note) => {
-  const noteRef = doc(db, 'users', uid, 'notes', noteId);
+  const noteRef = doc(db, 'users', uid, 'notes', noteId); // ← 修正済み
   await updateDoc(noteRef, {
     ...note,
     updatedAt: Date.now(),
   });
 };
+
 
 // ノートを削除
 export const deleteNote = async (uid, noteId) => {
