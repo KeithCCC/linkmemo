@@ -14,9 +14,16 @@ import { db } from './firebase'; // ← Firebase初期化済みのdbインスタ
 
 
 function App() {
-  const [collapsed, setCollapsed] = useState(false);
+  // const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem("navCollapsed") === "true";
+  });
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  useEffect(() => {
+    localStorage.setItem("navCollapsed", collapsed);
+  }, [collapsed]);
+
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {

@@ -143,7 +143,7 @@ export default function NoteEditScreen({ user }) {
         {saveSuccess && <span className="text-green-600 text-sm ml-4">✅ 保存しました！</span>}
         {/* ✅ 削除ボタン（復活版） */}
         {noteIdRef.current && (
-          
+
           <button
             onClick={async () => {
               if (confirm("このノートを削除してもよろしいですか？")) {
@@ -178,7 +178,7 @@ export default function NoteEditScreen({ user }) {
           ref={textareaRef}
           value={content}
           onChange={handleContentChange}
-          className={`w-full border px-3 py-2 border-gray-500 text-${fontSize}`}
+          className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
           style={{ height: "calc(100vh - 300px)" }}
           placeholder="内容を入力..."
         />
@@ -186,8 +186,19 @@ export default function NoteEditScreen({ user }) {
 
       {mode === "preview" && (
         <div
-          className={`prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto text-${fontSize}`}
-          style={{ height: "calc(100vh - 300px)" }}
+          // className={`prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto text-${fontSize}`}
+          className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border border-gray-500 bg-white rounded ${fontSize === "sm" ? "prose-sm" :
+            fontSize === "lg" ? "prose-lg" :
+              fontSize === "xl" ? "prose-xl" :
+                "prose-base"
+            }`}
+
+          style={{
+            minHeight: "200px",
+            maxHeight: "calc(100vh - 200px)",
+            overflowY: "auto",
+            resize: "none"
+          }}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
       )}
@@ -200,15 +211,28 @@ export default function NoteEditScreen({ user }) {
               value={content}
               onChange={handleContentChange}
               onScroll={() => syncScroll(textareaRef, previewRef)}
-              className={`border px-3 py-2 w-full resize-y border-gray-500 text-${fontSize}`}
+              // className={`border px-3 py-2 w-full resize-y border-gray-500 text-${fontSize}`}
+              className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
+
               style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
           <div
             ref={previewRef}
             onScroll={() => syncScroll(previewRef, textareaRef)}
-            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded text-${fontSize}`}
-            style={{ height: "calc(100vh - 300px)" }}
+            // className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded text-${fontSize}`}
+            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border border-gray-500 bg-white rounded ${fontSize === "sm" ? "prose-sm" :
+              fontSize === "lg" ? "prose-lg" :
+                fontSize === "xl" ? "prose-xl" :
+                  "prose-base"
+              }`}
+
+            style={{
+              minHeight: "200px",
+              maxHeight: "calc(100vh - 200px)",
+              overflowY: "auto",
+              resize: "none"
+            }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
         </div>
