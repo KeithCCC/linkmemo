@@ -145,7 +145,7 @@ export default function NoteEditScreen({ user }) {
       return target ? `<a href="/edit/${target.id}" class="text-blue-600 underline">${p1}</a>` : `<span class="text-gray-400">[[${p1}]]</span>`;
     });
     const lines = replaced.split("\n");
-    if (lines[0]) lines[0] = `**${lines[0]}**`;
+    if (lines[0]) lines[0] = `# ${lines[0]}`;
     return md.render(lines.join("\n"));
   };
 
@@ -162,11 +162,11 @@ export default function NoteEditScreen({ user }) {
     <div className="p-4 space-y-4 text-base sm:text-sm">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold">
-          {noteIdRef.current ? `ノート編集（ID: ${noteIdRef.current}）` : "新規ノート作成"}
+          {noteIdRef.current ? `ノート編集（ID: ${noteIdRef.current}）` : "新ノート"}
         </h1>
 
-        {isSaving && <span className="text-yellow-600 text-sm ml-4">💾 自動保存中...</span>}
-        {saveSuccess && <span className="text-green-600 text-sm ml-4">✅ 保存しました！</span>}
+        {/* {isSaving && <span className="text-yellow-600 text-sm ml-4">💾保存中...</span>}
+        {saveSuccess && <span className="text-green-600 text-sm ml-4">✅保存！</span>} */}
         {/* ✅ 削除ボタン（復活版） */}
         {noteIdRef.current && (
           <div className="flex items-center justify-end gap-2">
@@ -198,12 +198,13 @@ export default function NoteEditScreen({ user }) {
         <button onClick={() => changeMode("edit")} className={mode === "edit" ? "font-bold underline" : ""}>✏️ 編集</button>
         <button onClick={() => changeMode("preview")} className={mode === "preview" ? "font-bold underline" : ""}>👁 プレビュー</button>
         <button onClick={() => changeMode("split-right")} className={mode === "split-right" ? "font-bold underline" : ""}>↔ 横</button>
-        <span>:文字サイズ：</span>
+        <span>|文字サイズ：</span>
         <button onClick={() => changeFontSize("sm")} className={fontSize === "sm" ? "font-bold underline" : ""}>小</button>
         <button onClick={() => changeFontSize("base")} className={fontSize === "base" ? "font-bold underline" : ""}>標準</button>
         <button onClick={() => changeFontSize("lg")} className={fontSize === "lg" ? "font-bold underline" : ""}>大</button>
         <button onClick={() => changeFontSize("xl")} className={fontSize === "xl" ? "font-bold underline" : ""}>特大</button>
-
+        {isSaving && <span className="text-yellow-600 text-sm ml-4">💾保存中...</span>}
+        {saveSuccess && <span className="text-green-600 text-sm ml-4">✅保存！</span>}
 
       </div>
 
