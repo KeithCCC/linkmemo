@@ -15,11 +15,24 @@ export default function NoteEditScreen({ user }) {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
+  const [fontSize, setFontSize] = useState(() => {
+  return localStorage.getItem("noteFontSize") || "base";
+  });
+
 
   const [content, setContent] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState(() => (isNew ? "edit" : localStorage.getItem("noteViewMode") || "preview"));
+  // NotesContext に追加するか、NoteEditScreen に直接追加
+  // const [fontSize, setFontSize] = useState(() => {
+  //   return localStorage.getItem("fontSize") || "base"; // sm, base, lg, xl など
+  // });
+  const changeFontSize = (size) => {
+    setFontSize(size);
+    localStorage.setItem("noteFontSize", size);
+  };
+
 
   const textareaRef = useRef(null);
   const previewRef = useRef(null);
@@ -135,13 +148,22 @@ export default function NoteEditScreen({ user }) {
         <button onClick={() => changeMode("split-right")} className={mode === "split-right" ? "font-bold underline" : ""}>↔ 横</button>
       </div>
 
+    <div className="flex gap-2 items-center text-sm">
+      <span>文字サイズ：</span>
+      <button onClick={() => changeFontSize("sm")} className={fontSize === "sm" ? "font-bold underline" : ""}>小</button>
+      <button onClick={() => changeFontSize("base")} className={fontSize === "base" ? "font-bold underline" : ""}>標準</button>
+      <button onClick={() => changeFontSize("lg")} className={fontSize === "lg" ? "font-bold underline" : ""}>大</button>
+      <button onClick={() => changeFontSize("xl")} className={fontSize === "xl" ? "font-bold underline" : ""}>特大</button>
+    </div>
+
+
       {/* エディタ */}
       {mode === "edit" && (
         <textarea
           ref={textareaRef}
           value={content}
           onChange={handleContentChange}
-          className="w-full border px-3 py-2 border-gray-500"
+          className={`w-full border px-3 py-2 border-gray-500 text-${fontSize}`}
           style={{ height: "calc(100vh - 300px)" }}
           placeholder="内容を入力..."
         />
@@ -149,7 +171,7 @@ export default function NoteEditScreen({ user }) {
 
       {mode === "preview" && (
         <div
-          className="prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto"
+          className={`prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto text-${fontSize}`}
           style={{ height: "calc(100vh - 300px)" }}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
@@ -163,14 +185,14 @@ export default function NoteEditScreen({ user }) {
               value={content}
               onChange={handleContentChange}
               onScroll={() => syncScroll(textareaRef, previewRef)}
-              className="border px-3 py-2 w-full resize-y border-gray-500"
+              className={`border px-3 py-2 w-full resize-y border-gray-500 text-${fontSize}`}
               style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
           <div
             ref={previewRef}
             onScroll={() => syncScroll(previewRef, textareaRef)}
-            className="flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded"
+            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded text-${fontSize}`}
             style={{ height: "calc(100vh - 300px)" }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
