@@ -224,11 +224,11 @@ export default function NoteEditScreen({ user }) {
       {mode === "preview" && (
         <div
           // className={`prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto text-${fontSize}`}
-          className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border border-gray-500 bg-white rounded ${fontSize === "sm" ? "prose-sm" :
+          className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto rounded border-gray-500 bg-gray-50 ${fontSize === "sm" ? "prose-sm" :
             fontSize === "lg" ? "prose-lg" :
               fontSize === "xl" ? "prose-xl" :
                 "prose-base"
-            }`}
+            }	bg-gray-100`}
 
           style={{
             minHeight: "200px",
@@ -258,17 +258,18 @@ export default function NoteEditScreen({ user }) {
             ref={previewRef}
             onScroll={() => syncScroll(previewRef, textareaRef)}
             // className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded text-${fontSize}`}
-            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border border-gray-500 bg-white rounded ${fontSize === "sm" ? "prose-sm" :
+            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-white rounded ${fontSize === "sm" ? "prose-sm" :
               fontSize === "lg" ? "prose-lg" :
                 fontSize === "xl" ? "prose-xl" :
                   "prose-base"
-              }`}
+              } bg-gray-100`}
 
             style={{
               minHeight: "200px",
               maxHeight: "calc(100vh - 200px)",
               overflowY: "auto",
-              resize: "none"
+              resize: "none",
+              
             }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
