@@ -146,10 +146,7 @@ export default function NoteEditScreen({ user }) {
         <button onClick={() => changeMode("edit")} className={mode === "edit" ? "font-bold underline" : ""}>✏️ 編集</button>
         <button onClick={() => changeMode("preview")} className={mode === "preview" ? "font-bold underline" : ""}>👁 プレビュー</button>
         <button onClick={() => changeMode("split-right")} className={mode === "split-right" ? "font-bold underline" : ""}>↔ 横</button>
-      </div>
-
-    <div className="flex gap-2 items-center text-sm">
-      <span>文字サイズ：</span>
+      <span>:文字サイズ：</span>
       <button onClick={() => changeFontSize("sm")} className={fontSize === "sm" ? "font-bold underline" : ""}>小</button>
       <button onClick={() => changeFontSize("base")} className={fontSize === "base" ? "font-bold underline" : ""}>標準</button>
       <button onClick={() => changeFontSize("lg")} className={fontSize === "lg" ? "font-bold underline" : ""}>大</button>
