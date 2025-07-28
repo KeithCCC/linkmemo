@@ -44,7 +44,33 @@ export default function NoteEditScreen({ user }) {
     setMode(newMode);
     localStorage.setItem("noteViewMode", newMode);
   };
+  const handleDownload = () => {
+    const blob = new Blob([`${safeTitle}\n\n${content}`], {
+      type: "text/plain;charset=utf-8",
+    });
+    link.download = `${safeTitle}.txt`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title || "note"}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
+  const handleExportMarkdown = () => {
+    const filename = (content.split("\n")[0] || "note") + ".md";
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   const extractTags = (text) => {
     const matches = text.match(/[＃#]([^\s#]+)/g) || [];
     return [...new Set(matches.map((tag) => tag.slice(1)))];
@@ -143,18 +169,28 @@ export default function NoteEditScreen({ user }) {
         {saveSuccess && <span className="text-green-600 text-sm ml-4">✅ 保存しました！</span>}
         {/* ✅ 削除ボタン（復活版） */}
         {noteIdRef.current && (
-
-          <button
-            onClick={async () => {
-              if (confirm("このノートを削除してもよろしいですか？")) {
-                await deleteNote(user.uid, noteIdRef.current);
-                navigate("/", { replace: true });
-              }
-            }}
-            className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
-          >
-            削除
-          </button>
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={handleDownload} className="bg-gray-600 text-white  px-3 py-0.5 text-sm rounded hover:bg-gray-700">
+              テキスト保存
+            </button>
+            <button
+              onClick={handleExportMarkdown}
+              className="bg-orange-500 text-white px-4 py-0.5 rounded hover:bg-orange-600"
+            >
+              Markdown保存
+            </button>
+            <button
+              onClick={async () => {
+                if (confirm("このノートを削除してもよろしいですか？")) {
+                  await deleteNote(user.uid, noteIdRef.current);
+                  navigate("/", { replace: true });
+                }
+              }}
+              className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+            >
+              削除
+            </button>
+          </div>
         )}
 
       </div>
