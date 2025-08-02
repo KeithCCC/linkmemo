@@ -71,6 +71,7 @@ export default function NoteEditScreen({ user }) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
   const extractTags = (text) => {
     const matches = text.match(/[＃#]([^\s#]+)/g) || [];
     return [...new Set(matches.map((tag) => tag.slice(1)))];
@@ -139,15 +140,42 @@ export default function NoteEditScreen({ user }) {
     setTimeout(() => (isSyncingScroll.current = false), 10);
   };
 
-  const renderMarkdown = (text) => {
-    const replaced = text.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
-      const target = notes.find((n) => n.title === p1);
-      return target ? `<a href="/edit/${target.id}" class="text-blue-600 underline">${p1}</a>` : `<span class="text-gray-400">[[${p1}]]</span>`;
-    });
-    const lines = replaced.split("\n");
-    if (lines[0]) lines[0] = `# ${lines[0]}`;
-    return md.render(lines.join("\n"));
-  };
+const renderMarkdown = (text) => {
+  const tags = extractTags(text);
+
+  // [[リンク]] → <a> に変換（これはOK）
+  const withLinks = text.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
+    const target = notes.find((n) => n.title === p1);
+    return target
+      ? `[[LINK-${target.id}|${p1}]]`
+      : `[[${p1}]]`;
+  });
+
+  // Markdown変換を先にやる！
+  let rendered = md.render(withLinks);
+
+  // Markdownで変換されたあとに <span class="tag"> を埋め込む！
+  rendered = rendered.replace(/(^|\s)([#＃][^\s#＃<>]+)/g, (_, pre, tag) => {
+    return `${pre}<span class="tag">${tag}</span>`;
+  });
+
+  // リンク変換もHTMLに置換（あとから）
+  rendered = rendered.replace(/\[\[LINK-([^\|\]]+)\|([^\]]+)\]\]/g, (_, id, title) => {
+    return `<a href="/edit/${id}" class="text-blue-600 underline">${title}</a>`;
+  });
+
+  // タグセクション追加（変わらず）
+  const tagHTML = tags.length > 0
+    ? `<div class="mt-4 border-t pt-2 text-sm text-gray-600">
+        <strong>🏷 タグ：</strong> ${tags.map(t => `<span class="tag">#${t}</span>`).join(' ')}
+      </div>`
+    : "";
+
+  return rendered + tagHTML;
+};
+
+
+
 
   useEffect(() => {
     if (!isNew && user?.uid) {
