@@ -1,68 +1,99 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNotesContext, extractAllTags } from '../context/NotesContext';
 
 export default function NoteListScreen() {
   const { notes } = useNotesContext();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagStates, setTagStates] = useState({}); // { tag: "include" | "exclude" | "none" }
+  const [searchTermBackup, setSearchTermBackup] = useState('');
 
-  if (!notes) {
-    return <div className="text-red-500 p-4">ノートが読み込まれていません。</div>;
-  }
-
-  // ✅ 全タグ抽出（memo化）
+  // 全タグ抽出
   const allTags = useMemo(() => extractAllTags(notes), [notes]);
 
-  // ✅ 表示対象タグ（検索文字列にマッチ or 選択中タグ）
-  const visibleTags = useMemo(() => {
-    const lower = searchTerm.toLowerCase();
-    if (lower === "") {
-      // 入力が空 → 選択中タグだけ表示
-      return allTags.filter(tag => selectedTags.includes(tag));
+  // タグ状態の変化で検索欄をコントロール
+  useEffect(() => {
+    const entries = Object.entries(tagStates);
+    const active = entries.find(([_, state]) => state === "include");
+    const excluded = entries.find(([_, state]) => state === "exclude");
+
+    if (active) {
+      if (searchTerm !== '') {
+        setSearchTermBackup(searchTerm);
+        setSearchTerm(''); // ✅ 入力欄を明示的に空にする！
+      }
+    } else if (excluded) {
+      setSearchTerm('');
+    } else {
+      setSearchTerm(searchTermBackup);
     }
-    // 入力あり → 前方一致 or 選択中タグ
-    return allTags.filter(tag =>
-      tag.toLowerCase().startsWith(lower) || selectedTags.includes(tag)
-    );
-  }, [searchTerm, allTags, selectedTags]);
+  }, [tagStates]);
 
 
-
-  // ✅ タグのON/OFF切り替え
-  const toggleTag = (tag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+  // タグ状態のトグル（none → include → exclude → none）
+  const cycleTagState = (tag) => {
+    setTagStates((prev) => {
+      const current = prev[tag] || "none";
+      const next =
+        current === "none" ? "include" :
+          current === "include" ? "exclude" :
+            "none";
+      console.log(`Toggling [${tag}] from ${current} to ${next}`);
+      return { ...prev, [tag]: next };
+    });
   };
 
-  // 🔽 並び順（更新日時降順）
+  // タグの状態ごとのスタイル
+  const getTagClass = (state) => {
+    switch (state) {
+      case "include": return "bg-blue-600 text-white border-blue-600";
+      case "exclude": return "bg-red-500 text-white border-red-500";
+      default: return "bg-gray-100 text-gray-700 border-gray-300";
+    }
+  };
+
+  // 表示するタグ一覧（検索語に一致 or 選択中）
+  const visibleTags = useMemo(() => {
+    const lower = searchTerm.toLowerCase();
+    return allTags.filter(tag => {
+      const state = tagStates[tag] || "none";
+      const matchesSearch = lower && tag.toLowerCase().startsWith(lower);
+      const isSelected = state !== "none";
+      return matchesSearch || isSelected;
+    });
+  }, [searchTerm, allTags, tagStates]);
+
+
+  // 更新日時でソート
   const sortedNotes = [...notes].sort((a, b) => {
     const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt);
     const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt);
     return dateB.getTime() - dateA.getTime();
   });
 
-  // 🔍 検索 + タグフィルター（AND）
   const lowerTerm = searchTerm.toLowerCase();
+  const includeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "include");
+  const excludeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "exclude");
+
+  // ノートフィルタリング
   const filteredNotes = sortedNotes.filter((note) => {
+    const tags = note.tags || [];
+
     const matchesKeyword =
       note.title.toLowerCase().includes(lowerTerm) ||
       note.content.toLowerCase().includes(lowerTerm) ||
-      (Array.isArray(note.tags) && note.tags.some(tag => tag.toLowerCase().includes(lowerTerm)));
+      tags.some(tag => tag.toLowerCase().includes(lowerTerm));
 
-    const matchesTags =
-      selectedTags.length === 0 ||
-      (Array.isArray(note.tags) && selectedTags.every(tag => note.tags.includes(tag)));
+    const matchesInclude = includeTags.every(tag => tags.includes(tag));
+    const hasAnyExclude = excludeTags.some(tag => tags.includes(tag));
 
-    return matchesKeyword && matchesTags;
+    return matchesKeyword && matchesInclude && !hasAnyExclude;
   });
 
   return (
     <div className="max-w-3xl mx-auto text-left p-4">
       <h1 className="text-xl font-bold mb-4">ノート一覧 🗂️</h1>
 
-      {/* 🔎 キーワード検索 */}
       {/* 🔎 キーワード検索（×付き） */}
       <div className="relative w-full mb-4">
         <input
@@ -83,19 +114,14 @@ export default function NoteListScreen() {
         )}
       </div>
 
-
-
-      {/* 🏷️ タグチップUI（検索連動 + 選択保持） */}
+      {/* 🏷️ タグ三値トグル表示 */}
       {visibleTags.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {visibleTags.map((tag) => (
             <button
               key={tag}
-              onClick={() => toggleTag(tag)}
-              className={`px-3 py-1 text-sm rounded-full border transition ${selectedTags.includes(tag)
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-gray-100 text-gray-700 border-gray-300'
-                }`}
+              onClick={() => cycleTagState(tag)}
+              className={`px-3 py-1 text-sm rounded-full border transition ${getTagClass(tagStates[tag] || "none")}`}
             >
               #{tag}
             </button>

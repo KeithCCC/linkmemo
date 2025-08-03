@@ -10,7 +10,7 @@ import Navigation from './components/Navigation';
 import NoteListScreen from './screens/NoteListScreen';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase'; // ← Firebase初期化済みのdbインスタンス
-
+import TipTapScreen from './screens/TipTapScreen';
 
 
 function App() {
@@ -70,8 +70,10 @@ function App() {
         <div className="flex-1 relative">
           {/* モバイル用ハンバーガー */}
           <button
-            className="fixed top-2 left-2 sm:left-1 z-50 sm:hidden bg-white shadow px-3 py-1 rounded"
+            // className="fixed top-2 left-2 z-50 bg-white shadow px-2 py-1 rounded text-sm text-gray-700 hover:text-black border"
+            className="fixed top-2 left-2 z-50 bg-white shadow px-3 py-1 rounded"
             onClick={() => setCollapsed(!collapsed)}
+            aria-label="メニューを開く"
           >
             ☰
           </button>
@@ -82,6 +84,7 @@ function App() {
               <Route path="/edit/:id" element={<NoteEditScreenWrapper />} />
               <Route path="/new" element={<NoteEditScreenWrapper />} />
               <Route path="/settings" element={<SettingsScreen />} />
+              <Route path="/tiptap" element={<TipTapScreen />} />
             </Routes>
 
           </div>

@@ -42,11 +42,8 @@ export default function Navigation({ collapsed, setCollapsed }) {
   };
 
   return (
-    <aside className={`h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium 
-  ${collapsed ? 'hidden sm:block' : 'block'} 
-  w-48 sm:w-64 transition-all duration-300`}>
-
-
+    <aside className={`relative h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium transition-all duration-300 ${collapsed ? "w-0 overflow-hidden" : "w-48"
+      }`}>
 
       {!collapsed && (
         <div className="pt-16 px-2 space-y-3">
@@ -58,6 +55,13 @@ export default function Navigation({ collapsed, setCollapsed }) {
           </Link>
           <Link to="/settings" className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/settings") ? "text-blue-600 font-bold" : ""}`}>
             ⚙️ <span>設定(使い方)</span>
+          </Link>
+          <Link
+            to="/tiptap"
+            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/tiptap") ? "text-blue-600 font-bold" : ""
+              }`}
+          >
+            🧪 <span>TipTapテスト</span>
           </Link>
 
           {/* 📤 JSONエクスポート */}
