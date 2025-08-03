@@ -8,6 +8,27 @@ export const useNotesContext = () => useContext(NotesContext);
 
 const STORAGE_KEY = "notes";
 
+// NotesContext.jsx
+export const extractAllTags = (notes) => {
+  const tagSet = new Set();
+  const tagPattern = /(?:^|\s)[#＃]([a-zA-Z0-9ぁ-んァ-ヶ一-龠ー_]+)/g;
+
+  notes.forEach(note => {
+    const matches = [...note.content.matchAll(tagPattern)];
+    matches.forEach(match => {
+      tagSet.add(match[1]);
+    });
+    // tags フィールドに既にある場合も補完的に使う
+    if (Array.isArray(note.tags)) {
+      note.tags.forEach(tag => tagSet.add(tag));
+    }
+  });
+
+  return [...tagSet].sort();
+};
+
+
+
 export const NotesProvider = ({ children }) => {
   const { user } = useAuthContext(); // ← これを追加！ 🔥
   const [notes, setNotes] = useState(() => {
@@ -56,22 +77,22 @@ export const NotesProvider = ({ children }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   }, [notes, user]);
 
-const addNote = (note) => {
-  const now = new Date().toISOString();
-  const newNote = {
-    ...note,
-    id: note.id, // ← Firebaseから渡されたIDを使う
-    createdAt: note.createdAt || now,
-    updatedAt: now,
+  const addNote = (note) => {
+    const now = new Date().toISOString();
+    const newNote = {
+      ...note,
+      id: note.id, // ← Firebaseから渡されたIDを使う
+      createdAt: note.createdAt || now,
+      updatedAt: now,
+    };
+    setNotes((prev) => {
+      // 既存IDのノートがあれば更新、なければ追加
+      const exists = prev.some(n => n.id === newNote.id);
+      return exists
+        ? prev.map(n => (n.id === newNote.id ? newNote : n))
+        : [...prev, newNote];
+    });
   };
-  setNotes((prev) => {
-    // 既存IDのノートがあれば更新、なければ追加
-    const exists = prev.some(n => n.id === newNote.id);
-    return exists
-      ? prev.map(n => (n.id === newNote.id ? newNote : n))
-      : [...prev, newNote];
-  });
-};
 
 
   const updateNote = (id, updated) => {
@@ -102,6 +123,7 @@ const addNote = (note) => {
 
     fetchNotesFromFirestore();
   }, [user]);
+
 
   return (
     <NotesContext.Provider

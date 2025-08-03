@@ -256,7 +256,7 @@ const renderMarkdown = (text) => {
             fontSize === "lg" ? "prose-lg" :
               fontSize === "xl" ? "prose-xl" :
                 "prose-base"
-            }	bg-gray-100`}
+            }	bg-yellow-50`}
 
           style={{
             minHeight: "200px",
@@ -290,7 +290,7 @@ const renderMarkdown = (text) => {
               fontSize === "lg" ? "prose-lg" :
                 fontSize === "xl" ? "prose-xl" :
                   "prose-base"
-              } bg-gray-100`}
+              } bg-yellow-50`}
 
             style={{
               minHeight: "200px",

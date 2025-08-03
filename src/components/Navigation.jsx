@@ -42,17 +42,11 @@ export default function Navigation({ collapsed, setCollapsed }) {
   };
 
   return (
-    <aside className="relative h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium">
-      {/* ハンバーガー */}
-      <div className="absolute top-4 left-4 z-50">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="bg-white border rounded p-2 text-lg text-gray-600 shadow hover:text-black"
-          aria-label="メニューを開く"
-        >
-          ☰
-        </button>
-      </div>
+    <aside className={`h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium 
+  ${collapsed ? 'hidden sm:block' : 'block'} 
+  w-48 sm:w-64 transition-all duration-300`}>
+
+
 
       {!collapsed && (
         <div className="pt-16 px-2 space-y-3">
