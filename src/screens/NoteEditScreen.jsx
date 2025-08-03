@@ -1,4 +1,4 @@
-// ✅ NoteEditScreen.jsx 完全修正版（自動保存・新規ノート対応）
+// ✅ NoteEditScreen.jsx 完全修正版（自動保存・新規ノート対応）＋モバイルフォント最適化対応
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -19,20 +19,15 @@ export default function NoteEditScreen({ user }) {
     return localStorage.getItem("noteFontSize") || "base";
   });
 
-
   const [content, setContent] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState(() => (isNew ? "edit" : localStorage.getItem("noteViewMode") || "preview"));
-  // NotesContext に追加するか、NoteEditScreen に直接追加
-  // const [fontSize, setFontSize] = useState(() => {
-  //   return localStorage.getItem("fontSize") || "base"; // sm, base, lg, xl など
-  // });
+
   const changeFontSize = (size) => {
     setFontSize(size);
     localStorage.setItem("noteFontSize", size);
   };
-
 
   const textareaRef = useRef(null);
   const previewRef = useRef(null);
@@ -44,15 +39,16 @@ export default function NoteEditScreen({ user }) {
     setMode(newMode);
     localStorage.setItem("noteViewMode", newMode);
   };
+
   const handleDownload = () => {
+    const safeTitle = content.split("\n")[0] || "note";
     const blob = new Blob([`${safeTitle}\n\n${content}`], {
       type: "text/plain;charset=utf-8",
     });
-    link.download = `${safeTitle}.txt`;
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${title || "note"}.txt`;
+    link.download = `${safeTitle}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -140,42 +136,26 @@ export default function NoteEditScreen({ user }) {
     setTimeout(() => (isSyncingScroll.current = false), 10);
   };
 
-const renderMarkdown = (text) => {
-  const tags = extractTags(text);
-
-  // [[リンク]] → <a> に変換（これはOK）
-  const withLinks = text.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
-    const target = notes.find((n) => n.title === p1);
-    return target
-      ? `[[LINK-${target.id}|${p1}]]`
-      : `[[${p1}]]`;
-  });
-
-  // Markdown変換を先にやる！
-  let rendered = md.render(withLinks);
-
-  // Markdownで変換されたあとに <span class="tag"> を埋め込む！
-  rendered = rendered.replace(/(^|\s)([#＃][^\s#＃<>]+)/g, (_, pre, tag) => {
-    return `${pre}<span class="tag">${tag}</span>`;
-  });
-
-  // リンク変換もHTMLに置換（あとから）
-  rendered = rendered.replace(/\[\[LINK-([^\|\]]+)\|([^\]]+)\]\]/g, (_, id, title) => {
-    return `<a href="/edit/${id}" class="text-blue-600 underline">${title}</a>`;
-  });
-
-  // タグセクション追加（変わらず）
-  const tagHTML = tags.length > 0
-    ? `<div class="mt-4 border-t pt-2 text-sm text-gray-600">
-        <strong>🏷 タグ：</strong> ${tags.map(t => `<span class="tag">#${t}</span>`).join(' ')}
-      </div>`
-    : "";
-
-  return rendered + tagHTML;
-};
-
-
-
+  const renderMarkdown = (text) => {
+    const tags = extractTags(text);
+    const withLinks = text.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
+      const target = notes.find((n) => n.title === p1);
+      return target ? `[[LINK-${target.id}|${p1}]]` : `[[${p1}]]`;
+    });
+    let rendered = md.render(withLinks);
+    rendered = rendered.replace(/(^|\s)([#＃][^\s#＃<>]+)/g, (_, pre, tag) => {
+      return `${pre}<span class="tag">${tag}</span>`;
+    });
+    rendered = rendered.replace(/\[\[LINK-([^|\]]+)\|([^\]]+)\]\]/g, (_, id, title) => {
+      return `<a href="/edit/${id}" class="text-blue-600 underline">${title}</a>`;
+    });
+    const tagHTML = tags.length > 0
+      ? `<div class="mt-4 border-t pt-2 text-sm text-gray-600">
+          <strong>🏷 タグ：</strong> ${tags.map(t => `<span class="tag">#${t}</span>`).join(' ')}
+        </div>`
+      : "";
+    return rendered + tagHTML;
+  };
 
   useEffect(() => {
     if (!isNew && user?.uid) {
@@ -187,40 +167,29 @@ const renderMarkdown = (text) => {
   }, [id, isNew, user]);
 
   return (
-    <div className="p-4 space-y-4 text-base sm:text-sm">
+    <div className="p-4 space-y-4 text-lg sm:text-base">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold">
           {noteIdRef.current ? `ノート編集（ID: ${noteIdRef.current}）` : "新ノート"}
         </h1>
-
-        {/* {isSaving && <span className="text-yellow-600 text-sm ml-4">💾保存中...</span>}
-        {saveSuccess && <span className="text-green-600 text-sm ml-4">✅保存！</span>} */}
-        {/* ✅ 削除ボタン（復活版） */}
         {noteIdRef.current && (
           <div className="flex items-center justify-end gap-2">
-            <button onClick={handleDownload} className="bg-gray-600 text-white  px-3 py-0.5 text-sm rounded hover:bg-gray-700">
+            <button onClick={handleDownload} className="bg-gray-600 text-white px-3 py-0.5 text-sm rounded hover:bg-gray-700">
               テキスト保存
             </button>
-            <button
-              onClick={handleExportMarkdown}
-              className="bg-orange-500 text-white px-4 py-0.5 rounded hover:bg-orange-600"
-            >
+            <button onClick={handleExportMarkdown} className="bg-orange-500 text-white px-4 py-0.5 rounded hover:bg-orange-600">
               Markdown保存
             </button>
-            <button
-              onClick={async () => {
-                if (confirm("このノートを削除してもよろしいですか？")) {
-                  await deleteNote(user.uid, noteIdRef.current);
-                  navigate("/", { replace: true });
-                }
-              }}
-              className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
-            >
+            <button onClick={async () => {
+              if (confirm("このノートを削除してもよろしいですか？")) {
+                await deleteNote(user.uid, noteIdRef.current);
+                navigate("/", { replace: true });
+              }
+            }} className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700">
               削除
             </button>
           </div>
         )}
-
       </div>
       <div className="flex gap-3 text-sm mb-2">
         <button onClick={() => changeMode("edit")} className={mode === "edit" ? "font-bold underline" : ""}>✏️ 編集</button>
@@ -233,11 +202,7 @@ const renderMarkdown = (text) => {
         <button onClick={() => changeFontSize("xl")} className={fontSize === "xl" ? "font-bold underline" : ""}>特大</button>
         {isSaving && <span className="text-yellow-600 text-sm ml-4">💾保存中...</span>}
         {saveSuccess && <span className="text-green-600 text-sm ml-4">✅保存！</span>}
-
       </div>
-
-
-      {/* エディタ */}
       {mode === "edit" && (
         <textarea
           ref={textareaRef}
@@ -248,16 +213,9 @@ const renderMarkdown = (text) => {
           placeholder="内容を入力..."
         />
       )}
-
       {mode === "preview" && (
         <div
-          // className={`prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto text-${fontSize}`}
-          className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto rounded border-gray-500 bg-gray-50 ${fontSize === "sm" ? "prose-sm" :
-            fontSize === "lg" ? "prose-lg" :
-              fontSize === "xl" ? "prose-xl" :
-                "prose-base"
-            }	bg-yellow-50`}
-
+          className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${fontSize === "sm" ? "prose-sm" : fontSize === "lg" ? "prose-lg" : fontSize === "xl" ? "prose-xl" : "prose-base"}`}
           style={{
             minHeight: "200px",
             maxHeight: "calc(100vh - 200px)",
@@ -267,7 +225,6 @@ const renderMarkdown = (text) => {
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
       )}
-
       {mode === "split-right" && (
         <div className="flex h-full gap-4">
           <div className="flex-1">
@@ -276,28 +233,19 @@ const renderMarkdown = (text) => {
               value={content}
               onChange={handleContentChange}
               onScroll={() => syncScroll(textareaRef, previewRef)}
-              // className={`border px-3 py-2 w-full resize-y border-gray-500 text-${fontSize}`}
               className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
-
               style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
           <div
             ref={previewRef}
             onScroll={() => syncScroll(previewRef, textareaRef)}
-            // className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-base text-left overflow-auto border border-gray-500 bg-white rounded text-${fontSize}`}
-            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-white rounded ${fontSize === "sm" ? "prose-sm" :
-              fontSize === "lg" ? "prose-lg" :
-                fontSize === "xl" ? "prose-xl" :
-                  "prose-base"
-              } bg-yellow-50`}
-
+            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${fontSize === "sm" ? "prose-sm" : fontSize === "lg" ? "prose-lg" : fontSize === "xl" ? "prose-xl" : "prose-base"}`}
             style={{
               minHeight: "200px",
               maxHeight: "calc(100vh - 200px)",
               overflowY: "auto",
-              resize: "none",
-              
+              resize: "none"
             }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
           />
