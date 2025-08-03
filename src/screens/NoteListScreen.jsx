@@ -3,13 +3,27 @@ import { Link } from 'react-router-dom';
 import { useNotesContext, extractAllTags } from '../context/NotesContext';
 
 export default function NoteListScreen() {
-  const { notes } = useNotesContext();
+  const { notes, refreshNotes } = useNotesContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [tagStates, setTagStates] = useState({}); // { tag: "include" | "exclude" | "none" }
   const [searchTermBackup, setSearchTermBackup] = useState('');
 
   // 全タグ抽出
   const allTags = useMemo(() => extractAllTags(notes), [notes]);
+
+  const [filtered, setFiltered] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      await refreshNotes();
+    })();
+  }, []);
+
+
+  // useEffect(() => {
+  //   setFiltered(notes); // ✅ notesが更新されたら強制的に更新
+  // }, [notes]);
+
 
   // タグ状態の変化で検索欄をコントロール
   useEffect(() => {
@@ -76,19 +90,32 @@ export default function NoteListScreen() {
   const excludeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "exclude");
 
   // ノートフィルタリング
-  const filteredNotes = sortedNotes.filter((note) => {
-    const tags = note.tags || [];
+  const filteredNotes = useMemo(() => {
+    const lowerTerm = searchTerm.toLowerCase();
+    const includeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "include");
+    const excludeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "exclude");
 
-    const matchesKeyword =
-      note.title.toLowerCase().includes(lowerTerm) ||
-      note.content.toLowerCase().includes(lowerTerm) ||
-      tags.some(tag => tag.toLowerCase().includes(lowerTerm));
+    const sortedNotes = [...notes].sort((a, b) => {
+      const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt);
+      const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt);
+      return dateB.getTime() - dateA.getTime();
+    });
 
-    const matchesInclude = includeTags.every(tag => tags.includes(tag));
-    const hasAnyExclude = excludeTags.some(tag => tags.includes(tag));
+    return sortedNotes.filter((note) => {
+      const tags = note.tags || [];
 
-    return matchesKeyword && matchesInclude && !hasAnyExclude;
-  });
+      const matchesKeyword =
+        note.title.toLowerCase().includes(lowerTerm) ||
+        note.content.toLowerCase().includes(lowerTerm) ||
+        tags.some(tag => tag.toLowerCase().includes(lowerTerm));
+
+      const matchesInclude = includeTags.every(tag => tags.includes(tag));
+      const hasAnyExclude = excludeTags.some(tag => tags.includes(tag));
+
+      return matchesKeyword && matchesInclude && !hasAnyExclude;
+    });
+  }, [notes, searchTerm, tagStates]);
+
 
   return (
     <div className="max-w-3xl mx-auto text-left p-4">

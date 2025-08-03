@@ -4,14 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useNotesContext } from "../context/NotesContext";
 import MarkdownIt from "markdown-it";
-import { updateNote, getNoteById, deleteNote } from "../notesService";
+import { updateNote, getNoteById } from "../notesService";
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const md = new MarkdownIt({ breaks: true });
 
+
 export default function NoteEditScreen({ user }) {
-  const { notes, addNote } = useNotesContext();
+  const { notes, addNote, deleteNote } = useNotesContext();
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
@@ -180,12 +181,15 @@ export default function NoteEditScreen({ user }) {
             <button onClick={handleExportMarkdown} className="bg-orange-500 text-white px-4 py-0.5 rounded hover:bg-orange-600">
               Markdown保存
             </button>
-            <button onClick={async () => {
-              if (confirm("このノートを削除してもよろしいですか？")) {
-                await deleteNote(user.uid, noteIdRef.current);
-                navigate("/", { replace: true });
-              }
-            }} className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700">
+            <button
+              onClick={async () => {
+                if (confirm("このノートを削除してもよろしいですか？")) {
+                  await deleteNote(noteIdRef.current);
+                  navigate("/", { replace: true }); // 一覧に戻る
+                }
+              }}
+              className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+            >
               削除
             </button>
           </div>

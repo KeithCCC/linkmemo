@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { db } from '../firebase'; // ← 必要に応じてパス調整
 import { collection, getDocs } from 'firebase/firestore';
 import { useAuthContext } from './AuthContext'; // ← ログイン中のユーザーを使う前提
+import { doc, deleteDoc } from "firebase/firestore"; // 追加
 
 const NotesContext = createContext();
 export const useNotesContext = () => useContext(NotesContext);
@@ -31,26 +32,28 @@ export const extractAllTags = (notes) => {
 
 export const NotesProvider = ({ children }) => {
   const { user } = useAuthContext(); // ← これを追加！ 🔥
+  const [lastDeletedNoteId, setLastDeletedNoteId] = useState(null);
   const [notes, setNotes] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : [];
+    // const stored = localStorage.getItem(STORAGE_KEY);
+    // const parsed = stored ? JSON.parse(stored) : [];
     const now = new Date().toISOString();
 
     // createdAt / updatedAt を補完
-    return parsed.map((note) => ({
-      ...note,
-      createdAt: note.createdAt || now,
-      updatedAt: note.updatedAt || now,
-    }));
+    // return parsed.map((note) => ({
+    //   ...note,
+    //   createdAt: note.createdAt || now,
+    //   updatedAt: note.updatedAt || now,
+    // }));
+    return [];
   });
 
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("updatedAt"); // or "createdAt"
   const [sortOrder, setSortOrder] = useState("desc"); // or "asc"
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  }, [notes]);
+  // useEffect(() => {
+  //   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  // }, [notes]);
 
   const getNoteById = (id) => notes.find((note) => note.id === id);
 
@@ -72,10 +75,10 @@ export const NotesProvider = ({ children }) => {
     return sorted;
   };
 
-  useEffect(() => {
-    if (user) return; // Firestore優先時はローカル保存しない
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  }, [notes, user]);
+  // useEffect(() => {
+  //   if (user) return; // Firestore優先時はローカル保存しない
+  //   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  // }, [notes, user]);
 
   const addNote = (note) => {
     const now = new Date().toISOString();
@@ -104,25 +107,55 @@ export const NotesProvider = ({ children }) => {
     );
   };
 
-  const deleteNote = (id) => {
-    setNotes((prev) => prev.filter((note) => note.id !== id));
+  const refreshNotes = async () => {
+    if (!user) return;
+    const snapshot = await getDocs(collection(db, 'users', user.uid, 'notes'));
+    const fetched = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setNotes(fetched);
+  };
+
+  const deleteNote = async (id) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'notes', id);
+      try {
+        await deleteDoc(ref);
+        console.log(`✅ Firestoreから削除成功: ${id}`);
+      } catch (err) {
+        console.error(`❌ Firestoreからの削除失敗: ${id}`, err);
+      }
+    }
+
+    setNotes((prev) => prev.filter((note) => note.id.toString() !== id.toString()));
+    setLastDeletedNoteId(id);
+
+    await refreshNotes();
   };
 
   useEffect(() => {
-    const fetchNotesFromFirestore = async () => {
-      if (!user) return;
-
-      const snapshot = await getDocs(collection(db, 'users', user.uid, 'notes'));
-      const fetched = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setNotes(fetched);
-    };
-
-    fetchNotesFromFirestore();
+    if (user) {
+      refreshNotes(); // ← 初回取得を確実に
+    }
   }, [user]);
+
+
+  // useEffect(() => {
+  //   const fetchNotesFromFirestore = async () => {
+  //     if (!user) return;
+
+  //     const snapshot = await getDocs(collection(db, 'users', user.uid, 'notes'));
+  //     const fetched = snapshot.docs.map(doc => ({
+  //       id: doc.id,
+  //       ...doc.data(),
+  //     }));
+
+  //     setNotes(fetched);
+  //   };
+
+  //   fetchNotesFromFirestore();
+  // }, [user]);
 
 
   return (
@@ -140,6 +173,7 @@ export const NotesProvider = ({ children }) => {
         addNote,
         updateNote,
         deleteNote,
+        lastDeletedNoteId,
       }}
     >
       {children}
