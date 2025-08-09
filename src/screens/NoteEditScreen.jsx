@@ -1,4 +1,4 @@
-// ✅ NoteEditScreen.jsx 完全修正版（自動保存・新規ノート対応）＋モバイルフォント最適化対応
+// ✅ NoteEditScreen.jsx 見出しと本文を別々に描画版
 
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -10,13 +10,19 @@ import { db } from '../firebase';
 
 const md = new MarkdownIt({ breaks: true });
 
-
+const splitTitleBody = (text) => {
+  const lines = (text ?? "").split(/\r?\n/);
+  const title = (lines[0] || "新ノート").trim();
+  const body = lines.slice(1).join("\n");
+  return { title, body };
+};
 
 export default function NoteEditScreen({ user }) {
   const { notes, addNote, deleteNote } = useNotesContext();
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
+
   const [fontSize, setFontSize] = useState(() => {
     return localStorage.getItem("noteFontSize") || "base";
   });
@@ -31,23 +37,21 @@ export default function NoteEditScreen({ user }) {
       fontSize === "lg" ? "prose-lg" :
         fontSize === "xl" ? "prose-xl" : "prose";
 
-
-
   const [content, setContent] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState(() => (isNew ? "edit" : localStorage.getItem("noteViewMode") || "preview"));
-
-  const changeFontSize = (size) => {
-    setFontSize(size);
-    localStorage.setItem("noteFontSize", size);
-  };
 
   const textareaRef = useRef(null);
   const previewRef = useRef(null);
   const saveTimeoutRef = useRef(null);
   const noteIdRef = useRef(id === "new" ? null : id);
   const isSyncingScroll = useRef(false);
+
+  const changeFontSize = (size) => {
+    setFontSize(size);
+    localStorage.setItem("noteFontSize", size);
+  };
 
   const changeMode = (newMode) => {
     setMode(newMode);
@@ -82,14 +86,8 @@ export default function NoteEditScreen({ user }) {
     URL.revokeObjectURL(url);
   };
 
-  // const extractTags = (text) => {
-  //   const matches = text.match(/[＃#]([^\s#]+)/g) || [];
-  //   return [...new Set(matches.map((tag) => tag.slice(1)))];
-  // };
-
   const extractTags = (text) => {
     const matches = text.match(/[＃#]([^\s#]+)/g) || [];
-    // 先頭記号(#/＃)を除去 → 小文字化 → 重複排除
     return [...new Set(matches.map(t => t.slice(1).toLowerCase()))];
   };
 
@@ -186,12 +184,18 @@ export default function NoteEditScreen({ user }) {
     }
   }, [id, isNew, user]);
 
+  const { title, body } = splitTitleBody(content);
+
   return (
-    <div className="p-4 space-y-4 text-lg sm:text-base">
+    <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold">
-          {noteIdRef.current ? `ノート編集（ID: ${noteIdRef.current}）` : "新ノート"}
+        <h1 className="note-title">
+          {title}
+          <span className="ml-2 text-sm text-gray-500">
+            （ID: {noteIdRef.current ?? "未保存"}）
+          </span>
         </h1>
+
         {noteIdRef.current && (
           <div className="flex items-center justify-end gap-2">
             <button onClick={handleDownload} className="bg-gray-600 text-white px-3 py-0.5 text-sm rounded hover:bg-gray-700">
@@ -204,7 +208,7 @@ export default function NoteEditScreen({ user }) {
               onClick={async () => {
                 if (confirm("このノートを削除してもよろしいですか？")) {
                   await deleteNote(noteIdRef.current);
-                  navigate("/", { replace: true }); // 一覧に戻る
+                  navigate("/", { replace: true });
                 }
               }}
               className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
@@ -214,6 +218,7 @@ export default function NoteEditScreen({ user }) {
           </div>
         )}
       </div>
+
       <div className="flex gap-3 text-sm mb-2">
         <button onClick={() => changeMode("edit")} className={mode === "edit" ? "font-bold underline" : ""}>✏️ 編集</button>
         <button onClick={() => changeMode("preview")} className={mode === "preview" ? "font-bold underline" : ""}>👁 プレビュー</button>
@@ -226,57 +231,69 @@ export default function NoteEditScreen({ user }) {
         {isSaving && <span className="text-yellow-600 text-sm ml-4">💾保存中...</span>}
         {saveSuccess && <span className="text-green-600 text-sm ml-4">✅保存！</span>}
       </div>
+
       {mode === "edit" && (
         <textarea
           ref={textareaRef}
-          value={content}
+          value={content} // ← 本文はタイトル込みで表示
           onChange={handleContentChange}
-          // className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
           className={`w-full border-none outline-none px-2 py-1 ${textSizeCls} leading-tight bg-transparent`}
           style={{ height: "calc(100vh - 300px)" }}
           placeholder="内容を入力..."
         />
       )}
+
       {mode === "preview" && (
-        <div
-          // className={`prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto ${fontSize === "sm" ? "prose-sm" :
-          //     fontSize === "lg" ? "prose-lg" :
-          //       fontSize === "xl" ? "prose-xl" :
-          //         "prose-base"
-          //   }`}
-          className={`prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto ${proseSizeCls}`}
-          style={{ height: "calc(100vh - 300px)" }}
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-        />
+        <>
+          <h1 className="note-title">
+            {title}
+            {/* <span className="ml-2 text-sm text-gray-500">
+              （ID: {noteIdRef.current ?? "未保存"}）
+            </span> */}
+          </h1>
+          <div
+            className={`prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto ${proseSizeCls}`}
+            style={{ height: "calc(100vh - 300px)" }}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }}
+          />
+        </>
       )}
+
       {mode === "split-right" && (
         <div className="flex h-full gap-4">
+          {/* 左：エディタ（タイトル行も含む全文） */}
           <div className="flex-1">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={handleContentChange}
               onScroll={() => syncScroll(textareaRef, previewRef)}
-              // className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
               className={`w-full border-none outline-none px-2 py-1 ${textSizeCls} leading-tight bg-transparent`}
               style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
+
+          {/* 右：プレビュー（見出し＋本文） */}
           <div
             ref={previewRef}
             onScroll={() => syncScroll(previewRef, textareaRef)}
-            // className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${fontSize === "sm" ? "prose-sm" : fontSize === "lg" ? "prose-lg" : fontSize === "xl" ? "prose-xl" : "prose-base"}`}
             className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${proseSizeCls}`}
             style={{
               minHeight: "200px",
               maxHeight: "calc(100vh - 200px)",
               overflowY: "auto",
-              resize: "none"
+              resize: "none",
             }}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-          />
+          >
+            {/* タイトルはh1で個別描画 */}
+            <h1 className="note-title">{title}</h1>
+
+            {/* 本文だけをMarkdownレンダリング */}
+            <div dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }} />
+          </div>
         </div>
       )}
+
     </div>
   );
 }

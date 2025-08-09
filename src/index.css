@@ -92,3 +92,10 @@
 .prose > *:last-child {
   margin-bottom: 0 !important;
 }
+
+.note-title{
+  font-size: 32px !important; /* ← pxで固定。必要なら28～36pxで調整 */
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: .5rem;
+}

@@ -39,7 +39,10 @@ export default function NoteDetailScreen() {
   return (
     <div className="p-4 py-2 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-2">{note.title} {note.id}</h1>
+        <h1 className="note-title">
+            {note.title} {note.id}
+              {/* {noteIdRef.current ? `ノート編集（ID: ${noteIdRef.current}）` : "新規ノート作成"} */}
+        </h1>
         <Link
           to={`/edit/${note.id}`}
           className="inline-block mt-2 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
