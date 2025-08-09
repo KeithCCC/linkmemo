@@ -101,14 +101,20 @@ export default function NoteListScreen() {
       return dateB.getTime() - dateA.getTime();
     });
 
-    return sortedNotes.filter((note) => {
-      const tags = note.tags || [];
+    // return sortedNotes.filter((note) => {
+    //   const tags = note.tags || [];
 
+    return sortedNotes.filter((note) => {
+      const tags = (note.tags || []).map(t => t.toLowerCase());
+
+      // const matchesKeyword =
+      //   note.title.toLowerCase().includes(lowerTerm) ||
+      //   note.content.toLowerCase().includes(lowerTerm) ||
+      //   tags.some(tag => tag.toLowerCase().includes(lowerTerm));
       const matchesKeyword =
         note.title.toLowerCase().includes(lowerTerm) ||
         note.content.toLowerCase().includes(lowerTerm) ||
-        tags.some(tag => tag.toLowerCase().includes(lowerTerm));
-
+        tags.some(tag => tag.includes(lowerTerm));
       const matchesInclude = includeTags.every(tag => tags.includes(tag));
       const hasAnyExclude = excludeTags.some(tag => tags.includes(tag));
 
@@ -118,7 +124,7 @@ export default function NoteListScreen() {
 
 
   return (
-    <div className="max-w-3xl mx-auto text-left p-4">
+    <div className="max-w-3xl mr-auto text-left p-4">
       <h1 className="text-xl font-bold mb-4">ノート一覧 🗂️</h1>
 
       {/* 🔎 キーワード検索（×付き） */}

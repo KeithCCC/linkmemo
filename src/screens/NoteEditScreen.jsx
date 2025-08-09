@@ -11,6 +11,7 @@ import { db } from '../firebase';
 const md = new MarkdownIt({ breaks: true });
 
 
+
 export default function NoteEditScreen({ user }) {
   const { notes, addNote, deleteNote } = useNotesContext();
   const { id } = useParams();
@@ -19,6 +20,18 @@ export default function NoteEditScreen({ user }) {
   const [fontSize, setFontSize] = useState(() => {
     return localStorage.getItem("noteFontSize") || "base";
   });
+
+  const textSizeCls =
+    fontSize === "sm" ? "text-sm" :
+      fontSize === "lg" ? "text-lg" :
+        fontSize === "xl" ? "text-xl" : "text-base";
+
+  const proseSizeCls =
+    fontSize === "sm" ? "prose-sm" :
+      fontSize === "lg" ? "prose-lg" :
+        fontSize === "xl" ? "prose-xl" : "prose";
+
+
 
   const [content, setContent] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -69,9 +82,15 @@ export default function NoteEditScreen({ user }) {
     URL.revokeObjectURL(url);
   };
 
+  // const extractTags = (text) => {
+  //   const matches = text.match(/[＃#]([^\s#]+)/g) || [];
+  //   return [...new Set(matches.map((tag) => tag.slice(1)))];
+  // };
+
   const extractTags = (text) => {
     const matches = text.match(/[＃#]([^\s#]+)/g) || [];
-    return [...new Set(matches.map((tag) => tag.slice(1)))];
+    // 先頭記号(#/＃)を除去 → 小文字化 → 重複排除
+    return [...new Set(matches.map(t => t.slice(1).toLowerCase()))];
   };
 
   const handleContentChange = (e) => {
@@ -212,20 +231,21 @@ export default function NoteEditScreen({ user }) {
           ref={textareaRef}
           value={content}
           onChange={handleContentChange}
-          className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
+          // className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
+          className={`w-full border-none outline-none px-2 py-1 ${textSizeCls} leading-tight bg-transparent`}
           style={{ height: "calc(100vh - 300px)" }}
           placeholder="内容を入力..."
         />
       )}
       {mode === "preview" && (
         <div
-          className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${fontSize === "sm" ? "prose-sm" : fontSize === "lg" ? "prose-lg" : fontSize === "xl" ? "prose-xl" : "prose-base"}`}
-          style={{
-            minHeight: "200px",
-            maxHeight: "calc(100vh - 200px)",
-            overflowY: "auto",
-            resize: "none"
-          }}
+          // className={`prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto ${fontSize === "sm" ? "prose-sm" :
+          //     fontSize === "lg" ? "prose-lg" :
+          //       fontSize === "xl" ? "prose-xl" :
+          //         "prose-base"
+          //   }`}
+          className={`prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto ${proseSizeCls}`}
+          style={{ height: "calc(100vh - 300px)" }}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
       )}
@@ -237,14 +257,16 @@ export default function NoteEditScreen({ user }) {
               value={content}
               onChange={handleContentChange}
               onScroll={() => syncScroll(textareaRef, previewRef)}
-              className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
+              // className={`w-full border-none outline-none px-2 py-1 text-${fontSize} leading-tight bg-transparent`}
+              className={`w-full border-none outline-none px-2 py-1 ${textSizeCls} leading-tight bg-transparent`}
               style={{ height: "calc(100vh - 300px)" }}
             />
           </div>
           <div
             ref={previewRef}
             onScroll={() => syncScroll(previewRef, textareaRef)}
-            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${fontSize === "sm" ? "prose-sm" : fontSize === "lg" ? "prose-lg" : fontSize === "xl" ? "prose-xl" : "prose-base"}`}
+            // className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${fontSize === "sm" ? "prose-sm" : fontSize === "lg" ? "prose-lg" : fontSize === "xl" ? "prose-xl" : "prose-base"}`}
+            className={`flex-1 prose max-w-3xl mx-auto px-4 py-2 text-left overflow-auto border-gray-500 bg-yellow-50 rounded ${proseSizeCls}`}
             style={{
               minHeight: "200px",
               maxHeight: "calc(100vh - 200px)",
