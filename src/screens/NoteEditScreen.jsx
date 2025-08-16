@@ -108,6 +108,16 @@ export default function NoteEditScreen({ user: userProp }) {
     [fontSize]
   );
 
+  // 追加：ハッシュタグを <span class="tag"> に変換（日本語・句読点対応）
+  const convertHashtagsToHTML = (text) => {
+    // 例: "#計画", "＃todo", 文末/空白/句読点で終わるパターン
+    return text.replace(
+      /[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}])/gu,
+      '<span class="tag">#$1</span>'
+    );
+  };
+
+
   const renderMarkdown = useCallback(
     (txt) => {
       // まずMarkdownをHTML化
@@ -120,6 +130,12 @@ export default function NoteEditScreen({ user: userProp }) {
           ? `<a href="/edit/${noteId}" class="text-blue-600 underline">${p1}</a>`
           : `<span class="text-gray-400">[[${p1}]]</span>`;
       });
+
+      // 3) #タグ を <span class="tag"> に装飾（日本語・句読点対応）
+      html = html.replace(
+        /(?<![A-Za-z0-9_])[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}<])/gu,
+        '<span class="tag">#$1</span>'
+      );
 
       return html;
     },

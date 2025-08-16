@@ -1,159 +1,143 @@
-// import React, { useState, useMemo, useEffect } from 'react';
-// import { Link } from 'react-router-dom';
-// import { useNotesContext, extractAllTags } from '../context/NotesContext';
-
+// src/screens/NoteListScreen.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
-import { useAuthContext } from "../context/AuthContext";  // ★追加
+import { useAuthContext } from "../context/AuthContext";
+
+// 正規化（大小無視）
+const normalize = (s = "") => s.trim().toLowerCase();
+
+// タイトル＋本文から #タグ を抽出（日本語・全角＃・句読点終端OK）
+const mineTags = (title = "", content = "") => {
+  // 単語途中の # を回避、全角＃もサポート、句読点・括弧・空白・行末で終端
+  const re =
+    /(?<![A-Za-z0-9_])[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}<>])/gu;
+  const set = new Set();
+  for (const m of (`${title}\n${content}`).matchAll(re)) set.add(normalize(m[1]));
+  return [...set];
+};
 
 export default function NoteListScreen() {
   const { notes, refreshNotes } = useNotesContext();
-  const allNotes = Array.isArray(notes) ? notes : []; // ← 安全ガード
-  const [searchTerm, setSearchTerm] = useState('');
-  const [tagStates, setTagStates] = useState({}); // { tag: "include" | "exclude" | "none" }
-  const [searchTermBackup, setSearchTermBackup] = useState('');
+  const { user } = useAuthContext();
+  const allNotes = Array.isArray(notes) ? notes : [];
 
-  // ローカル版（後で共通化してOK）
-  const extractAllTags = (text = "") => {
-    const re = /[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}])/gu;
-    const set = new Set();
-    let m;
-    while ((m = re.exec(text)) !== null) set.add(m[1]);
-    return [...set];
-  };
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tagStates, setTagStates] = useState({}); // { [tag]: "include" | "exclude" | "none" }
 
-  // 全タグ抽出
-  const allTags = useMemo(() => extractAllTags(notes), [notes]);
-
-  const [filtered, setFiltered] = useState([]);
-  const { user } = useAuthContext(); // まだ取ってなければ
-
-  // useEffect(() => {
-  //   if (user?.uid && typeof refreshNotes === "function") {
-  //     refreshNotes(user.uid).catch(console.error);
-  //   }
-  // }, [user?.uid, refreshNotes]);
-
+  // Firestore を使っている場合だけ明示リフレッシュ（存在チェック安全化）
   useEffect(() => {
-    if (user?.uid) refreshNotes().catch(console.error); // 引数なしでOK（Context内でuser参照）
+    if (user?.uid && typeof refreshNotes === "function") {
+      refreshNotes().catch(() => {});
+    }
   }, [user?.uid, refreshNotes]);
 
+  // すべてのタグ（保存済み tags + 本文/タイトル抽出）を集約
+  const allTags = useMemo(() => {
+    const set = new Set();
+    allNotes.forEach(n => {
+      const saved = Array.isArray(n.tags) ? n.tags.map(normalize) : [];
+      const mined = mineTags(n.title, n.content);
+      [...saved, ...mined].forEach(t => set.add(t));
+    });
+    return [...set].sort();
+  }, [allNotes]);
 
-
-
-  // タグ状態の変化で検索欄をコントロール
-  useEffect(() => {
-    const entries = Object.entries(tagStates);
-    const active = entries.find(([_, state]) => state === "include");
-    const excluded = entries.find(([_, state]) => state === "exclude");
-
-    if (active) {
-      if (searchTerm !== '') {
-        setSearchTermBackup(searchTerm);
-        setSearchTerm(''); // ✅ 入力欄を明示的に空にする！
-      }
-    } else if (excluded) {
-      setSearchTerm('');
-    } else {
-      setSearchTerm(searchTermBackup);
-    }
-  }, [tagStates]);
-
-
-  // タグ状態のトグル（none → include → exclude → none）
+  // 三値トグル：none → include → exclude → none
   const cycleTagState = (tag) => {
-    setTagStates((prev) => {
-      const current = prev[tag] || "none";
-      const next =
-        current === "none" ? "include" :
-          current === "include" ? "exclude" :
-            "none";
-      console.log(`Toggling [${tag}] from ${current} to ${next}`);
+    setTagStates(prev => {
+      const cur = prev[tag] || "none";
+      const next = cur === "none" ? "include" : cur === "include" ? "exclude" : "none";
       return { ...prev, [tag]: next };
     });
   };
 
-  // タグの状態ごとのスタイル
-  const getTagClass = (state) => {
-    switch (state) {
-      case "include": return "bg-blue-600 text-white border-blue-600";
-      case "exclude": return "bg-red-500 text-white border-red-500";
-      default: return "bg-gray-100 text-gray-700 border-gray-300";
-    }
-  };
+  // タグピル見た目
+  const tagClass = (state) =>
+    state === "include"
+      ? "bg-blue-600 text-white border-blue-600"
+      : state === "exclude"
+      ? "bg-red-500 text-white border-red-500"
+      : "bg-gray-100 text-gray-700 border-gray-300";
 
-  // 表示するタグ一覧（検索語に一致 or 選択中）
+  // 検索欄とトグルの両立（トグルが有効なら検索語なし優先）
+  const anyToggleActive = Object.values(tagStates).some(s => s !== "none");
+
+  // 一覧の並び順：更新降順
+  const sortedNotes = useMemo(() => {
+    return [...allNotes].sort((a, b) => {
+      const A = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt);
+      const B = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt);
+      return (B?.getTime?.() || 0) - (A?.getTime?.() || 0);
+    });
+  }, [allNotes]);
+
+  // 🔎 フィルタ本体
+  const filteredNotes = useMemo(() => {
+    const q = anyToggleActive ? "" : (searchTerm || "");
+    const isTagQuery = q.trim().startsWith("#");
+
+    // 検索欄でのタグ指定（AND）
+    const requiredTags = isTagQuery
+      ? q.trim().split(/\s+/).map(t => normalize(t.replace(/^#/, ""))).filter(Boolean)
+      : [];
+
+    // トグルでの include / exclude
+    const includeTags = Object.keys(tagStates).filter(t => tagStates[t] === "include");
+    const excludeTags = Object.keys(tagStates).filter(t => tagStates[t] === "exclude");
+
+    return sortedNotes.filter(n => {
+      const title = n.title || "";
+      const content = n.content || "";
+      const saved = Array.isArray(n.tags) ? n.tags.map(normalize) : [];
+      const mined = mineTags(title, content);
+      const tagSet = new Set([...saved, ...mined]);
+
+      // 1) 検索欄（#タグ or 通常語）
+      let textHit = true;
+      if (isTagQuery) {
+        textHit = requiredTags.every(t => tagSet.has(t)); // AND
+      } else if (q) {
+        const needle = normalize(q);
+        textHit =
+          normalize(title).includes(needle) ||
+          normalize(content).includes(needle) ||
+          [...tagSet].some(t => t.includes(needle));
+      }
+
+      // 2) トグル（include / exclude）
+      const includeOk = includeTags.every(t => tagSet.has(t));
+      const excludeOk = !excludeTags.some(t => tagSet.has(t));
+
+      return textHit && includeOk && excludeOk;
+    });
+  }, [sortedNotes, searchTerm, tagStates, anyToggleActive]);
+
+  // 検索欄上に、候補タグ（typeahead + 選択中）を表示
   const visibleTags = useMemo(() => {
     const lower = searchTerm.toLowerCase();
     return allTags.filter(tag => {
       const state = tagStates[tag] || "none";
-      const matchesSearch = lower && tag.toLowerCase().startsWith(lower);
-      const isSelected = state !== "none";
-      return matchesSearch || isSelected;
+      const matches = lower && tag.toLowerCase().startsWith(lower);
+      const selected = state !== "none";
+      return matches || selected;
     });
-  }, [searchTerm, allTags, tagStates]);
-
-
-  // 更新日時でソート
-  const sortedNotes = [...notes].sort((a, b) => {
-    const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt);
-    const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt);
-    return dateB.getTime() - dateA.getTime();
-  });
-
-  const lowerTerm = searchTerm.toLowerCase();
-  const includeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "include");
-  const excludeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "exclude");
-
-  // ノートフィルタリング
-  const filteredNotes = useMemo(() => {
-    const lowerTerm = searchTerm.toLowerCase();
-    const includeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "include");
-    const excludeTags = Object.keys(tagStates).filter(tag => tagStates[tag] === "exclude");
-
-    const sortedNotes = [...notes].sort((a, b) => {
-      const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt);
-      const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(b.updatedAt);
-      return dateB.getTime() - dateA.getTime();
-    });
-
-    // return sortedNotes.filter((note) => {
-    //   const tags = note.tags || [];
-
-    return sortedNotes.filter((note) => {
-      const tags = (note.tags || []).map(t => t.toLowerCase());
-
-      // const matchesKeyword =
-      //   note.title.toLowerCase().includes(lowerTerm) ||
-      //   note.content.toLowerCase().includes(lowerTerm) ||
-      //   tags.some(tag => tag.toLowerCase().includes(lowerTerm));
-      const matchesKeyword =
-        note.title.toLowerCase().includes(lowerTerm) ||
-        note.content.toLowerCase().includes(lowerTerm) ||
-        tags.some(tag => tag.includes(lowerTerm));
-      const matchesInclude = includeTags.every(tag => tags.includes(tag));
-      const hasAnyExclude = excludeTags.some(tag => tags.includes(tag));
-
-      return matchesKeyword && matchesInclude && !hasAnyExclude;
-    });
-  }, [notes, searchTerm, tagStates]);
-
+  }, [allTags, searchTerm, tagStates]);
 
   return (
     <div className="max-w-3xl mr-auto text-left p-4">
       <h1 className="text-xl font-bold mb-4">ノート一覧 🗂️</h1>
 
-      {/* 🔎 キーワード検索（×付き） */}
-      <div className="relative w-full mb-4">
+      {/* 🔎 キーワード検索（×で即クリア） */}
+      <div className="relative w-full mb-3">
         <input
           type="text"
-          value={searchTerm}
+          value={anyToggleActive ? "" : searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="キーワード検索（タイトル・本文・タグ）"
+          placeholder="キーワード検索（タイトル・本文・タグ） / 例：#todo #env"
           className="w-full border border-gray-300 rounded px-3 py-2 pr-10"
         />
-        {searchTerm && (
+        {(searchTerm && !anyToggleActive) && (
           <button
             onClick={() => setSearchTerm('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
@@ -164,14 +148,15 @@ export default function NoteListScreen() {
         )}
       </div>
 
-      {/* 🏷️ タグ三値トグル表示 */}
+      {/* 🏷️ タグ候補 & 三値トグル */}
       {visibleTags.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {visibleTags.map((tag) => (
             <button
               key={tag}
               onClick={() => cycleTagState(tag)}
-              className={`px-3 py-1 text-sm rounded-full border transition ${getTagClass(tagStates[tag] || "none")}`}
+              className={`px-3 py-1 text-sm rounded-full border transition ${tagClass(tagStates[tag] || "none")}`}
+              title="クリックで include → exclude → 解除"
             >
               #{tag}
             </button>
@@ -184,23 +169,37 @@ export default function NoteListScreen() {
         <p className="text-gray-500 italic">検索結果が見つかりませんでした…</p>
       ) : (
         <ul className="space-y-2">
-          {filteredNotes.map((note) => (
-            <li key={note.id} className="p-3 border rounded hover:bg-gray-50">
-              <div className="font-semibold">
-                <Link className="text-blue-600" to={`/edit/${note.id}`}>{note.title}</Link>
-              </div>
-              <div className="text-sm text-gray-500">
-                更新日: {(note.updatedAt?.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)).toLocaleString()}
-              </div>
-              {Array.isArray(note.tags) && note.tags.length > 0 && (
-                <div className="mt-1 space-x-1">
-                  {note.tags.map((tag) => (
-                    <span key={tag} className="text-xs bg-gray-200 px-2 py-1 rounded">#{tag}</span>
-                  ))}
+          {filteredNotes.map((note) => {
+            const saved = Array.isArray(note.tags) ? note.tags : [];
+            const mined = mineTags(note.title, note.content);
+            const tags = [...new Set([...saved, ...mined])];
+
+            return (
+              <li key={note.id} className="p-3 border rounded hover:bg-gray-50">
+                <div className="font-semibold">
+                  <Link className="text-blue-600" to={`/edit/${note.id}`}>{note.title}</Link>
                 </div>
-              )}
-            </li>
-          ))}
+                <div className="text-sm text-gray-500">
+                  更新日: {(note.updatedAt?.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)).toLocaleString()}
+                </div>
+
+                {tags.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {tags.map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setSearchTerm(`#${t}`)}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
+                        title={`#${t} で検索`}
+                      >
+                        #{t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
