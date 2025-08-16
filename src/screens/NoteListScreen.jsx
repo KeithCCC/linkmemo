@@ -1,28 +1,45 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useNotesContext, extractAllTags } from '../context/NotesContext';
+// import React, { useState, useMemo, useEffect } from 'react';
+// import { Link } from 'react-router-dom';
+// import { useNotesContext, extractAllTags } from '../context/NotesContext';
+
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useNotesContext } from "../context/NotesContext";
+import { useAuthContext } from "../context/AuthContext";  // ★追加
 
 export default function NoteListScreen() {
   const { notes, refreshNotes } = useNotesContext();
+  const allNotes = Array.isArray(notes) ? notes : []; // ← 安全ガード
   const [searchTerm, setSearchTerm] = useState('');
   const [tagStates, setTagStates] = useState({}); // { tag: "include" | "exclude" | "none" }
   const [searchTermBackup, setSearchTermBackup] = useState('');
+
+  // ローカル版（後で共通化してOK）
+  const extractAllTags = (text = "") => {
+    const re = /[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}])/gu;
+    const set = new Set();
+    let m;
+    while ((m = re.exec(text)) !== null) set.add(m[1]);
+    return [...set];
+  };
 
   // 全タグ抽出
   const allTags = useMemo(() => extractAllTags(notes), [notes]);
 
   const [filtered, setFiltered] = useState([]);
-
-  useEffect(() => {
-    (async () => {
-      await refreshNotes();
-    })();
-  }, []);
-
+  const { user } = useAuthContext(); // まだ取ってなければ
 
   // useEffect(() => {
-  //   setFiltered(notes); // ✅ notesが更新されたら強制的に更新
-  // }, [notes]);
+  //   if (user?.uid && typeof refreshNotes === "function") {
+  //     refreshNotes(user.uid).catch(console.error);
+  //   }
+  // }, [user?.uid, refreshNotes]);
+
+  useEffect(() => {
+    if (user?.uid) refreshNotes().catch(console.error); // 引数なしでOK（Context内でuser参照）
+  }, [user?.uid, refreshNotes]);
+
+
 
 
   // タグ状態の変化で検索欄をコントロール

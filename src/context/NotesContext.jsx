@@ -3,6 +3,8 @@ import { db } from '../firebase'; // ← 必要に応じてパス調整
 import { collection, getDocs } from 'firebase/firestore';
 import { useAuthContext } from './AuthContext'; // ← ログイン中のユーザーを使う前提
 import { doc, deleteDoc } from "firebase/firestore"; // 追加
+import { getNotes } from '../notesService'; // 既存APIを使う
+// import { useNotesContext, extractAllTags } from "../context/NotesContext";
 
 const NotesContext = createContext();
 export const useNotesContext = () => useContext(NotesContext);
@@ -33,19 +35,20 @@ export const extractAllTags = (notes) => {
 export const NotesProvider = ({ children }) => {
   const { user } = useAuthContext(); // ← これを追加！ 🔥
   const [lastDeletedNoteId, setLastDeletedNoteId] = useState(null);
-  const [notes, setNotes] = useState(() => {
-    // const stored = localStorage.getItem(STORAGE_KEY);
-    // const parsed = stored ? JSON.parse(stored) : [];
-    const now = new Date().toISOString();
+  // const [notes, setNotes] = useState(() => {
+  //   // const stored = localStorage.getItem(STORAGE_KEY);
+  //   // const parsed = stored ? JSON.parse(stored) : [];
+  //   const now = new Date().toISOString();
 
-    // createdAt / updatedAt を補完
-    // return parsed.map((note) => ({
-    //   ...note,
-    //   createdAt: note.createdAt || now,
-    //   updatedAt: note.updatedAt || now,
-    // }));
-    return [];
-  });
+  //   // createdAt / updatedAt を補完
+  //   // return parsed.map((note) => ({
+  //   //   ...note,
+  //   //   createdAt: note.createdAt || now,
+  //   //   updatedAt: note.updatedAt || now,
+  //   // }));
+  //   return [];
+  // });
+  const [notes, setNotes] = useState([]);  // ← 復活
 
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("updatedAt"); // or "createdAt"
@@ -54,6 +57,8 @@ export const NotesProvider = ({ children }) => {
   // useEffect(() => {
   //   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   // }, [notes]);
+
+
 
   const getNoteById = (id) => notes.find((note) => note.id === id);
 
@@ -117,6 +122,7 @@ export const NotesProvider = ({ children }) => {
     setNotes(fetched);
   };
 
+
   const deleteNote = async (id) => {
     if (user) {
       const ref = doc(db, 'users', user.uid, 'notes', id);
@@ -174,6 +180,7 @@ export const NotesProvider = ({ children }) => {
         updateNote,
         deleteNote,
         lastDeletedNoteId,
+        refreshNotes,
       }}
     >
       {children}
