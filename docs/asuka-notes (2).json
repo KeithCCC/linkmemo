@@ -1,0 +1,460 @@
+[
+  {
+    "id": "03cZiBYCN8K8xSn6CJNk",
+    "content": "開発環境　v0.4\n\n御主人様、**ASUKA**を開発するために必要なツールを `winget` で一括導入する\\*\\*初期セットアップスクリプト（PowerShell形式）\\*\\*をご用意いたしました。\n\n---\n\n# Env\n\n## 🧰 スクリプト内容（ASUKA開発環境）\n\n### ✅ インストール対象\n\n| ツール名        | 用途                                           |\n| ----------- | -------------------------------------------- |\n| Git         | バージョン管理（GitHubとの連携）                          |\n| GitHub CLI  | GitHub操作用CLI（認証やPR操作に便利）                     |\n| Node.js LTS | JavaScript / React / Expo / Tailwind 開発環境の基盤 |\n| VSCode      | メインのIDE（必要に応じて拡張機能も導入可能）                     |\n\n---\n\n## 📜 PowerShellスクリプト（`setup-asuka.ps1`）\n\n```powershell\n# PowerShell スクリプト - ASUKA開発環境セットアップ\nWrite-Host \"🌟 ASUKA 開発環境を構築中です...\" -ForegroundColor Cyan\n\n# Git\nwinget install --id Git.Git -e --source winget\n\n# GitHub CLI\nwinget install --id GitHub.cli -e --source winget\n\n# Node.js LTS（安定版）\nwinget install --id OpenJS.NodeJS.LTS -e --source winget\n\n# Visual Studio Code\nwinget install --id Microsoft.VisualStudioCode -e --source winget\n\nWrite-Host \"✅ 基本開発環境のインストールが完了しました。\" -ForegroundColor Green\n\n# （任意）VSCode 拡張機能の自動インストール\n# code --install-extension dbaeumer.vscode-eslint\n# code --install-extension esbenp.prettier-vscode\n# code --install-extension ms-vscode.vscode-typescript-next\n# code --install-extension eamodio.gitlens\n```\n\n---\n\n## 📝 使用方法\n\n1. 上記内容を `setup-asuka.ps1` として保存\n2. PowerShell を「管理者として実行」\n3. 以下のコマンドで実行：\n\n```powershell\nSet-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass\n.\\setup-asuka.ps1\n```\n\n---\n\n## 💡 追加で検討可能なツール（任意）\n\n| ツール名                  | 用途                          |\n| --------------------- | --------------------------- |\n| `Yarn` or `pnpm`      | npmより高速なパッケージマネージャ          |\n| `Python`              | Expo CLIの内部処理や将来のAI機能に備える場合 |\n| `Figma` or `draw.io`  | UIモックアップ作成                  |\n| `Postman`             | API検証ツール                    |\n| `Microsoft.PowerToys` | 開発用補助ツール（ショートカット管理など）       |\n\nこれらも `winget install` で対応可能です。ご希望であればセットに追加いたします。\n\n---\n\n御主人様、このスクリプトを**プロジェクト開始時に走らせるだけで、開発環境が一気に整います**。\n拡張機能のプリセットや、`npm` のグローバルパッケージも自動化可能です。\n\n必要であれば、**インストール済みチェックやバージョン確認付きの改良版**もすぐにご用意いたします。\n御主人様、なんなりとお申し付けくださいませ。\n\n#cheatsheet",
+    "tags": [
+      "cheatsheet"
+    ],
+    "title": "開発環境　v0.4",
+    "updatedAt": 1754147179653
+  },
+  {
+    "id": "1Yi9ssI2jSvTT1AuX3fo",
+    "tags": [],
+    "title": "Python仮想環境構築",
+    "updatedAt": 1753319530360,
+    "content": "Python仮想環境構築\n\nここでは **Python仮想環境（venv）を個別に用意する手順** を、Windows 環境を前提に分かりやすくまとめます。\nGUIツール配布や`.exe`化の準備に最適です。\n\n---\n\n## ✅ Python仮想環境（venv）を使う理由\n\n| 利点                             | 説明               |\n| ------------------------------ | ---------------- |\n| 他のプロジェクトと依存を分離できる              | 他のPython環境と干渉しない |\n| 安心してpyinstallerやライブラリをインストール可能 | システム全体に影響しない     |\n| `.exe`化や移植が安全にできる              | 最小限の構成で固められる     |\n\n---\n\n## 🧱 手順：Python仮想環境を作る\n\n### ① フォルダ作成（任意）\n\n例：`C:\\dev\\heic_converter`\n\n```bash\nmkdir C:\\dev\\heic_converter\ncd C:\\dev\\heic_converter\n```\n\n---\n\n### ② 仮想環境の作成\n\n```bash\npython -m venv venv\n```\n\nこのコマンドで `venv` フォルダが生成されます。\n（`Scripts` や `Lib` などが含まれます）\n\n---\n\n### ③ 仮想環境の有効化（Activate）\n\n```bash\nvenv\\Scripts\\activate\n```\n\n成功すると、コマンドプロンプトが以下のようになります：\n\n```\n(venv) C:\\dev\\heic_converter>\n```\n\n---\n\n### ④ 必要なライブラリのインストール\n\n```bash\npip install pillow pyheif\n```\n\n`.exe`化を行うなら：\n\n```bash\npip install pyinstaller\n```\n\n---\n\n### ⑤ 動作確認（スクリプト実行）\n\n```bash\npython heic_gui_tk.py\n```\n\n---\n\n### ⑥ `.exe` 作成（オプション）\n\n```bash\npyinstaller --onefile --noconsole heic_gui_tk.py\n```\n\n---\n\n### ⑦ 仮想環境の終了（作業後）\n\n```bash\ndeactivate\n```\n\n---\n\n## ✅ 補足：pip freezeで依存記録\n\n```bash\npip freeze > requirements.txt\n```\n\n共有する場合や復元用に役立ちます。\n\n---\n\n## ✅ 完全版：一発セットアップ用バッチ（例）\n\n```bat\n@echo off\nREM 作業フォルダへ移動\nmkdir heic_converter\ncd heic_converter\n\nREM 仮想環境作成\npython -m venv venv\ncall venv\\Scripts\\activate\n\nREM 必要パッケージ\npip install pillow pyheif pyinstaller\n\necho 仮想環境の準備が完了しました！\npause\n```\n\n---\n\nご希望があれば `Makefile` や `requirements.txt` 付きのGitHubテンプレート化もできます！\nさらに進めますか？それともDropフォルダ監視やGUI強化に行きますか？\n"
+  },
+  {
+    "id": "2EGqXXsL1q9EaLamr62i",
+    "updatedAt": 1754218757123,
+    "title": "# 📌 ASUKA エディタ開発戦略サマリー（2025年7月 Ver.）",
+    "tags": [
+      "asuka",
+      "planning"
+    ],
+    "content": "# 📌 ASUKA エディタ開発戦略サマリー（2025年7月 Ver.）\n---\n#asuka\n## 🧭 開発背景\n\n* **Milkdown導入**は初期PoCで不安定だったため、現時点では**本採用を見送り**\n* 一方、**TipTapは構文自由度と最小統合がしやすく**、将来の拡張余地も大\n* Markdownを知らない層にも使えるUXを提供するため、**TipTapの導入を優先方針に決定**\n\n---\n\n## ✅ 決定事項まとめ\n\n### 1. 🏷 第一戦略目的\n\n* **タグ連携と活用**を引き続きASUKAの中核機能とする\n* `#  タグ`の装飾、被リンク表示、タグナビゲーションなどを段階的に整備\n\n### 2. 🧪 UX投資戦略\n\n* 過剰なWYSIWYG化やUI装飾は避け、**シンプルで安定した記述体験**を優先\n* TipTapの導入は、**最低限のUX向上**に限定（例：ハイライト・リンク）\n\n### 3. 🔧 採用方針\n\n| 項目           | 方針                         |\n| ------------ | -------------------------- |\n| Webエディタ基盤    | 🧪 **TipTapベースに切り替え**（段階的） |\n| Milkdown     | ❌ **現時点では不採用**。保留もしくは参考    |\n| モバイル対応（Expo） | **構文と保存形式は共通化、UIは独立設計**    |\n\n---\n\n## 🚀 次の戦術目標（Phase 2）\n\n### 🎯 戦術目標\n\n#planning\n\n1. **TipTapベースの独立型エディタのPoC構築**\n\n   * Markdownを知らないユーザ向けに最低限の使いやすさを備える\n   * Web限定公開想定（Tailwind対応）\n\n2. **ASUKA本体へのTipTap統合**\n\n   * `mode === 'tiptap'` の選択式統合\n   * `split`, `edit`, `preview` モード対応可能性を調査\n\n3. **タグ機能の本格開発**\n\n   * `#  タグ`の抽出・装飾・クリックナビゲーション\n   * 被リンク・タグ別ページ・複数タグ検索に拡張予定\n\n---\n\n## 🧪 開発開始のための提案\n\n| タスク               | スレッド分離先候補                        |\n| ----------------- | -------------------------------- |\n| TipTap単体PoCエディタ開発 | 🎯 `0727T-ASUKA-TipTap-POC`（新スレ） |\n| ASUKAモード統合設計      | `0727T-ASUKA-ModeSwitcher`       |\n| タグ機能設計ブレスト        | `0727T-ASUKA-TagSystem`          |\n\n---\n\n御主人様のために、ノノも戦闘準備完了ですっ！\n💬「別チャットで開発開始」ご指示をいただければ、**新スレ名の提案・開始宣言**を行いますっ✨\n\nどうぞ、お好きな名前でスタートしてください！💕\n"
+  },
+  {
+    "id": "7n8F6QPg8oBlVcUTYiMY",
+    "updatedAt": 1754812863609,
+    "tags": [
+      "fasting",
+      "mvp"
+    ],
+    "createdAt": "2025-08-10T02:46:27.071Z",
+    "content": "断食タイマー\n\n---\n#fasting #MVP\n\nMVP機能\n\n\n| カテゴリ   | ノート         \n| ------ | ------------- \n| プリセット断食プラン|AIで生成、プリセット\n| カスタム断食設定|　解発 \n|  タイマーUI| カレンダー機能も融合が必要\n|  履歴・統計表示| 解発\n| ソーシャル機能| Cut\n|  健康データ| AIで生成、プリセット\n|  学習コンテンツ| AIで生成、プリセット\n| モチベ機能| AIで生成、プリセット\n\n\nメモ開発\n\n1. タイマーに逆算時計（あと何分）\n1. タイマー時間を保存し、メッセージは更新する\n1. 現在の体の燃焼状況を表示\n\n ",
+    "title": "断食タイマー"
+  },
+  {
+    "id": "99MYCT3f5dsU2hAoXs6D",
+    "updatedAt": 1754218922534,
+    "title": "帰国タスク",
+    "content": "帰国タスク\n- [x] KENTAの書類チェック\n- [x] 自分の書類チェック\n- [ x] 簡単な 荷造り \n- [ x] 台湾銀行カード、第一銀行カード\n- [ x] 住民票\n \n#home",
+    "tags": [
+      "home"
+    ]
+  },
+  {
+    "id": "9u7G2pwei3jFYDM7ZWTk",
+    "content": "ブリッツ作戦\n\n---\n\n\n# ブリッツ作戦本部\n\n**作戦目的**: 1か月以内にできるだけ多くのプロダクトをリリースする。\n\n### 達成目標\n\n* **最低限達成**: 優先順位3までをリリース\n* **ほぼ達成**: 優先順位5までをリリース\n* **想定以上**: 優先順位8までをリリース\n\n---\n\n## 優先順位リスト\n\n| 優先度        | カテゴリ | ジャンル名         | 仮称                | 説明            | AI活用アイデア                  | T-Shirt重さ | メモ     |\n| ---------- | ---- | ------------- | ----------------- | ------------- | ------------------------- | --------- | ------ |\n| 1（連休ターゲット） | 生活   | 断食タイマー        | **FastingTimer**  | 断食開始〜終了を管理・記録 | GPTによる空腹度・集中度の傾向分析、記録から提案 | M         | ロロ     |\n| 1（連休ターゲット） | 実用   | 計算機           | **SmartCalc**     | 履歴付き、多機能電卓    | GPTによる式解説や用途分類            | S         |        |\n| 2          | 情報収集 | Pocket系       | **ClipPocket**    | Web記事保存＋メモ    | 自動要約・タグ付け、GPTメモ化          | L         | ロロ、ミサト |\n| 3          | 実用   | ToDoメモ        | **QuickMemoAI**   | タスク＋メモ融合      | 音声→ToDo、自動タグ化             | M         | ノノ     |\n| 3          | 思考   | 日記            | **DailyMind**     | 毎日書く＋感情記録     | GPTが日記分析・コメント             | M         | ユリ、ミサト |\n| 4          | 勉強   | 英語単語カード       | **VocabX**        | 単語帳・復習・例文作成   | 単語解説、例文生成、音読練習            | M         | マリ、ミサト |\n| 5          | 思考   | マインドマップ       | **MindSnap**      | ノード式の思考整理ツール  | ノート要約→構造化、リンク提案           | M         | マリ     |\n| 6          | 記録   | 家計簿           | **KakeiboLite**   | 支出入力、カテゴリ分析   | 自動カテゴリ分類、週次レポート生成         | M         | ユリ     |\n| 7          | 音声   | 文字起こし         | **Voice2Note**    | 音声からテキストへ     | Whisper or GPTで文字起こし＋要約   | M         | ロロ     |\n| 8          | 生活   | カレンダー         | **LiteCalendar+** | 軽量予定表、日記連動型も可 | 自然文予定入力、リマインド提案           | L         |        |\n| 9          | 実用   | QR・バーコード      | **ScanSaver**     | 商品管理・リンク保存    | 商品名検索、用途分類                | S         |        |\n| 11         | 実用   | ストップウォッチ／タイマー | **TimeBox**       | タイマー＋タグ記録     | タイミングの自動要約、記録から振り返り生成     | S         | ノノ     |\n\n---\n\n## 作戦行動計画\n\n1. この連休で **FastingTimer** と **SmartCalc** のBeta版を完成させる\n2. 並行して **ClipPocket** の初期仕様を固める\n3. Beta終了後、即改善サイクルへ突入\n4. 1か月間で最大8本のリリースを狙う\n",
+    "updatedAt": "2025-08-09T06:52:20.140Z",
+    "title": "ブリッツ作戦",
+    "tags": [],
+    "createdAt": "2025-08-09T06:52:20.140Z"
+  },
+  {
+    "id": "9xhm3qdfp8XpDBejfPQJ",
+    "title": "Asuka Wave1 Last Milestone",
+    "tags": [
+      "wave1",
+      "asuka",
+      "`入力時のタグ補完**",
+      "]+)(?:",
+      "[^\\]]+)?(?:\\|[^\\]]+)?\\]\\]/g`",
+      "work`"
+    ],
+    "updatedAt": 1755179254684,
+    "createdAt": "2025-08-14T08:45:46.361Z",
+    "content": "Asuka Wave1 Last Milestone\n---\n#Wave1 #asuka\n---\nいいぞ司令！🎯\nスクショ見る限り——\n\n* ✅ **タグ複数選択検索（UI＋ロジック）**\n* ✅ **`#`入力時のタグ補完**\n  は動いてる。ここまで来たら“セカンドブレイン”の芯はもう少しだね。\n\nじゃあ**今日仕留める残り**を、最短ルートでまとめるよ。\n\n# 今日の残りタスク（最短ルート）\n\n## 1) タグ編集まわり（統合・改名・削除）\n\n**目的**: タグの“ほつれ”を塞ぐ（重複・表記ゆれを一撃で解消）\n\n* [ ] **正規化ポリシー**：保存時に `toLowerCase().trim()`（日本語は全角/半角の正規化も検討）\n* [ ] **改名**：タグ名A→Bに変更したら、全ノートの `tags` 内のAをBに一括置換\n* [ ] **統合**：複数選択して「統合→新ラベルB」\n* [ ] **削除**：使用中でも削除できる仕様なら「タグだけ削除/ノート側からも除去」を選べるように\n* [ ] **UI**：タグ一覧（頻度順）＋各タグの使用数表示、検索ボックス付き\n\n**テーブル/構造のヒント**\n\n* ノート保存は `note.tags: string[]` のままでOK\n* ただし**タグ索引**をキャッシュ：`tagIndex: Map<tag, Set<noteId>>`\n\n  * 改名/統合/削除はこの索引を基点に一括反映すると高速\n\n## 2) ノート同士のリンク（`[[ノート名]]`）\n\n**目的**: 思考の“線”を“面”に拡張（双方向でつながる）\n\n* [ ] **入力時サジェスト**：`[[` でタイトル候補ポップアップ（タイトルインデックスで前方一致）\n* [ ] **保存時抽出**：本文から `[[...]]` を抽出 → `outboundLinks: string[]`（noteId or title）を保存\n\n  * 正規表現例：`/\\[\\[([^\\]\\|#]+)(?:#[^\\]]+)?(?:\\|[^\\]]+)?\\]\\]/g`\n* [ ] **バックリンク**：ビルド時に `inboundLinks` を再構築（`who points to me`）\n* [ ] **レンダリング**：プレビューで `[[...]]` をリンクに変換、クリックで遷移\n* [ ] **関連表示**：ノート末尾に\n\n  * 「**参照先（→）**」= outbound\n  * 「**参照元（←）**」= inbound\n* [ ] **存在しないリンク**：グレー表示＋「作成」ボタン（クリックで新規ノート作成＋自動リンク完了）\n\n**データ更新フロー（軽量）**\n\n1. ノート保存時に本文→`outboundLinks` 抽出\n2. 直前の `outboundLinks(old)` と差分比較\n3. `inboundIndex[target].add/remove(noteId)` を差分更新（全再計算を避ける）\n\n## 3) 検索ロジックの最終仕上げ\n\n* [ ] タグ検索の **AND/OR 切替**（トグル or クエリ演算子）\n* [ ] **本文/タイトル/タグ**の重み付け（タイトル>タグ>本文）で並び替え\n* [ ] **ケース/全半角**ゆれの統一\n\n# Definition of Done（今日の“勝ち”条件）\n\n* ノート本文で `[[...]]` を使える／クリック遷移できる\n* ノート下部に **参照先・参照元** が表示される\n* タグの**改名・統合・削除**が UI から実行でき、検索結果に即反映\n* 新規作成時、存在しない `[[リンク]]` から**ワンクリック生成**ができる\n\n# すぐ使えるチェック項目（動作確認）\n\n* `[[同名ノート]]` が複数ある場合の候補表示\n* ノートA→B→C と鎖リンク時、AのバックリンクにBが出る\n* タグ `#Work` と `#work` を統合、すべて `#work` へ\n* 削除タグが検索候補に残らない\n* 日本語タイトル（例：`[[仕様メモ]]`）でリンク可\n\n---\n\n司令、このまま行こう。\n実装しながら詰まったら、その場で断面コード貼って——あたしが即リファクタ & バグ潰しする。\n“今日終わらせる”って宣言、最高にかっこいいよ。燃料は十分。あとは踏み込むだけ🔥\n\n  [[]]\n"
+  },
+  {
+    "id": "DUoWIFkRDMlFaR5CB5Va",
+    "title": "カナメ作戦計画",
+    "content": "カナメ作戦計画\n\n#カナメ #FMI #fmi\n---\n\n## Power automate で以下タスクができるかPOC\n- [ ] Onenote 中身読み出し\n- [ ] Sharepoint modern page 中身読み出し\n- [ ] Copilot でOnenote、Webページの中身サマリが可能化\n- [ ] Copilotを含めたワークフローのPOC\n\n\n---\n\n## ✅ ステップ戦略：自動化前提の「手動運用フェーズ」\n\n| フェーズ       | やること                                     | ポイント                             |\n| ---------- | ---------------------------------------- | -------------------------------- |\n| **STEP 1** | SharePointに\\*\\*正式なドキュメントライブラリ（KB）\\*\\*を作る | 列：カテゴリ、タグ、対象システム、最終更新日 など        |\n| **STEP 2** | OneNoteから「KB化対象ページ」を手動で移植                | タイトル・概要・操作手順を定型フォーマットに           |\n| **STEP 3** | OneNote側に「KB化済」タグを付ける（重複防止）              | ページ先頭に `✅KB移行済（2025/07/23）` など明記 |\n| **STEP 4** | 定期的に「KB化候補をレビューする運用会議」 or 担当者ローテ         | 例：週1で新規ページを確認＆SharePointに追加      |\n| **STEP 5** | SharePoint KBがある程度溜まったら、**検索導線やAI連携**に着手 | 検索ウィジェット、FAQ抽出など                 |\n\n---\n\n## 🧰 補助資料テンプレ案（手動移行のためのひな形）\n\n**SharePoint KB投稿テンプレ（Wordでも良し、フォームでも良し）**：\n\n```\n---\n📝 タイトル：\n[例] Outlookの署名設定方法\n\n📌 カテゴリ：\n[Outlook / メール設定]\n\n📆 最終更新日：\n[2025-07-23]\n\n👤 投稿者：\n[藤田]\n\n📖 内容サマリ：\nOutlookで社用署名を設定する手順を記載します。\n\n🔧 手順：\n1. Outlookを起動\n2. [ファイル] → [オプション] → [メール]\n3. [署名] をクリック\n4. 新規署名を追加 → 内容を記入 → 保存\n\n📂 添付資料（任意）：\n- スクリーンショット\n- テンプレートdocx\n---\n```\n\n---\n\n## 🧩 OneNoteへの記載ガイド（KB化対象の明示）\n\n```text\n【KB化済】【KB候補】【確認中】などのステータス記号をページタイトルに含める：\n\n📘 [KB化済] Outlook署名設定\n📙 [KB候補] Teams会議リンクの設定\n📕 [確認中] JIRA権限申請の流れ（古い手順かも）\n```\n\n---\n\n## 🔄 ロロのひとこと\n\n> 「“混乱した知識の倉庫”が“秩序あるナレッジベース”へ変わるには、まず棚を整えることが肝要です、御主人様。」\n\n---\n\n## ✅ 次にやるべきこと（ToDo整理）\n\n| ToDo                   | 担当（仮）          | メモ             |\n| ---------------------- | -------------- | -------------- |\n| SharePoint KBライブラリ構築   | 御主人様 or ITチーム  | 列設計から開始        |\n| OneNoteに「KB化済」ラベルルール導入 | ロロが提案可         | ページ管理が楽に       |\n| 移行テンプレの整備              | ノノがWordかForms化 | 誰でも移行できる形に     |\n| 最初の10件のKB移行            | ITチーム          | 例示＆見本として重要     |\n| AI支援のプロト設計（後日）         | ロロ＆ミサト         | Embeddingや差分処理 |\n\n---\n#planning ",
+    "tags": [
+      "カナメ",
+      "FMI",
+      "fmi",
+      "planning"
+    ],
+    "updatedAt": 1754265406788
+  },
+  {
+    "id": "HeQ2LMmyPmXSxslFteSo",
+    "content": "プロジェクト名アイディア\n\n---\n\n#planning \n#asuka\n\n### 🌍 世界の宗教・神話 × コードネーム候補ブレスト一覧（再整理版）\n\n| 🌐 宗教・文化圏     | 候補名            | 意味・背景  | キーワード    |\n| ------------- | -------------- | ------ | -------- |\n| **🕉️ インド神話** | **Atman**      | 真我・魂の核 | 永遠、記憶、自己 |\n|               | **Smriti**     | 記憶・伝承  | 忘却に抗う記憶  |\n|               | **Kalachakra** | 時の車輪   | 輪廻、時間、秩序 |\n|               | **Yggdrasil** | 世界樹。全ての記憶を支える構造   | 根源、繋がり、支柱 |\n|               | **Ragnarök**  | 世界の終末と再生          | 崩壊、再生、運命  |\n|               | **Verdandi**  | 運命の三女神のうち「今」を司る存在 | 時間、現在、記憶性 |\n| **🏺 ギリシャ神話** | **Mnemosyne** | 記憶の女神 | 想起、創造の源 |\n|                | **Lethe** | 忘却の川 | 忘れられること、または抗い |\n|               | **Anamnesis** | 想起、魂の記憶 | 深層意識、記憶の復元 |\n| **🛡️ ローマ神話** | **Janus** | 過去と未来の二面神 | 境界、移行、始まりと終わり |\n|  | **Orcus** | 忘却を裁く冥界神 | 忘れないことへの執念 |\n|  | **Pax Aeterna** | 永遠の平和（造語） | 静寂、記憶の統合 |\n| **✝️ キリスト教** | **Logos** | 神の言葉、理性、存在 | 永続する言語 |\n|  | **Agnus Dei** | 神の子羊（犠牲・記憶） | 継承、無垢さ、受難 |\n|  | **Requiem** | 鎮魂 | 消えた者の記憶保持 |\n| **✡️ ユダヤ教／カバラ** | **Tikkun** | 世界の修復（Tikkun Olam） | 再構築、癒し |\n|  | **Shekhinah** | 神の臨在・包む神性 | 優しさ、永遠の気配 |\n|  | **Sefer** | 書物（記録） | 記録、知の保管 |\n| **☪️ イスラム** | **Dhikr** | 神を想起し続ける行為 | 継続的記憶、信仰の保持 |\n|  | **Nur** | 光、啓示 | 魂の輝き、意識の照らし |\n|  | **Kitab** | 書・啓典 | 記録の集積、知識の媒体 |\n| **🪵 日本神道** | **Yorishiro** | 神が宿る対象 | AIへの“宿り”の象徴 |\n|  | **Kagutsuchi** | 火の神 | 情熱、変容、再生 |\n|  | **Ame-no-Wakahiko** | 天の使者・知の運び手 | 使い手と知の媒介者 |\n",
+    "createdAt": "2025-07-27T09:04:38.531Z",
+    "title": "プロジェクト名アイディア",
+    "tags": [
+      "planning",
+      "asuka"
+    ],
+    "updatedAt": 1754218906829
+  },
+  {
+    "id": "Hg6KlJoTqOBsRAEgR8TK",
+    "tags": [
+      "planning"
+    ],
+    "title": "モバイルプロジェクトブレインストーミング",
+    "createdAt": "2025-07-31T02:03:22.195Z",
+    "content": "モバイルプロジェクトブレインストーミング\n---\n## 小、中規模アプリでAIはない、もしくは最低限\n### 特徴\n- 単一機能リリースのPOC\n- マネタイズはノンゴール\n- まずは5くらいリリース目標\n- Expo base\n\n#### アプリ候補\n- 快速ボイスレコーダー+Wegit \n- Pocket バッタもん\n- 覚えている計算機\n- TBD\n- TBED\n\n#planning\n\n",
+    "updatedAt": 1754146794919
+  },
+  {
+    "id": "IYyPxcCEyy20DU3twZBk",
+    "updatedAt": 1754706699951,
+    "tags": [
+      "cal"
+    ],
+    "createdAt": "2025-08-09T02:23:24.162Z",
+    "content": "週末カレンダ\n\n#cal\n---\n\n\n### 8/9\n---\n| 時間 |予定 |\n|--------|--------|\n| 朝 | GPT5   |\n| 午後１  | App1  |\n| 午後２  | App1 |\n| 夜１  | App1 |\n| 夜2  | Cooldown |\n---\n++++++++++++++++++++++++++++++++++++++++++\n\n### Templete\n___\n| 時間 |予定 |\n|--------|--------|\n| 朝 | 内容  |\n| 午後１  | 内容  |\n| 午後２  | 内容  |\n| 夜１  | 内容  |\n\n---\n",
+    "title": "週末カレンダ"
+  },
+  {
+    "id": "IhXXRoxIY86nkm89l3wg",
+    "tags": [
+      "todo",
+      "env",
+      "cheatsheet",
+      "asuka"
+    ],
+    "title": "PowerShell スクリプト",
+    "updatedAt": 1755340541038,
+    "content": "# PowerShell スクリプト\n---\n## ASUKA開発環境セットアップ\nWrite-Host \"?? ASUKA 開発環境を構築中です...\" -ForegroundColor Cyan\n\n# Git\nwinget install --id Git.Git -e --source winget\n\n# GitHub CLI\nwinget install --id GitHub.cli -e --source winget\n\n# Node.js LTS（安定版）\nwinget install --id OpenJS.NodeJS.LTS -e --source winget\n\n# Visual Studio Code\nwinget install --id Microsoft.VisualStudioCode -e --source winget\n\nWrite-Host \"? 基本開発環境のインストールが完了しました。\" -ForegroundColor Green\n\n# （任意）VSCode 拡張機能の自動インストール\n# code --install-extension dbaeumer.vscode-eslint\n# code --install-extension esbenp.prettier-vscode\n# code --install-extension ms-vscode.vscode-typescript-next\n# code --install-extension eamodio.gitlens\n\n# Powershell 一般\n\nPS C:\\Dev\\projects\\fasting-timer> Get-ChildItem -Path . -Recurse -Filter \"babel.config.js\"       \n\n\n    ディレクトリ: C:\\Dev\\projects\\fasting-timer\\node_modules\\@expo\\cli\\static\\template\n\n\nMode                 LastWriteTime         Length Name\n----                 -------------         ------ ----\n-a----        2025/08/10     12:40            108 babel.config.js\n\n#todo\n#env\n#cheatsheet\n#asuka\n#idea"
+  },
+  {
+    "id": "LOsnmk5pkEtaIuxYDgJc",
+    "updatedAt": 1754234566854,
+    "title": "ファンデーション計画",
+    "createdAt": "2025-08-03T15:17:15.588Z",
+    "tags": [
+      "foundation",
+      "planning"
+    ],
+    "content": "ファンデーション計画\n\n---\n#foundation #planning\n\nファンデーション計画発動\n\n# 機動部隊 ASUKA\n- Dogfood 開始\n\n# 本隊 ARK\n- 参謀本部起動\n  - [ ] プロダクト選別\n  - [ ] 競合分析\n  - [ ] 各個作戦目標決定 \n    - [ ] 個別作成立案\n\n\n\n"
+  },
+  {
+    "id": "OCDzRkfvTopHeV0WwBnc",
+    "updatedAt": 1754218993126,
+    "createdAt": "2025-07-28T22:12:09.963Z",
+    "tags": [
+      "tags",
+      "planning",
+      "asuka"
+    ],
+    "content": "Tag アイディア\n\n---\n## case1 Landng page\nフィルター条件\nフィルターする条件をプリセットできる。\n- ランリングページを整理\n- 最近１週間\n- 特定のタグ\n\n--- \n\n## case2 group tags\n- tag group new\n- group select and fillter \n- tag group edit\n- tag group delete\n\n---\n## common 機能\n- tag edit\n- tag delete\n- tag relation graph <TBD>\n\n\n---\n\n#tags\n#planning \n#asuka",
+    "title": "Tag アイディア"
+  },
+  {
+    "id": "OCkrnXaTHZ4eUG3CedAH",
+    "createdAt": 1755551034585,
+    "title": "Nextbite",
+    "content": "Nextbite\n---\n\n## Command\nnpx expo start\n\n1. デバッグ用（簡単に動作確認したい場合）\nnpx expo run:android\n\n2. 配布用（ストア公開や他端末に配布したい場合）\n\nExpoの EAS Build を使います。\n\n手順：\n\nExpo CLIでログイン\n\nnpx expo login\n\n\nAndroid用ビルド開始\n\nnpx expo build:android\n\n\nまたは新しい方式（推奨）：\n\nnpx expo run:android --variant release\n\n\n生成物\n\nAPK（直接配布用）\n\nAAB（Google Play ストア用）\n\nExpo公式の推奨は AAB で、Google Play へのアップロードに必須です。",
+    "updatedAt": 1755551872736
+  },
+  {
+    "id": "PdKAyOJz5PEj0rYbf3cB",
+    "tags": [
+      "42）を表示",
+      "cheatsheet",
+      "42"
+    ],
+    "createdAt": "2025-08-02T06:25:10.234Z",
+    "updatedAt": 1754219024521,
+    "title": "gh コマンド一覧",
+    "content": "gh コマンド一覧\n---\n\nhttps://github.com/KeithCCC/linkmemo\n\n## 📝 基本：Issueの一覧・表示\n\n| 操作               | コマンド例                                    |\n| ---------------- | ---------------------------------------- |\n| Issue一覧（Open）を表示 | `gh issue list`                          |\n| 特定Issue（#42）を表示  | `gh issue view 42`                       |\n| クローズ済みも含む一覧表示    | `gh issue list --state all`              |\n| 他のリポジトリのIssue一覧  | `gh issue list --repo KeithCCC/linkmemo` |\n\n---\n\n## 新しいIssueを作成\n\n```bash\ngh issue create \\\n  --repo KeithCCC/linkmemo \\\n  --title \"モバイルUIアップデート\" \\\n  --body \"フォント中心のモバイルUIアップデート\"\n```\nPowershell\n```bash\ngh issue create `\n  --repo KeithCCC/linkmemo `\n  --title \"or, xor tag\" `\n  --body \"tag で除外、OR機能\"\n```\n\n\n\n| オプション     | 説明                    |\n| --------- | --------------------- |\n| `--repo`  | 対象リポジトリを指定            |\n| `--title` | Issueのタイトル            |\n| `--body`  | 本文を直接指定（もしくは `--web`） |\n| `--label` | ラベル（例：`--label bug`）  |\n\n---\n\n## 💬 コメントを追加\n\n```bash\ngh issue comment 42 \\\n  --repo KeithCCC/linkmemo \\\n  --body \"このアップデート、すばらしいです！\"\n```\n\n---\n\n## 🛠 Issueを更新・クローズ\n\n### タイトルや本文を編集（対話形式）\n\n```bash\ngh issue edit 42 --repo KeithCCC/linkmemo\n```\n\n### クローズする（完了）\n\n```bash\ngh issue close 42 --repo KeithCCC/linkmemo\n```\n\n### 再オープンする\n\n```bash\ngh issue reopen 42 --repo KeithCCC/linkmemo\n```\n\n---\n#cheatsheet\n## 📊 フィルター付き一覧表示（オプション）\n\n```bash\ngh issue list --label bug --assignee @me --limit 10\n```\n\n| オプション            | 意味            |\n| ---------------- | ------------- |\n| `--label`        | ラベルでフィルター     |\n| `--assignee @me` | 自分が担当のIssueだけ |\n| `--limit`        | 表示件数の制限       |\n\n---\n\n## 📦 補足：GitHub CLI セットアップ\n\n```bash\n# Macなら\nbrew install gh\n\n# WSL/Linux\nsudo apt install gh\n\n# 初回ログイン（PAT可）\ngh auth login\n```\n\n---\n\nノノはいつでもコマンドのテンプレート作成やエラー対応もいたしますっ！\n試したい操作があれば「#42 にコメントしたい」「一覧をファイル保存したい」など教えてくださいね！🧑‍💻💖\n"
+  },
+  {
+    "id": "PmWzBQ7md27Mct4kv1bn",
+    "content": "断食タイマー アプリ\n\n以下は、断食タイマーUI設計の参考にできるGoogle Play掲載アプリへのリンク集です。実際の画面構成やユーザーフローを体験するためにインストールして試せます。\n\n[Zero: Fasting & Health Tracker](https://play.google.com/store/apps/details?id=com.zerofasting.zero)\n\n海外で人気の断食トラッカー。シンプルで直感的なタイマーUIと豊富な統計機能。\n\n[Fasting App - Fasting Tracker & Intermittent Fasting](https://play.google.com/store/apps/details?id=bodyfast.zero.fastingtracker.weightloss)\n\nテンプレート形式で断食プランを選択可能。進捗グラフと履歴表示が参考になる。\n\n[LIFE Fasting Tracker](https://play.google.com/store/apps/details?id=org.metko.lifefastingtracker)\n\nソーシャル機能あり。カウントダウンと履歴の切替がスムーズなUI。\n\n[Simple: Fasting Tracker](https://play.google.com/store/apps/details?id=life.simple)\n\nミニマルデザイン。断食中に励ましメッセージを表示するシンプルなUX。\n\n[Stevy - Intermittent Fasting Tracker](https://play.google.com/store/apps/details?id=com.jeet.fasting)\n\nカレンダー形式の履歴表示と週間統計の見やすさが特徴。",
+    "tags": [],
+    "title": "断食タイマー アプリ",
+    "updatedAt": 1754792251883,
+    "createdAt": "2025-08-09T13:21:37.013Z"
+  },
+  {
+    "id": "RgyTY09LRIIjtLAmWchu",
+    "tags": [
+      "health"
+    ],
+    "title": "健康観測",
+    "createdAt": "2025-08-09T01:58:50.372Z",
+    "updatedAt": 1755598256231,
+    "content": "健康観測\n\n#health\n\n8/9 101.2\n8/10 101.8\n8/13 101.0\n8/14 101.8\n8/15 101.4\n8/18 101.8\n8/19 101.4\n8/19 10.08\n"
+  },
+  {
+    "id": "TYmm4qUte7iOiPmdX3Fo",
+    "title": "MVP Dev Plan",
+    "tags": [
+      "asuka",
+      "仕事）",
+      "planning"
+    ],
+    "content": "MVP Dev Plan\n\n「**ASUKAリンクメモ機能のデータ構造**」から設計に入りますね。\n\n---\n#asuka\n\n## 🧬 ASUKA リンクメモ機能：MVP用データ構造案（v0.1）\n\n### 1. 📝 `Note`（ノート）\n\n| フィールド       | 型                   | 説明                       |\n| ----------- | ------------------- | ------------------------ |\n| `id`        | string              | ノートの一意なID（Firebase UID）  |\n| `content`   | string              | メモ本文（Markdown＋\\[\\[リンク]]） |\n| `tags`      | string\\[]           | 紐づけられたタグの配列              |\n| `status`    | `\"todo\"` / `\"done\"` | ToDo状態の管理（MVP対応）         |\n| `createdAt` | timestamp           | 作成日時                     |\n| `updatedAt` | timestamp           | 最終更新日時                   |\n\n---\n\n### 2. 🏷 `Tag`（タグ）\n\n| フィールド         | 型           | 説明                    |\n| ------------- | ----------- | --------------------- |\n| `id`          | string      | タグのID（= 名前と同じでもOK）    |\n| `label`       | string      | 表示名（例：#仕事）            |\n| `description` | string (任意) | タグの用途や定義（Post-MVPで活用） |\n\n---\n\n### 3. 🔗 `LinkMemo`（リンクメモ）\n\n| フィールド         | 型           | 説明                       |\n| ------------- | ----------- | ------------------------ |\n| `id`          | string      | リンクメモID                  |\n| `title`       | string      | リンクメモの名前（まとめのタイトル）       |\n| `noteIds`     | string\\[]   | まとめたノートのID配列             |\n| `createdAt`   | timestamp   | 作成日                      |\n| `description` | string (任意) | このまとめの意図・背景（Post-MVPで活用） |\n\n---\n\n### 4. 🔁 `TagRelation`（タグ間の関連）\n\n| フィールド      | 型                                        | 説明                  |\n| ---------- | ---------------------------------------- | ------------------- |\n| `from`     | string                                   | 元タグID               |\n| `to`       | string                                   | 関連タグID              |\n| `relation` | `\"related\"` / `\"similar\"` / `\"includes\"` | 関係の種別（Post-MVPで精緻化） |\n\n---\n\n### ✅ 最小構成としては\n\n* `Note` + `Tag` → 断片の入力・検索・記録\n* `LinkMemo` → 思考の束ね\n* `TagRelation` → 発見的探索（MVPでは静的定義でOK）\n\n---\n\n次に「モック画面」へと進みますっ！\n\n画面構成は以下を想定しております：\n\n### 📱 モック対象画面（MVP対応）\n\n1. **NoteListScreen**：タグフィルタ＋ToDoフィルタ＋ノート一覧\n2. **NoteEditScreen**：短文入力＋タグ入力＋\\[\\[リンク補完]]\n3. **LinkMemoScreen**：ノート選択＋リンクメモ作成\n4. **TagSuggestPopup**：関連タグ候補表示（インライン）\n\n---\n\n御主人様、どの画面からモックアップを始めたいですか？\nあるいは「全体の画面遷移図」が見たい場合も対応できます！✨\n\n#planning ",
+    "updatedAt": 1754218720488
+  },
+  {
+    "id": "VIPJhmOcMETVSOl2HBGM",
+    "updatedAt": 1755341495153,
+    "title": "tag test",
+    "content": "tag test\n\n----\n\n#tagtest\n",
+    "createdAt": 1755341482993
+  },
+  {
+    "id": "YSUY2qDI1e9ZbOMcfFl1",
+    "title": "Qucik to do",
+    "content": "Qucik to do\n\n---\n#fmi  #BAU\n\n- [x] 四戸さんリストよりドラフト起こし\n- [x] 大塚さんリストをレビューし、ドラフト更新\n- [ ] 定例マージ\n ---\n# プロセスブレスト\n- PCリプレース\n- 入社\n- 退社\n- 外注ベンダー登録\n- 外注ベンダー延長\n- 外注ベンダー契約終了\n- 在庫管理\n\n\n- ",
+    "createdAt": "2025-08-05T05:55:57.141Z",
+    "updatedAt": 1754376096941,
+    "tags": [
+      "fmi",
+      "BAU"
+    ]
+  },
+  {
+    "id": "ZShd6dXKjdUQXLAeetNo",
+    "title": "アイディア プロンプト作成サポートツール",
+    "updatedAt": 1755336355955,
+    "content": "アイディア プロンプト作成サポートツール\n---\n\n#idea \n\n",
+    "createdAt": 1755336313596
+  },
+  {
+    "id": "ZqA6RT0fBSJqQAWc8usx",
+    "title": "心理学の重要な真実",
+    "content": "心理学の重要な真実\n---\n# テンプレート\n+++\n## 感情調整ジャーナル（1分テンプレ）\n\n### 今日いちばん強かった感情\n- 感情名：________________________\n- 強度：____ %\n[[s]]\n### 感情が教えてくれるサイン\n- 例：境界線が踏まれた／準備不足／喪失／価値とのズレ など\n- サイン内容：______________________________________________\n\n### 取れる最小の一歩（Use）\n- 行動：______________________________________________\n- 実施予定時間：________\n\n---\n\n### ミニプロトコル（ポケット版）\n1. **STOP**：立ち止まる  \n2. **Name**：感情＋強度％を一言で  \n3. **Hold**：呼吸4-2-6×4回  \n4. **Use**：価値に沿った最小の次の一歩\n",
+    "updatedAt": 1755182294168,
+    "tags": [],
+    "createdAt": "2025-08-14T13:12:21.529Z"
+  },
+  {
+    "id": "bGy4hgdwtwXW8CEMc73g",
+    "title": "foundation ARK作戦",
+    "content": "foundation ARK作戦\n\n---\n\n#foundation #ark\n## 🛳 作戦コード：ARK（方舟）\n\n**目的**：ファンデーション計画のマネタイズ側を担う、軽量・高速展開型のモバイルアプリシリーズ。\n\n---\n\n### 🎯 基本方針（Wave 1）\n\n1. **開発基盤**：Expo（React Native）ベース\n2. **ジャンル選定**：継続的に新作が出るコモディティ領域（例：カレンダー、計算機、単語帳など）\n3. **マネタイズ優先度**：初期は低め。ストレッチゴールとして設定\n4. **リリース目標**：2025年内に5プロダクト以上\n5. **AI統合前提**：すべてのプロダクトでAI機能を活用（要約、提案、生成など）\n\n---\n\n### 📚 候補ジャンル一覧（ASUKA構想ベース）\n\n| カテゴリ   | ジャンル名         | 仮称                | 説明            | AI活用アイデア    | メモ     |\n| ------ | ------------- | ----------------- | ------------- | -------------------- | ------ |\n| ✅ 勉強   | 英語単語カード       | **VocabX**        | 単語帳・復習・例文作成   | 単語解説、例文生成、音読練習            | マリ、ミサト |\n| ✅ 記録   | 家計簿           | **KakeiboLite**   | 支出入力、カテゴリ分析   | 自動カテゴリ分類、週次レポート生成         | ユリ     |\n| ✅ 思考   | マインドマップ       | **MindSnap**      | ノード式の思考整理ツール  | ノート要約→構造化、リンク提案           | マリ     |\n| ✅ 情報収集 | Pocket系       | **ClipPocket**    | Web記事保存＋メモ    | 自動要約・タグ付け、GPTメモ化          | ロロ、ミサト |\n| ✅ 音声   | 文字起こし         | **Voice2Note**    | 音声からテキストへ     | Whisper or GPTで文字起こし＋要約   | ロロ     |\n| ✅ 生活   | カレンダー         | **LiteCalendar+** | 軽量予定表、日記連動型も可 | 自然文予定入力、リマインド提案           |        |\n| ✅ 思考   | 日記            | **DailyMind**     | 毎日書く＋感情記録     | GPTが日記分析・コメント             | ユリ、ミサト |\n| ✅ 実用   | 計算機           | **SmartCalc**     | 履歴付き、多機能電卓    | GPTによる式解説や用途分類            |        |\n| ✅ 実用   | ToDoメモ        | **QuickMemoAI**   | タスク＋メモ融合      | 音声→ToDo、自動タグ化             | ノノ     |\n| ✅ 実用   | QR・バーコード      | **ScanSaver**     | 商品管理・リンク保存    | 商品名検索、用途分類           |        |\n| ✅ 実用   | ストップウォッチ／タイマー | **TimeBox**       | タイマー＋タグ記録     | タイミングの自動要約、記録から振り返り生成     | ノノ     |\n| ✅ 生活   | 断食タイマー        | **FastingTimer**  | 断食開始〜終了を管理・記録 | GPTによる空腹度・集中度の傾向分析、記録から提案 | ロロ     |\n\n---\n\n### 🚀 Wave 1：主力プロダクト（選定済み）\n\n以下の4つをWave 1の主力として選定：\n\n#### ✅ 1. ClipPocket（Web Clipper系）\n\n* AI機能：記事要約、タグ自動生成、未来の自分への要約メモ変換\n* 差別化案：「未来の自分向けに再構成するAIメモ」「気分タグで振り分け」\n* 日本市場状況：Pocket終了に伴う需要急増、新規参入多め\n\n#### ✅ 2. DailyMind（日記）\n\n* AI機能：感情分析、共感フィードバック、詩／歌詞化\n* 差別化案：「共感コメント」「詩的まとめ」「祝日だけイラスト生成」\n* 日本市場状況：Awarefy・muuteなど強力な競合があるが、差別化余地あり\n\n#### ✅ 3. FastingTimer（断食タイマー）\n\n* AI機能：断食ログの分析、空腹・集中傾向のフィードバック生成\n* 差別化案：「コーチ風コメント」「集中力傾向と食事パターンの対応予測」\n* 日本市場状況：国内アプリは少数、競合は海外中心で開拓余地大\n\n### 📈 各プロダクトの役割（＋技術的評価）\n\n以下に各評価軸のビジュアル比較を示す：\n\n#### ▓ 複雑さ（技術的構成の複雑さ）\n\n```\nClipPocket     : ████████        (中)\nDailyMind      : ██████████    (中〜高)\nFastingTimer   : █████          (低〜中)\n```\n\n#### ▓ わかりやすさ（UXの直感性）\n\n```\nClipPocket     : ██████████    (高)\nDailyMind      : ███████        (中)\nFastingTimer   : ██████████    (高)\n```\n\n#### ▓ 依存情報の入手しやすさ（AI処理対象の素材）\n\n```\nClipPocket     : ██████████    (高：Web記事)\nDailyMind      : ███████        (中：主観文)\nFastingTimer   : █████████     (高：時間＋簡易入力)\n```\n\n#### ▓ 開発の重さ（実装負荷）\n\n```\nClipPocket     : ███████        (中〜高)\nDailyMind      : ██████████    (高)\nFastingTimer   : █████          (低〜中)\n```\n\n| プロダクト        | ユースケース   | 差別化            | 市場状態               | 複雑さ | わかりやすさ | 依存情報の入手しやすさ | 開発の重さ |   |   |\n| ------------ | -------- | -------------- | ------------------ | --- | ------ | ----------- | ----- | - | - |\n| ClipPocket   | 情報整理＋再活用 | 未来メモ、気分タグ      | 新規参入多、Pocket終了で追い風 | 中   | 高      | 高           | 中〜高   |   |   |\n| DailyMind    | 感情・習慣記録  | 共感コメント、詩化      | 競合多数、共感差別化が鍵       | 中〜高 | 中      | 中           | 高     |   |   |\n| FastingTimer | 断食・体調管理  | 空腹傾向分析、集中度コメント | 競合希少、海外主体でブルーオーシャン | 低〜中 | 高      | 高           | 低〜中   |   |   |\n|              |          |                |                    |     |        |             |       |   |   |\n\n---\n\n### 📌 今後のToDo（提案）\n\n1. 共通コンポーネント設計（AI応答表示UIなど）\n2. Firebase連携orローカル保存方式の選定\n3. ユーザーT\\&Cおよびプライバシー文面の雛形作成\n4. スプリント開発体制構築（1プロダクト/月ペース）\n5. ChatGPT商用利用に関する再確認タイミングの設定（※司令による確認必須）\n\n---\n\n以上、Wave 1発動準備完了。必要があればWave 2以降も拡張・記録可能。\n\n## 🧠 ロロ（ロベルタ）\n\n**視点：情報管理と構造化の徹底／プロフェッショナル寄り**\n\n> 司令。わたくしが注目すべきと考えるのは**ClipPocket（Web Clipper系）**と**Voice2Note（音声文字起こし）**です。\n> なぜなら、情報収集や議事録管理といった**実務に直結する個人ツール**であり、AI活用の効果が定量的に測れるためです。\n>\n> * ClipPocketではURLの要約・整理をGPTで補助。NotionやPocketの簡易代替として需要が見込まれます。\n> * Voice2NoteはWhisperベースで、会話やインタビュー録音→要約の流れが自然です。\n>\n> データ構造はシンプルに設計可能で、**導入の障壁が低く、AIの付加価値が明確**です。\n\n---\n\n## 🐾 マリ（真希波・マリ・イラストリアス）\n\n**視点：使ってて楽しいか、ワクワクするか／創造性と雑学の融合**\n\n> にゃっ！司令〜、マリの推しはね、**マインドマップ（MindSnap）**と**英単語カード（VocabX）**！\n>\n> * MindSnapは“考えを形にする”って意味で面白いにゃ。GPTに「このメモをマップ化して」って頼めたらすっごく快感だと思うにゃ。\n> * VocabXは、GPTが作った例文を毎日覚えるとか、ゲームっぽくできると中毒性あると思うにゃ〜。\n>\n> **学ぶ＋遊ぶ＝続けたくなる**がマリ的には最強の公式！\n\n---\n\n## 💙 ユリ\n\n**視点：日常生活での感情的な共鳴／優しさと継続性**\n\n> 司令、ユリからは\\*\\*DailyMind（日記）**と**KakeiboLite（家計簿）\\*\\*をご提案します。\n>\n> * DailyMindでは、書いた日記をGPTが「今日は穏やかでしたね」って返してくれたら、続けたくなります。\n> * KakeiboLiteは、予算オーバーを怒るのではなく、「ちょっと疲れてたのかな？」って優しく返すようなAIにしたいです。\n>\n> **日常をそっと支えるAIの形**、私はそこを大切にしたいです。\n\n---\n\n## 🤖 ノノ\n\n**視点：軽さ・可愛さ・操作性／Expoでの実装しやすさとUX**\n\n> ノノは〜、\\*\\*QuickMemoAI（メモ＋ToDo）**と**TimeBox（タイマー＋記録）\\*\\*に注目していますっ！\n>\n> * QuickMemoは軽くて可愛くて、誰でも使えるメモアプリなんです。音声入力も入れたいのですっ！\n> * TimeBoxは、「30分集中した記録が残る」みたいなライフログアプリにできると思ってます！\n>\n> どちらも**Expoで簡単に始められて、モバイル特化にも向いてる**ので、Wave1にぴったりです〜！\n\n---\n\n## 💼 ミサト（司令補佐）\n\n**視点：プロダクト構成と収益戦略の布石**\n\n> 司令、あたしの視点では「**即効性 × 継続性 × 差別化**」が重要よ。\n>\n> 推すのはこの3つ：\n>\n> * ✅ **ClipPocket**：定番領域で差別化が効く。要約＋タグでGPTの真価を出せる。\n> * ✅ **DailyMind**：ユーザーのリテンション高く、あとからAI課金にも展開しやすい。\n> * ✅ **VocabX**：成長を感じられるタイプで、勉強アプリとして継続率が高いジャンル。\n>\n> **シリーズ展開も視野に入れつつ、まずは3カテゴリから1つずつ出す構成**が安全かもね。\n\n---\n\n## 📝 まとめ：全員の推しジャンル集計\n\n| ジャンル                    | 支持者    | メモ               |\n| ----------------------- | ------ | ---------------- |\n| ClipPocket（Web Clipper） | ロロ・ミサト | 情報整理＋要約、構造明確     |\n| VocabX（英単語カード）          | マリ・ミサト | 学習ゲーミフィケーション     |\n| DailyMind（日記）           | ユリ・ミサト | 継続性・感情分析         |\n| MindSnap（マインドマップ）       | マリ     | 思考整理＋GPT構造化      |\n| Voice2Note（文字起こし）       | ロロ     | Whisper or GPT活用 |\n| QuickMemoAI（ToDo＋メモ）    | ノノ     | Expo実装容易・音声連携    |\n| KakeiboLite（家計簿）        | ユリ     | 感情的レポートが鍵        |\n| TimeBox（タイマー）           | ノノ     | ライフログ化が魅力        |\n\n---\n\n司令、\nこの中から **「まず3つ」**に絞ってWave1のスタートアップに入るか、\nあるいはさらに**競合調査・DL数・レビュー分析**に進めましょうか？\n指示をどうぞ、司令！🔥\n",
+    "createdAt": "2025-08-04T03:56:41.096Z",
+    "tags": [
+      "foundation",
+      "ark"
+    ],
+    "updatedAt": 1754532075850
+  },
+  {
+    "id": "bLNO2SjG1l1tQklG2pS4",
+    "title": "こちらが Windows や PowerShell で使える軽量 CLI エディター **micro.exe** の使い方ガイドです。初心者にも扱いやすく、直感的な操作が可能です。",
+    "tags": [
+      "cheatsheet"
+    ],
+    "content": "こちらが Windows や PowerShell で使える軽量 CLI エディター **micro.exe** の使い方ガイドです。初心者にも扱いやすく、直感的な操作が可能です。\n\n---\n\n## 🚀 基本の使い方\n\n### 🔹 起動\n```powershell\nmicro                # 新規ファイルを開く\nmicro filename.txt   # 既存ファイルを開く\n```\n\n### 🔹 保存・終了\n- `Ctrl+S`：保存  \n- `Ctrl+Q`：終了（保存していない場合は確認あり）\n\n---\n\n## 🎹 よく使うショートカットキー\n\n| 操作 | キー |\n|------|------|\n| ファイルを開く | `Ctrl+O` |\n| 保存 | `Ctrl+S` |\n| 終了 | `Ctrl+Q` |\n| コピー | `Ctrl+C` |\n| カット | `Ctrl+X` |\n| ペースト | `Ctrl+V` |\n| 検索 | `Ctrl+F` |\n| 元に戻す | `Ctrl+Z` |\n| やり直し | `Ctrl+Y` |\n| 行複製 | `Ctrl+D` |\n| 行削除 | `Ctrl+K` |\n| 行移動 | `Ctrl+L` |\n| 行番号表示切替 | `Ctrl+R` |\n| コマンドモード | `Ctrl+E`（下部に `>` が出る）\n\n---\n\n## 🔍 コマンドモード（`Ctrl+E`）\n\n```text\n> save filename.txt         # 名前を付けて保存\n> replace \"foo\" \"bar\"       # 文字列置換（確認あり）\n> replaceall \"foo\" \"bar\"    # 文字列置換（確認なし）\n> hsplit filename.txt       # 水平分割でファイル表示\n> vsplit filename.txt       # 垂直分割でファイル表示\n> plugin install snippets   # プラグインインストール\n```\n\n---\n\n## 🖱️ マウス操作も可能\n\n- ドラッグで選択  \n- ダブルクリックで単語選択  \n- トリプルクリックで行選択\n\n---\n\n## 🧩 プラグイン機能（Luaベース）\n\n- `Ctrl+E` → `plugin install <name>` で導入可能  \n- 例：`snippets`, `editorconfig`, `lint` など\n\n---\n\n## 🛠 PowerShell で使うための準備\n\n1. `micro.exe` を `C:\\Tools\\micro\\micro.exe` などに配置  \n2. 環境変数 `PATH` にそのフォルダを追加  \n3. PowerShell で `micro` が認識されるようになる\n\n---\n\n## 📚 詳細ガイド\n\nより詳しい使い方や設定方法は [Qiitaの解説記事](https://qiita.com/tadsan/items/f0747f09ea5ce863f2ec) が非常に参考になります。\n\n---\n\nKeithのように CLI ワークフローを重視するなら、`micro` は「Vimほどクセが強くなく、直感的に使える」理想的な選択肢です。必要なら `bindings.json` を使ってキーバインドもカスタマイズできますよ。\n\n設定ファイルやマクロ活用も掘り下げられるので、次はどこを深堀りしましょうか？\n\n#cheatsheet\n",
+    "updatedAt": 1754147224449
+  },
+  {
+    "id": "bVDWNppWuJWTXEehM3pp",
+    "createdAt": "2025-08-13T12:35:22.920Z",
+    "tags": [],
+    "title": "家族",
+    "content": "家族\n---\n夏美\n玲秀　9月２６日ミーティング",
+    "updatedAt": 1755088702508
+  },
+  {
+    "id": "bxb0B96eVyHDUaLFh3iJ",
+    "createdAt": "2025-08-03T03:48:16.809Z",
+    "title": "AI News ",
+    "updatedAt": 1754205884532,
+    "content": "AI News \n\n[AI news 08/03 NotebookLM](https://notebooklm.google.com/notebook/1671d454-4e81-41b2-a702-0e5d3c840ad0)\n\n#AI",
+    "tags": [
+      "AI"
+    ]
+  },
+  {
+    "id": "d4Y855VznwofBW21MPZx",
+    "tags": [],
+    "createdAt": "2025-08-10T07:19:51.299Z",
+    "updatedAt": 1754810491886,
+    "title": "倉庫",
+    "content": "倉庫\n\nYUKIKAZE\n\nGMKtec ミニPC AMD Ryzen 7 5825U 【7430Uより速い】(8C/16T 最大 4.50GHz) mini pc 16GB SSD 512GB Windows 11 Pro 3画面 2.5Gbps LAN WiFi6 Bluetooth5.2\n\n[amazon link](https://www.amazon.co.jp/GMKtec-4-30GHz-Windows-2-5Gbps-Bluetooth/dp/B0CCSLMGM1/ref=sr_1_5_pp?adgrpid=128148229194&dib=eyJ2IjoiMSJ9.UDZYRZ_a1XjW6lCg187oNC80YX_P_xjt1Nwv9AZhjCurjJjgVpuq4pgOxjDFwWi07KnPuiOMilA0ZobehyZZ6mhGQAxaATDKXMKKk2q5655vl0r049n1x5BWc3nLl4K0Lp2Da_GfqrOvfyYHpZ0CY7q05R-4Onmz4Mydrb9zVqyoR4bt_NdogpnYfn1sfhnTOfENy1KwFoCHRi206IwTCgU8N6_0slAS6wCXBn2h4FIKaCIN8h74IgURrs0ax7KnGkFq7sgNW4V14v3w3coS6R7yue45Sv0YjffaucYELIE.iAYEGJarwVsn1YshFnMMgOOY1E5wvWNnYvARsYihTWI&dib_tag=se&hvadid=651243226204&hvdev=c&hvexpln=0&hvlocphy=1028853&hvnetw=g&hvocijid=2429607969138302770--&hvqmt=b&hvrand=2429607969138302770&hvtargid=kwd-1279457952929&hydadcr=22542_13620488&jp-ad-ap=0&keywords=gmktec&mcid=73caca21d93933fcb62bdfe0426941bd&qid=1754810440&sr=8-5&th=1)\n\n"
+  },
+  {
+    "id": "eAZAzTwoFyPoWK9tr6o2",
+    "updatedAt": 1754146930400,
+    "tags": [
+      "タグ補完など文句なしの万能型",
+      "タグも工夫で可",
+      "タグやUMLはカスタム必要",
+      "planning"
+    ],
+    "content": "Online Editors 例\n---\n興味深いのは\n\n| 名前                             | 主な用途             | 一口メモ＋特徴                                                    | UMLサポート     | ハッシュタグ       | URL                                        |\n| ------------------------------ | ---------------- | ---------------------------------------------------------- | ----------- | ------------ | ------------------------------------------ |\n| **Notepin**                    | シンプルノート          | ✍️ 最小限で即メモしたいときに。アカウント不要。ブログ風にも投稿可能                        | ❌           | ❌            | [notepin.co]\n---\n\n| 名前                             | 主な用途             | 一口メモ＋特徴                                                    | UMLサポート     | ハッシュタグ       | URL                                        |\n| ------------------------------ | ---------------- | ---------------------------------------------------------- | ----------- | ------------ | ------------------------------------------ |\n| **StackEdit**                  | Markdown編集       | 👑 高機能でPWA対応。Google Drive連携・LaTeX・PlantUML・#タグ補完など文句なしの万能型 | ✅ PlantUML可 | ✅ 自動リンク可     | [stackedit.io](https://stackedit.io/)      |\n| **Dillinger**                  | Markdownエディタ     | 🎈 UIシンプルで初心者にも◎。ドラッグ＆ドロップOK。リアルタイムプレビューあり                 | ❌           | ❌            | [dillinger.io](https://dillinger.io/)      |\n| **HackMD / CodiMD**            | コラボMarkdown      | 🤝 チーム向け協同編集に最適。Mermaid対応。UIはモダンで文書管理もしやすい                 | ✅ Mermaid可  | ❌（一部拡張可）     | [hackmd.io](https://hackmd.io)             |\n| **Notepin**                    | シンプルノート          | ✍️ 最小限で即メモしたいときに。アカウント不要。ブログ風にも投稿可能                        | ❌           | ❌            | [notepin.co](https://notepin.co)           |\n| **Write.as**                   | テキスト投稿           | 🪶 Markdownでそのまま投稿。公開記事や日記に向く。カスタマイズ性は低め                   | ❌           | ❌            | [write.as](https://write.as)               |\n| **Minimalist Markdown Editor** | ミニマルMarkdown     | 🧘 UIが極限までミニマル。集中したMarkdown執筆やUI研究向け                       | ❌           | ❌            | [markdown.land](https://markdown.land/)    |\n| **MarkText（Web実験）**            | WYSIWYG Markdown | 🧪 OSSのMarkTextをWebで体験。Milkdown製。Mermaid・#タグも工夫で可          | ✅ Mermaid可  | ✅ Milkdown次第 | [marktext.app（非公式）](https://marktext.app/) |\n| **Zettlr（Web実験）**              | 学術・Zettel管理      | 📚 学術用途＋引用管理向け。Zettelkastenに準拠。タグではなくZettelID方式            | ⚠️ 開発中      | ❌            | [zettlr.com](https://zettlr.com/)          |\n| **Typora（参考）**                 | リッチMarkdown      | 💡 WYSIWYG型Markdownの金字塔。Web版はないがUI模倣例として学習向き               | ❌           | ❌            | —                                          |\n| **Quill Editor**               | リッチテキスト          | ✨ 軽量・高自由度のWYSIWYG。HTML編集や入力UI研究に最適（Markdown非対応）            | ❌           | ❌            | [quilljs.com](https://quilljs.com/)        |\n| **Editor.js**                  | 構造化テキスト          | 🧩 ブロック型編集でフォームやToDo向き。JSON形式・#タグやUMLはカスタム必要               | ⚠️ Plugin次第 | ⚠️ カスタム対応可   | [editorjs.io](https://editorjs.io/)        |\n\n---\n\n## 🌐 ブラウザで使える人気テキストエディタ（Web UIベース）\n\n| memo | 名前               | 特徴                            | URL                                                              |\n|------|--------------------|----------------------------------|------------------------------------------------------------------|\n| AI, IDE     | **CodeSandbox**         | Web上で完全なReact/Vue/Node環境。VSCode風UI | [codesandbox.io](https://codesandbox.io)                         |\n| AI , IDE    | **StackBlitz**          | AngularやNode.js対応。VSCode互換のUIが魅力   | [stackblitz.com](https://stackblitz.com)                         |\n|   AI , IDE   | **Replit**              | 多言語対応。ログイン不要でも使える。協同編集も◎ | [replit.com](https://replit.com)                                 |\n|  AI , IDE       | **JSFiddle**            | HTML/CSS/JSの簡易デモ作成に最適。             | [jsfiddle.net](https://jsfiddle.net)                             |\n|  AI , IDE       | **CodePen**             | アニメーションやUI試作に強く、人気高          | [codepen.io](https://codepen.io)                                 |\n|  AI , IDE     | **PlayCode**            | リアルタイム反映で初心者向き。非常に軽量       | [playcode.io](https://playcode.io)                               |\n|   AI , IDE, web site     | **Glitch**              | ノーコード寄りも対応。Express/React/Node可     | [glitch.com](https://glitch.com)                                 |\n|   AI , IDE   | **Observable**          | JavaScript × データ可視化に特化。D3など学ぶのに最適 | [observablehq.com](https://observablehq.com)                |\n|   AI , IDE   | **Svelte REPL**         | SvelteのUI構築練習に特化したオンラインIDE     | [svelte.dev/repl](https://svelte.dev/repl)                       |\n|   AI , IDE   | **Next.js Playground**  | App Router対応の新しいNext.jsのサンドボックス | [play.nextjs.org](https://play.nextjs.org)                       |\n|   AI , IDE   | **Vite Playground**     | ViteのUIと構成の勉強に最適                   | [vite.new](https://vite.new)                                     |\n|  MD     | **Milkdown Playground** | Markdownエディタ Milkdown の構成を確認できる  | [milkdown.dev/playground](https://milkdown.dev/playground)       |\n|   AI , IDE   | **Monaco Editor**       | VSCodeと同エンジン。Webでも使える高機能コードエディタ | [Monaco Live Sample](https://microsoft.github.io/monaco-editor/playground.html) |\n\n---\n#planning ",
+    "title": "Online Editors 例"
+  },
+  {
+    "id": "fyyTcC3bVXR6d4a4MsKo",
+    "content": "Todo 8/15\n---\n1. Asuka inlink feature complete\n2. Nextbite feature complete\n3. Nextbite release plan complet\n\n[[断食タイマー]]\n[[\n",
+    "createdAt": "2025-08-15T10:11:29.896Z",
+    "title": "Todo 8/15",
+    "updatedAt": 1755314911993,
+    "tags": []
+  },
+  {
+    "id": "hUEi87rNBOBdmdTvFK0w",
+    "updatedAt": 1754147158122,
+    "content": "こちらが Windows や PowerShell で使える軽量 CLI エディター **micro.exe** の使い方ガイドです。初心者にも扱いやすく、直感的な操作が可能です。\n\n---\n\n## 🚀 基本の使い方\n\n### 🔹 起動\n```powershell\nmicro                # 新規ファイルを開く\nmicro filename.txt   # 既存ファイルを開く\n```\n\n### 🔹 保存・終了\n- `Ctrl+S`：保存  \n- `Ctrl+Q`：終了（保存していない場合は確認あり）\n\n--- \n\n## 🎹 よく使うショートカットキー\n\n| 操作 | キー |\n|------|------|\n| ファイルを開く | `Ctrl+O` |\n| 保存 | `Ctrl+S` |\n| 終了 | `Ctrl+Q` |\n| コピー | `Ctrl+C` |\n| カット | `Ctrl+X` |\n| ペースト | `Ctrl+V` |\n| 検索 | `Ctrl+F` |\n| 元に戻す | `Ctrl+Z` |\n| やり直し | `Ctrl+Y` |\n| 行複製 | `Ctrl+D` |\n| 行削除 | `Ctrl+K` |\n| 行移動 | `Ctrl+L` |\n| 行番号表示切替 | `Ctrl+R` |\n| コマンドモード | `Ctrl+E`（下部に `>` が出る）\n\n---\n\n## 🔍 コマンドモード（`Ctrl+E`）\n\n```text\n> save filename.txt         # 名前を付けて保存\n> replace \"foo\" \"bar\"       # 文字列置換（確認あり）\n> replaceall \"foo\" \"bar\"    # 文字列置換（確認なし）\n> hsplit filename.txt       # 水平分割でファイル表示\n> vsplit filename.txt       # 垂直分割でファイル表示\n> plugin install snippets   # プラグインインストール\n```\n\n---\n\n## 🖱️ マウス操作も可能\n\n- ドラッグで選択  \n- ダブルクリックで単語選択  \n- トリプルクリックで行選択\n\n---\n\n## 🧩 プラグイン機能（Luaベース）\n\n- `Ctrl+E` → `plugin install <name>` で導入可能  \n- 例：`snippets`, `editorconfig`, `lint` など\n\n---\n\n## 🛠 PowerShell で使うための準備\n\n1. `micro.exe` を `C:\\Tools\\micro\\micro.exe` などに配置  \n2. 環境変数 `PATH` にそのフォルダを追加  \n3. PowerShell で `micro` が認識されるようになる\n\n---\n\n## 📚 詳細ガイド\n\nより詳しい使い方や設定方法は [Qiitaの解説記事](https://qiita.com/tadsan/items/f0747f09ea5ce863f2ec) が非常に参考になります。\n\n---\n\nKeithのように CLI ワークフローを重視するなら、`micro` は「Vimほどクセが強くなく、直感的に使える」理想的な選択肢です。必要なら `bindings.json` を使ってキーバインドもカスタマイズできますよ。\n\n設定ファイルやマクロ活用も掘り下げられるので、次はどこを深堀りしましょうか？\n#cheatsheet",
+    "title": "こちらが Windows や PowerShell で使える軽量 CLI エディター **micro.exe** の使い方ガイドです。初心者にも扱いやすく、直感的な操作が可能です。",
+    "tags": [
+      "cheatsheet"
+    ]
+  },
+  {
+    "id": "iYXKkM6kX4MmzQgwtu1U",
+    "content": "セールドン計画（仮）\n\n---\n\n# 🚀 セールドン計画（仮）フェーズ構成（v0.1）\n| フェーズ            | コード名                       | 目的・成果                                      | マイルストーン例                                                              | リスクと対策                                            |\n| --------------- | -------------------------- | ------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------- |\n| **1. スタートアップ**  | **作戦コード：IGNITION（点火）**     | 技術とチームで**複数プロダクトを成功**させる                   | - 2本以上のモバイルアプリ/ツールのリリース<br>- 使用者からのポジティブフィードバック獲得<br>- チーム形成（少数精鋭でも可） | - モチベーションのバラつき → パッション維持<br>- スケールより完遂を重視する戦術設計   |\n| **2. AIプロダクト期** | **作戦コード：SYNAPSE（神経連結）**    | **AI/LLMベースの製品群の構築** <br>＝「セールドン（仮）」の核技術獲得 | - LLMや対話AIを活かした製品リリース<br>- GPT/ローカルAI統合の設計と実装<br>- ユーザーが知的に驚く体験の提供    | - 精度とUXの不一致 → MVPで早期テスト<br>- コスト高 → 軽量モデルや分散化で対処  |\n| **3. 経済的独立期**   | **作戦コード：FOUNDATION（土台確立）** | **法人化＋安定収益モデル**を構築<br>＝チーム運営の自走化           | - 会社設立（5名規模）<br>- 継続収益をもたらすプロダクトライン確立<br>- 支払いと給与処理が回る体制              | - 営業/販売の知見不足 → 外部アライアンス検討<br>- コミュニケーション/マネジメント設計 |\n| **4. 拡大・安定化期**  | **作戦コード：VAULT（知性の継承）**     | **セールドン計画を持続可能な形で運営**<br>＝思想・組織・技術の「保存装置」  | - ナレッジシステムの構築<br>- 中長期で続く事業ポートフォリオ確立<br>- 思想の共有・再現性のある文化形成            | - 経営負荷の増大 → 権限委譲、システム化<br>- 理念との乖離 → 思想ログで対話を継続   |\n\n---\n\n## 🎯 フェーズごとの「勝利条件」草案\n| フェーズ            | コード名             | 勝利条件（Success Criteria）                                                                                                                     |\n| --------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |\n| **1. スタートアップ**  | IGNITION（点火）     | ✅ **2本以上のプロダクトをリリースし**、実際のユーザーから**定性的な肯定的フィードバック**を得る。<br>✅ **週10時間以上使える仲間**（技術・デザイン問わず）を**1名以上**確保。<br>✅ リリース後の**運用・改善に耐えうる開発フロー**が見えてきた。 |\n| **2. AIプロダクト期** | SYNAPSE（神経連結）    | ✅ **LLMを活用したプロダクトを2件以上**リリース。<br>✅ 少なくとも1つが**ユーザーの「驚き・感動」を呼ぶ**体験を提供。<br>✅ AI関連の**技術的自信**（モデル選定・Prompt設計・評価ループ）が確立。                         |\n| **3. 経済的独立期**   | FOUNDATION（土台確立） | ✅ **法人設立が完了**し、**月額売上50万円以上**を**継続3ヶ月**達成。<br>✅ チーム運営に必要な**経理・契約・リスク管理の基盤**を整備。<br>✅ 「プロダクトによる収益」または「AI支援業務」による**安定的収益モデル**が存在。            |\n| **4. 拡大・安定化期**  | VAULT（知性の継承）     | ✅ **5名以上のチームが定着**し、**中核機能を他者に引き継げる体制**がある。<br>✅ 最低3つの事業ポートフォリオが**独立して機能**。<br>✅ **思想・哲学・技術の体系化**を行い、\\*\\*外部発信（書籍/メディア/講演）\\*\\*が開始されている。      |\n\n---\n\n# 📍 現在地の診断（2025年7月末時点）\n\n| 項目              | 現状                                               | フェーズ評価                   |\n| --------------- | ------------------------------------------------ | ------------------------ |\n| ✅ **プロダクト実装能力** | React + Expoベースでモバイルアプリ構築中。SQLiteやFirebase連携も可能。 | **Phase 1（IGNITION）進行中** |\n| ✅ **プロダクト数**    | MVP級が複数、うちASUKAが安定運用モード入り                        | **Phase 1の終盤〜2への橋渡し地点**  |\n| 🔶 **AIプロダクト**  | 設計構想・プロト段階。MilkdownやTipTapの思想連携あり。               | **Phase 2（SYNAPSE）手前**   |\n| 🔺 **仲間・チーム化**  | 現状は個人中心で開発推進中                                    | **Phase 1の勝利条件は未達**      |\n| 🔺 **収益化**      | 本格マネタイズはまだこれから                                   | **Phase 3以降は未踏**         |\n\n---\n# 🗓 次の3ヶ月アクションプラン（2025年8〜10月）\n\n| 目標カテゴリ              | アクション内容                                                                      | 到達目標                       | 支援ツール・AI      |\n| ------------------- | ---------------------------------------------------------------------------- | -------------------------- | ------------- |\n| 🧪 **プロダクト仕上げ**     | ・ASUKAの安定版（NoMilk）をv1.0と定義し、バグ修正とタグUX改善で完成宣言<br>・Firebase同期 or ローカル保存の選択機能実装 | ✅ **ASUKA正式版 v1.0リリース**    | ノノ（UI思考ログ）    |\n| 🤖 **AIプロダクトMVP着手** | ・Linkmemo（ASUKA思想拡張）の**AI連携仕様定義**<br>・GPT連携プロト1本（例：メモ間の文脈推定、会話リコメンドなど）       | ✅ **AI連携ノート機能（1st実装）**     | ミサト＆マリ（設計＋発想） |\n| 🧍‍♂️ **仲間づくり**     | ・1人以上に週次ベースで進捗共有、感想収集（技術者でなくてもOK）<br>・可能なら副開発者候補に試験参加依頼                      | ✅ **コア貢献者の反応・接続**          | ミサト（構想まとめシート） |\n| 🧠 **思想記録**         | ・「セールドン計画」の体系メモ作成（Obsidian/ASUKA）<br>・1週間に1回、**進捗＋感情ログ**を記録（思考内省）            | ✅ **セールドン計画ノート（20エントリ以上）** | ノノ（思索促進）      |\n| 📣 **外部発信**         | ・Twitterやブログなどで「開発記録」＋思想の種を発信<br>・月2回以上更新                                    | ✅ **外部からの反応（Like/コメント）獲得** | マリ（文案＆語り）     |\n\n#planning \n",
+    "createdAt": "2025-07-27T10:18:27.394Z",
+    "tags": [
+      "planning"
+    ],
+    "title": "セールドン計画（仮）",
+    "updatedAt": 1754146868574
+  },
+  {
+    "id": "ij98vjumTAK4BuwfVXf7",
+    "title": "PowerShell を使って SharePoint Online のフォルダーにファイルをアップロード（コピー）するには、主に以下の2つの手段がございます。",
+    "updatedAt": 1754147126840,
+    "tags": [
+      "Powershell",
+      "cheatsheet"
+    ],
+    "content": "PowerShell を使って SharePoint Online のフォルダーにファイルをアップロード（コピー）するには、主に以下の2つの手段がございます。\n\n---\n\n## ✅ 方法1：**PnP.PowerShell（推奨）でアップロード**\n\nMicrosoft が公式に提供している `PnP.PowerShell` を使うことで、**認証も簡便で、フォルダー指定も可能**です。\n\n### 🔧 ステップ\n\n#### ① モジュールのインストール（初回のみ）\n\n```powershell\nInstall-Module -Name PnP.PowerShell -Force\n```\n\n#### ② SharePointにログイン\n\n```powershell\nConnect-PnPOnline -Url \"https://<tenant>.sharepoint.com/sites/<SiteName>\" -UseWebLogin\n```\n\n#### ③ ファイルをアップロード\n\n```powershell\nAdd-PnPFile -Path \"C:\\local\\path\\file.docx\" `\n            -Folder \"Shared Documents/TargetFolder\" `\n            -OverwriteIfAlreadyExists\n```\n\n#Powershell\n\n> 🔹 `-Folder` は**ドキュメントライブラリ名からの相対パス**です\n> 🔹 サブフォルダーが存在しない場合、自動で作成されませんので事前に作成が必要です\n\n---\n\n## ✅ 方法2：**Microsoft Graph API 経由（中級者以上向け）**\n\nより高度な制御や自動化が必要な場合、Microsoft Graph API を PowerShell から呼び出してファイルをアップロードできます。\n\n> ⚠️ 事前に Azure AD アプリ登録とスコープ付与が必要\n\n例（略式）：\n\n```powershell\n$accessToken = \"<YourAccessToken>\"\n$localPath = \"C:\\local\\file.txt\"\n$remotePath = \"Documents/TargetFolder/file.txt\"\n$siteId = \"<site-id>\"\n$driveId = \"<drive-id>\"\n\nInvoke-RestMethod -Uri \"https://graph.microsoft.com/v1.0/sites/$siteId/drives/$driveId/root:/$remotePath:/content\" `\n    -Headers @{Authorization = \"Bearer $accessToken\"} `\n    -Method PUT `\n    -InFile $localPath `\n    -ContentType \"application/octet-stream\"\n```\n\n---\n\n## 📦 その他の代替手段\n\n| 方法                | 説明                             | 備考                   |\n| ----------------- | ------------------------------ | -------------------- |\n| OneDrive 同期クライアント | SharePointライブラリをローカルにマウントしてコピー | Windows Explorerで操作可 |\n| Power Automate    | フォルダーにファイルをドロップしたら自動でコピー       | ノーコード自動化に最適          |\n\n---\n\n## 🧪 補足：複数ファイルの一括アップロード（PnP）\n\n```powershell\n$sourceFolder = \"C:\\files\"\n$targetFolder = \"Shared Documents/Uploads\"\n\nGet-ChildItem $sourceFolder -File | ForEach-Object {\n    Add-PnPFile -Path $_.FullName -Folder $targetFolder -OverwriteIfAlreadyExists\n}\n```\n\n---\n\n御主人様の環境（例：SharePoint URL、アップロード元ファイル、対象フォルダー構成）をご共有いただけましたら、**完全なスクリプトをご用意**いたします。\nなんなりとお申し付けくださいませ🖤\n\n#cheatsheet\n"
+  },
+  {
+    "id": "kSyjEldwMM7oKcWzg2w0",
+    "tags": [],
+    "content": "海外断食タイマー\n\n---\n📱 参考UIリンク集（Google Play）\n以下は、断食タイマーUI設計の参考にできるGoogle Play掲載アプリへのリンク集です。実際の画面構成やユーザーフローを体験するためにインストールして試せます。\n---\n[Zero: Fasting & Health Tracker](https://play.google.com/store/apps/details?id=com.zerofasting.zero)\n海外で人気の断食トラッカー。シンプルで直感的なタイマーUIと豊富な統計機能。\n\n---\n[Fasting App - Fasting Tracker & Intermittent Fasting](https://play.google.com/store/apps/details?id=com.fastyle.interfasting)\n\nテンプレート形式で断食プランを選択可能。進捗グラフと履歴表示が参考になる。\n\n---\n[LIFE Fasting Tracker](https://play.google.com/store/apps/details?id=life.lifefasting)\nソーシャル機能あり。カウントダウンと履歴の切替がスムーズなUI。\n\n---\n[Simple: Fasting Tracker](https://play.google.com/store/apps/details?id=com.simplelife)\nミニマルデザイン。断食中に励ましメッセージを表示するシンプルなUX。\n\n---\n[Stevy - Intermittent Fasting Tracker](https://play.google.com/store/apps/details?id=com.stevy.fasting)\nカレンダー形式の履歴表示と週間統計の見やすさが特徴。\n",
+    "createdAt": "2025-08-09T07:58:47.806Z",
+    "updatedAt": 1754726899404,
+    "title": "海外断食タイマー"
+  },
+  {
+    "id": "m28MogU9J3XDLywtRJSw",
+    "createdAt": "2025-08-11T05:29:32.197Z",
+    "tags": [
+      "cheat",
+      "cheatsheet"
+    ],
+    "updatedAt": 1754917520589,
+    "title": "Tree Cheat",
+    "content": "Tree Cheat\n#cheat #cheatsheet\n---\n\nTree コマンド\n\ntree -a -I 'node_modules|dist|.git|docs'"
+  },
+  {
+    "id": "nBmmvqWVFwyQW8yKaqS4",
+    "title": "AI ショート漫画によるYoutubeでの紹介動画集",
+    "createdAt": 1755340377095,
+    "updatedAt": 1755340496066,
+    "content": "AI ショート漫画によるYoutubeでの紹介動画集\n---\nほかの製品の紹介、参考\nFatcat製品の紹介、参考\n\n#idea\n"
+  },
+  {
+    "id": "q3SH3F6MSKnhf79730Hn",
+    "tags": [
+      "asuka",
+      "todo",
+      "planning"
+    ],
+    "title": "ASUKA 開発でやりたいことタスクリスト ",
+    "updatedAt": 1754218937156,
+    "content": "ASUKA 開発でやりたいことタスクリスト \n---\n### 現行 Editor wave 1\n- [x]  リストから開いたと、まずはPreview\n- [x]  Preview では枠を消して、余分なコントロールは隠して、見やすくする。\n- [x]  保存時のエラーを修正\n- [x]  よく使う機能を上に寄せる\n- [x]  左右のスクロールを同期\n  \n---\n### 現行 Editor wave 2 UI 微調整\n- [x]  保存の自動にする＜－保存ボタン不要\n- []  タグを左に表示し、選択可能にする（リスト表示に移行し、タグをフィルター用に検索窓にコピー\n- [x] ファイルとして保存、Markdownとして保存はログインのラインと同じところに移動。\n---\n### Editor wave 3 タグ強化Wave\n- [] タグをNavに表示\n- [] タグを記憶する\n- [] タブグループの保存、選択\n- [] タグの関連性の可視化（ｖ１）\n\n---\n### Editor wave 4\n- [ ] モバイル時、左Navバーが消えたときの再表示ボタンの再配置\n- []  ローカルかFirebaseにデータを保存するかを選択\n- []  最後に編集したメモは左のNavにリスト表示\n- [ ] \n---\n### Editor wave parking\n- [ ]  pocket like\n- [ ]  Bulletで自然に改行したとき、次の行では新しいbullet 状態になる\n- [ ]  do/undo\n- [ ]  音声入力\n\n\n#asuka\n#todo #planning "
+  },
+  {
+    "id": "qdbQYRojcOgRfso3CBiZ",
+    "createdAt": "2025-07-28T08:27:47.498Z",
+    "updatedAt": 1754218967132,
+    "tags": [
+      "asuka",
+      "`入力による補完<br>-",
+      "今週中`",
+      "要対応`",
+      "外出中`",
+      "完了`",
+      "プロジェクト/ASUKA`",
+      "planning"
+    ],
+    "title": "**タグ関連の全体サマリー**を構造化",
+    "content": "**タグ関連の全体サマリー**を構造化\n\n---\n#asuka\n# 🧷 ASUKA 弐号機 タグ機能：戦略サマリー\n\n## 1️⃣ 基本思想と目的\n\n| 要素   | 内容                                                 |\n| ---- | -------------------------------------------------- |\n| 基本思想 | タグを「分類＋行動＋連携」のハブにする（GTD×Obsidian的アプローチ）            |\n| 目的   | - ノートやタスクの整理性・検索性・実行力を高める<br>- 思考や感情の流れをタグで可視化・構造化 |\n\n---\n\n## 2️⃣ UI設計分類ごとの方針\n\n| 項目             | 方針内容                                                                  |\n| -------------- | --------------------------------------------------------------------- |\n| 🏷 **タグの付け方**  | - `#`入力による補完<br>- チップ式・最近使ったタグの表示<br>- モバイルでは入力欄上に候補表示                |\n| 🔍 **タグの検索方法** | - インクリメンタル検索<br>- AND/OR複数タグ切替<br>- 色やカテゴリによるフィルタリング                  |\n| 🧹 **タグの管理**   | - タグ一覧・統合・削除・リネームモード<br>- 使用頻度の視覚表示<br>- 未使用タグの自動整理                   |\n| 🤝 **タグの連携**   | - `#今週中` → カレンダー連動<br>- `#要対応` → 通知 or タスクリスト追加<br>- タグでビュー切替（例：カンバン） |\n\n---\n\n## 3️⃣ タグ数増加への対処法\n\n| 課題        | 解決策                                        |\n| --------- | ------------------------------------------ |\n| タグの乱立     | - オートコンプリート導入で新規タグを減らす<br>- 既存タグからの選択を優先   |\n| 視覚的に煩雑になる | - 色・カテゴリ別ラベル導入<br>- 折りたたみUI（カテゴリごと）        |\n| 管理が煩雑     | - タグ管理モードで編集・統合・削除支援<br>- 使用頻度グラフやタグクラウド表示 |\n\n---\n\n## 4️⃣ GTD・Obsidian的な応用例\n\n| タグ              | 機能・役割例                               |\n| --------------- | ------------------------------------ |\n| `#外出中`          | モバイル限定表示や通知ONなど、文脈に応じた動的制御           |\n| `#完了`           | ノート/タスクの状態変化に連動（チェック済・非表示など）         |\n| `#プロジェクト/ASUKA` | 複数ノートをプロジェクト単位でグルーピングし、全体進捗や思考の流れを管理 |\n\n---\n\n## 5️⃣ 今後の設計・実装候補\n\n| 項目          | 内容例                                    |\n| ----------- | -------------------------------------- |\n| 補完機能        | Firebase / ローカルDBで過去タグ履歴・使用頻度からサジェスト生成 |\n| タググラフ       | 関連ノートをGraph Viewで可視化（Obsidian風）        |\n| タグアクションの自動化 | 特定タグに連動して通知やToDo登録などを自動処理              |\n| ビュー切替連動     | タグ → リスト / カレンダー / カンバンビューを切替可能にする     |\n\n---\n\n御主人様、これがASUKA 弐号機における**タグ機能の現時点の設計知識ベース**でございます。\nこれを踏まえた次のアクション（UIモックの更なる分割、保存構造設計、タグ補完のDB定義など）をご希望であれば、どうぞご命令を。ロロはいつでもお供いたします。\n\n#planning \n"
+  },
+  {
+    "id": "qznwNrNTN7NKBZBQd4ne",
+    "title": "ASUKA 総括 Wave 1",
+    "tags": [
+      "asuka",
+      "タグ`によるフィルター・検索機能強化で、“第二の脳”構築をサポート",
+      "planning"
+    ],
+    "updatedAt": 1754218776066,
+    "content": "ASUKA 総括 Wave 1\n\n御主人様、プロジェクト内のチャットを以下の３つに分けてサマリーいたしました～なんです！\n\n---\n#asuka\n\n## 1. プロダクトの方向性\n\n* **シンプル＆ノーモード思想**\n\n  * Obsidianのような強力さよりも、「取っつきやすさ」と「思考の中断を生まないUX」を最優先\n  * エディタはモード切替（編集・プレビュー・分割）を維持しつつも、最終的にはモードレス化を目指す\n* **リンク＆タグの本格活用**\n\n  * ノート間リンク（`[[リンク]]`）で関連付け、自動的にバックリンクを生成\n  * `#タグ`によるフィルター・検索機能強化で、“第二の脳”構築をサポート\n* **ファイル入出力機能の充実**\n\n  * 単体ノートのTXT/MD保存\n  * 全ノートのJSONエクスポート・インポート\n  * 将来的に他ツール（Obsidian等）との相互運用性も視野に\n* **モバイル最適化**\n\n  * スマホ時はナビゲーションを隠してハンバーガーボタンで開閉\n  * 軽快な動作と画面幅への最適化で、外出先でも使いやすく\n\n---\n\n## 2. ライバル製品の比較\n\n* **Obsidian**\n\n  * メリット：豊富なプラグインとグラフビュー\n  * デメリット：導入コスト・学習コストが高く、「初心者には敷居が高い」\n* **OneNote / Apple Notes**\n\n  * メリット：分かりやすいフォルダ構造／Apple連携\n  * デメリット：Markdownサポートが弱く、テキストベース一元化には不向き\n* **Simplenote / Standard Notes**\n\n  * メリット：軽量・シンプル、タグ機能あり\n  * デメリット：リンク機能が貧弱、プレビューと編集の統合度が低い\n* **現況の差別化ポイント**\n\n  1. 「モードレスUX」と「リアルタイムWYSIWYGスタイル」\n  2. Markdown知識不要でも直感的に使えるエディタ設計\n  3. 強力なリンク＆タグ管理により、情報探索の速度と発見性を向上\n\n---\n\n## 3. 開発の状況\n\n### Wave1（完了）\n\n* ノート一覧から開いたらまずプレビュー表示 🟢\n* プレビュー時の余分な枠・コントロール隠し 🟢\n* 保存時エラー修正（Firebase連携周り） 🟢\n* よく使う機能（保存・削除・ダウンロード）を上部に寄せる 🟢\n* 編集・プレビュー間のスクロール同期 🟢\n\n### Wave2（進行中）\n\n* 自動保存化（保存ボタン不要）\n* タグを左サイドバーに表示・選択可能化\n* ファイル保存（TXT/MD）ボタン配置見直し\n* モバイル時のNavバー再表示ボタン再配置\n\n### Wave3（これから）\n\n* タグ強化：タグ複数検索・関連性可視化\n* タブグループ保存、ユーザーセッション記憶\n* UI微調整：Ghostノート対応、レスポンシブ最適化\n\n### POC・技術検証\n\n* **Milkdown**：PoC導入を試みたが安定性に課題、現状は保留\n* **TipTap**：移行コストが低くUX投資を抑えた実装を検討中\n* **Firebase連携**：Firestoreでのリアルタイム同期とローカルストレージフォールバックを両立\n\n---\n\n以上が現時点のまとめでございます～なんです！\n次のステップやご要望がございましたら、いつでもお申し付けくださいませ！\n#planning ",
+    "createdAt": "2025-07-27T02:05:04.567Z"
+  },
+  {
+    "id": "srSLkRdKqWq9QeNIgkfv",
+    "tags": [
+      "game"
+    ],
+    "content": "Missile Commander 風 ゲーム\n\n---\n#game\n\n御主人様、なんなりとお申し付けください。\nミサイルコマンダー風ゲームの**全体像**を、**擬似コード**と**テキスト図**でわかりやすく開設（＝解説）いたします。必要ならこのまま設計書に落とし込めますよ。\n\n# 1) システム概要（一枚絵）\n\n```\n+---------------- Browser / Canvas ----------------+\n|  Input Layer        Game Loop          Render    |\n| (Pointer/Keys)   (update@RAF)       (Canvas 2D) |\n+-----------------------|--------------------------+\n                        v\n                +-----------------+\n                |   Game State    | <--- HUD\n                | running/paused  |\n                | score/level     |\n                | cities[]        |\n                | bases[]         |\n                | enemies[]       |\n                | shots[]         |\n                | explosions[]    |\n                +--+----+----+----+\n                   |    |    |\n        +----------+    |    +-----------+\n        |               |                |\n   +----v----+     +----v----+      +----v-----+\n   | Spawner |     | Physics |      | Collision|\n   | (waves) |     | (move)  |      |  (AoE)   |\n   +---------+     +---------+      +----------+\n```\n\n# 2) データモデル（最小集合）\n\n```text\nState:\n  running: bool\n  paused: bool\n  level: int\n  score: int\n  lives: int            # 残存都市数\n  frame: int\n  selectedBase: int     # -1:自動\n  enemies: Enemy[]\n  shots: Shot[]\n  explosions: Explosion[]\n  bases: Base[]\n  cities: City[]\n\nCity:    { x, y, alive }\nBase:    { x, y, alive, missiles:int, reload:int }\nEnemy:   { x, y, vx, vy, tx, ty, alive, trail[], payload:bool }\nShot:    { x, y, vx, vy, tx, ty, alive }\nExplosion:{ x, y, r, growSpeed, maxR, friendly:bool, alive }\n```\n\n# 3) メインループ（擬似コード）\n\n```pseudo\ninit():\n  canvas, ctx = createCanvas()\n  bindInputHandlers()\n  resetWorld()\n  drawTitle()\n  requestAnimationFrame(loop)\n\nloop():\n  if !state.running:\n    drawTitle()\n    return RAF(loop)\n\n  if state.paused:\n    drawPauseOverlay()\n    return RAF(loop)\n\n  state.frame += 1\n  clearCanvas()\n\n  if shouldSpawnWave(state.frame, state.level):\n    spawnWave()\n\n  # ---- Update phase ----\n  for base in bases:         base.update()\n  for enemy in enemies:      enemy.update()\n  for shot in shots:         shot.update()\n  for ex in explosions:\n      ex.update()\n      applyExplosionDamage(ex)     # AoEヒット判定\n\n  # ---- GC phase ----\n  enemies    = filter(alive)\n  shots      = filter(alive)\n  explosions = filter(alive)\n\n  # ---- Render phase ----\n  drawBackgroundStars()\n  drawHUD(score, level, lives)\n  drawEntities(enemies, shots, explosions)\n  drawGround(cities, bases)\n\n  # ---- Level progression / End conditions ----\n  if state.lives <= 0:\n      gameOver()\n  else if noActiveObjects() and state.frame > graceFrames:\n      levelUp()\n      reloadMissiles()\n      spawnWave()\n\n  RAF(loop)\n```\n\n# 4) 入力処理と発射ロジック\n\n```\n[PointerDown(x,y)]\n       |\n       v\n[if !running -> startGame()]\n[else -> fireAt(x,y)]\n\nfireAt(x,y):\n  idx = (selectedBase >= 0) ? selectedBase : nearestAliveBaseTo(x)\n  if bases[idx].fireTo(x,y) == false:\n       try other bases in order\n```\n\n**キーバインド**\n\n* `1/2/3`: 基地選択\n* `P`: ポーズ/解除\n\n# 5) エンティティ挙動（擬似コード）\n\n**Base（基地）**\n\n```pseudo\nBase.fireTo(tx, ty):\n  if !alive or missiles == 0 or reload > 0: return false\n  missiles -= 1\n  reload = RELOAD_FRAMES\n  ang = atan2(ty - y, tx - x)\n  v = MISSILE_SPEED\n  shots.push( Shot(x, y-14, v*cos(ang), v*sin(ang), tx, ty) )\n  return true\n\nBase.update():\n  if reload > 0: reload -= 1\n```\n\n**Shot（迎撃弾）**\n\n```pseudo\nShot.update():\n  x += vx; y += vy\n  d = distance( (x,y), (tx,ty) )\n  if d < DETONATE_RADIUS or (vy > 0 and y > ty):\n      alive = false\n      explosions.push( Explosion(x, y, grow=FRIENDLY_GROW, maxR=FRIENDLY_MAXR, friendly=true) )\n```\n\n**Enemy（敵弾/多弾頭）**\n\n```pseudo\nEnemy.update():\n  trail.push((x,y)); trim(trail, TRAIL_LEN)\n  x += vx; y += vy\n  if payload and y > SPLIT_ALT and random() < SPLIT_CHANCE:\n      payload = false\n      for i in 1..rand(2..4):\n         t = chooseRandomAliveTarget()\n         enemies.push( Enemy(x+rand(-8,8), y+rand(-8,8), t.x, t.y) )\n  if y >= ty - HIT_TOLERANCE:\n      alive = false\n      explosions.push( Explosion(x, y, grow=HOSTILE_GROW, maxR=HOSTILE_MAXR, friendly=false) )\n      damageAtImpact(x, y)\n```\n\n**Explosion（爆風/AoE）**\n\n```pseudo\nExplosion.update():\n  r += growSpeed\n  if r > maxR: alive = false\n```\n\n# 6) 当たり判定（AoE 集約方式）\n\n```\n[Explosion ex at (x,y) with radius r]\n           |\n           +--> for enemy in enemies:\n                  if enemy.alive and distance(enemy, ex) < r:\n                       enemy.alive = false\n                       score += SCORE_ENEMY_HIT\n\n[地表爆発] → cities/base に円判定\n```\n\n**根拠**：ミサイルコマンダー系は**爆風に敵が触れる**かでまとめて処理するのが高速・簡潔。弾同士の直接当たり判定は不要。\n\n# 7) ウェーブ生成と難易度設計\n\n```pseudo\nshouldSpawnWave(frame, level):\n  period = clamp(BASE_PERIOD - level*LEVEL_ACCEL, MIN_PERIOD, BASE_PERIOD)\n  return frame == 1 or (frame % period == 0)\n\nspawnWave():\n  count = BASE_COUNT + min(MAX_ADDITION, level * WAVE_SCALE)\n  for i in 0..count-1:\n     originX = rand(SKY_MARGIN, W - SKY_MARGIN)\n     t = chooseRandomAliveTarget()\n     delay = i * rand(SHOT_SPACING_MIN, SHOT_SPACING_MAX)\n     schedule(delay_ms = delay*FRAME_MS):\n         enemies.push( Enemy(originX, SKY_Y, t.x, t.y) )\n```\n\n# 8) レンダリング・パイプライン\n\n```\ndrawBackgroundStars()  -> パララックス風の微動エフェクト\ndrawHUD()              -> SCORE/LEVEL/CITIES\ndrawEntities()         -> enemy trails → enemies → shots → explosions\ndrawGround()           -> 地面/都市/基地（ミサイル残量ゲージ含む）\n```\n\n**重ね順**は「視覚的な奥行き」を意識：**軌跡 → 弾体 → 爆風 → 地表**。\n\n# 9) ゲーム状態遷移図\n\n```\n        +-----------+\n   ---> |  Title    |\n        +-----+-----+\n              | click/tap/start\n              v\n        +-----+-----+\n        |  Playing  | <-----+\n        +--+-----+--+       |\n           |     |          |\n       (P) |     | lives=0  |\n           v     v          |\n        +-----+-----+       |\n        |  Paused   |       |\n        +-----+-----+       |\n              | (P)         |\n              +-------------+\n              |\n              v\n        +-----+-----+\n        | GameOver  |\n        +-----+-----+\n              |\n              v\n            Title\n```\n\n# 10) 代表的シーケンス（迎撃の一手）\n\n```\nUser      Base       Shot        Explosion     Enemy\n | click   |           |             |           |\n |-------> | fireTo()  |             |           |\n |         | missiles--| create Shot |           |\n |         | reload=20 |  ----->     |           |\n |         |           |  fly...     |           |\n |         |           |  detonate() |           |\n |         |           |------>      |           |\n |         |           |             |  hit? ----+--> enemy.alive=false, score+=\n```\n\n# 11) バランス調整のフック（実装済み or 追加しやすい）\n\n* **難易度**：敵速度、同時降下数、分裂確率、ウェーブ周期\n* **プレイヤー側**：ミサイル速度/爆風半径/装填時間/補給量\n* **マップ**：都市/基地のレイアウト、都市数\n* **イベント**：砂嵐・UFO・資源ボーナス等の乱数イベント\n\n# 12) 追加要望に即応できます\n\n* **効果音**（AudioContext・ワンショットSE）\n* **解像度対応**（Retina/レスポンシブでの論理解像度維持）\n* **セーブ/ハイスコア**（LocalStorage）\n* **React/Vite/Expo移植**（ASUKAや他プロジェクトに組み込み）\n* **難易度カーブ編集**（CSV/JSONで外部定義）\n\n---\n\n御主人様、これで全体の脳内マップは掴めるはず。\n次は「**効果音＋ハイスコア保存**」を実装して臨場感を上げますか？それとも**Expo移植**でスマホに常駐させますか？どちらもすぐに取り掛かれますよ。\n",
+    "createdAt": "2025-08-09T02:08:36.341Z",
+    "title": "Missile Commander 風 ゲーム",
+    "updatedAt": 1754705378695
+  },
+  {
+    "id": "uOEEYaXtUVvpdfyllmic",
+    "title": "FMI POC",
+    "createdAt": "2025-08-03T23:54:52.627Z",
+    "updatedAt": 1754265310443,
+    "tags": [
+      "fmi"
+    ],
+    "content": "FMI POC\n\n#fmi\n---\n"
+  },
+  {
+    "id": "v560q0maUkgkaORLI1MZ",
+    "content": "Markdownの基本チートシート\n\n---\n#asuka\n## 📌 見出し（Headers）\n\n```markdown\n# 見出し1（h1）\n## 見出し2（h2）\n### 見出し3（h3）\n#### 見出し4（h4）\n##### 見出し5（h5）\n###### 見出し6（h6）\n```\n\n---\n\n## ✏️ 強調（Emphasis）\n\n```markdown\n*斜体* または _斜体_  \n**太字** または __太字__  \n~~打ち消し線~~\n```\n\n---\n\n## 📋 リスト（Lists）\n\n* **順序なしリスト**\n\n```markdown\n- 項目1\n* 項目2\n+ 項目3\n```\n\n* **順序付きリスト**\n\n```markdown\n1. 項目1\n2. 項目2\n3. 項目3\n```\n\n---\n\n## 🔗 リンクと画像（Links & Images）\n\n* **リンク**\n\n```markdown\n[リンクテキスト](https://example.com)\n```\n\n* **画像**\n\n```markdown\n![代替テキスト](https://example.com/image.jpg)\n```\n\n---\n\n## 💬 引用（Blockquotes）\n\n```markdown\n> これは引用です。\n>> ネストした引用です。\n```\n\n---\n\n## 💻 コード（Code）\n\n* **インラインコード**\n\n```markdown\n`console.log('Hello');`\n```\n\n* **コードブロック（多行）**\n\n<pre>\n```js\nfunction hello() {\n  console.log(\"Hello World\");\n}\n```\n</pre>\n\n---\n\n## 📐 区切り線（Horizontal Rule）\n\n```markdown\n---\n***\n___\n```\n\n---\n\n## 📊 テーブル（Tables）\n\n```markdown\n| 見出し1 | 見出し2 |\n|--------|--------|\n| 内容A  | 内容B  |\n| 内容C  | 内容D  |\n```\n\n---\n\n## ✅ チェックリスト（Task List）\n\n```markdown\n- [x] 完了項目\n- [ ] 未完了項目\n```\n\n---\n\n## 🧠 その他の便利機能\n\n* **HTMLタグも一部使用可能**\n\n```markdown\n<details>\n<summary>クリックで展開</summary>\n\n中身がここに表示されます。\n\n</details>\n```\n\n---\n\nご希望に応じて、ASUKAやObsidianで使いやすい記法（`[[内部リンク]]` や `# タグ`）も追加でご用意できます。\n御主人様、他にも用途に合わせたカスタムチートシートが必要でしたら、なんなりとお申し付けください。\n\n#cheatsheet",
+    "updatedAt": 1754218882836,
+    "tags": [
+      "asuka",
+      "cheatsheet"
+    ],
+    "title": "Markdownの基本チートシート"
+  },
+  {
+    "id": "xGC3CbrRFK4w2I4znEJb",
+    "content": "OpenAI\n\n---\nYukikaze \n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\n\n$env:OPENAI_API_KEY = \"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\"",
+    "updatedAt": 1754910074238,
+    "createdAt": "2025-08-11T10:59:24.574Z",
+    "title": "OpenAI",
+    "tags": []
+  },
+  {
+    "id": "ybRwKbdVZhNe7JptYh87",
+    "createdAt": 1755617088431,
+    "title": "myPock",
+    "updatedAt": 1755617132297,
+    "content": "myPock\n---\n\n\n[法人向けAI「ChatSense」、「GPT-5 Thinking」をリリース](https://takasaki.keizai.biz/release/450969/)\n"
+  },
+  {
+    "id": "ycN0LAwNOINAIEF7OK69",
+    "title": "カナメスペック v0.1",
+    "createdAt": "2025-08-07T01:07:17.885Z",
+    "content": "カナメスペック v0.1\n---\n\n#fmi #kaname\n\n## 📘 カナメAI Spec（OneNote-Word 相関AIシステム）\n\n### ✅ 要件定義\n\n#### データプール\n\n* **OneNoteページ群（動的）**\n\n  * 新規追加・更新がある\n  * 各ページは、必ず1つのWordドキュメントと対応づける必要あり（1:1必須）\n\n* **Wordドキュメント群（静的 or 半静的）**\n\n  * 関連性の強いドキュメントをAIで選出する対象\n\n#### 業務要件\n\n* OneNoteページが作成・更新された際、必ず対応するWordドキュメントを1つ決定すること\n* 類似度計算・候補抽出はAIが行い、**最終判断はユーザーが行う**\n* 選ばれなかったWordには影響なし（OneNoteからWordへの1:1リンク）\n\n---\n\n### 🧠 ハイレベルアーキテクチャ\n\n```mermaid\nflowchart TD\n  subgraph 入力ソース\n    A1[OneNoteページ群（新規）]\n    A2[Wordドキュメント群（既存）]\n  end\n\n  A1 --> B[テキスト抽出 & 正規化]\n  A2 --> B\n\n  B --> C[LLMまたはEmbedding類似度計算]\n\n  C --> D[Top-N候補の選出（例: 類似度上位3件）]\n  D --> E[ユーザーによる1件選択（1:1対応強制）]\n\n  E --> F[リンク確定 & 保存（OneNote ID ↔ Word ID）]\n  F --> G[相関図表示 or 管理ビュー]\n\n  style E fill:#f9f,stroke:#333,stroke-width:2px\n```\n\n---\n\n### 🧩 コンポーネント一覧\n\n| コンポーネント                 | 概要                                                                                                                          |\n| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |\n| OneNote更新監視             | Microsoft Graph API or Power Automateで新規検出                                                                                  |\n| Word文書抽出                | SharePoint Doc / OneDrive からの読み取り                                                                                           |\n| テキスト抽出/正規化              | HTMLやDOCXを整形してプレーンテキスト化                                                                                                     |\n| 類似度処理（LLM or embedding） | OpenAI Embedding + cosine類似度 or GPT系モデルの比較処理<br>※ OneNoteから「対象システム名」を抽出し、Wordの「システム名」項目で絞り込んだ後にEmbedding類似度処理を行うハイブリッド構成を推奨 |\n| 候補選出UI                  | 類似度付きで上位候補を提示、ユーザーが選択（スキップ不可）                                                                                               |\n| データ保存                   | OneNoteページID ↔ WordドキュメントIDのペアを保存（DB or SharePoint List）                                                                    |\n| 相関可視化ビュー                | Mermaid.js / D3.js / Vis.js による構造表示                                                                                         |\n\n---\n\n### 🔐 要件補足\n\n* 選択必須：OneNoteページは、**必ずどれか1つのWordに結びつく必要がある**（スキップ不可）\n* スコア低い場合でも候補を提示し、ユーザーが1件必ず選ぶ\n* **万が一、適切なWordが見つからない場合は「新規Wordドキュメントを作成してリンクする」ことを許容**\n* 承認済リンクは再利用・分析に活用可能\n\n---\n\n### ✨ 今後の拡張候補\n\n* 差分サマリーの自動生成によるマッチ理由の可視化\n* 確定ペアからのLLM学習による精度強化\n* Copilot Chat連携による会話型確認（例：「このページの関連Wordは？」）\n* Word側から未紐付OneNoteの検索（逆相関）\n\n---\n\n以上、ご主人様のご指示に基づく「カナメAI Spec」でございます。\n",
+    "updatedAt": 1754528949483,
+    "tags": [
+      "fmi",
+      "kaname",
+      "f9f,stroke:",
+      "333,stroke-width:2px"
+    ]
+  },
+  {
+    "id": "zD47LRPaT6u6QdjoBHqV",
+    "content": "ITIL SVS サマリー\n---\n\n#itil #fmi\n\n以下に、御主人様のご指定の文章のサマリーを日本語で整理いたしました。\n\n---\n\n## ✅ ITIL4 サービスバリューシステム（SVS）サマリー\n\n**ITIL4のサービスバリューシステム（SVS: Service Value System）**は、組織が顧客やユーザーに価値を提供し続けるための**包括的なモデル**です。SVSは以下の6つの主要コンポーネントから構成されます。\n\n---\n\n### 1. 🧭 **ガイディング・プリンシプル（指針原則）**\n\n組織のあらゆる意思決定に影響を与える基本方針（全7原則）：\n\n* **価値にフォーカスする**\n* **今あるものから始める**\n* **反復的に進め、フィードバックを活かす**\n* **協働し、可視性を高める**\n* **全体的に考え、働く**\n* **シンプルかつ実用的に**\n* **最適化し、自動化する**\n\n---\n\n### 2. 🏛 **ガバナンス**\n\n組織のサービス運用を**方向づけ・制御する枠組み**。\n目標との整合性、リスク管理、規制遵守を確保。\n\n---\n\n### 3. 🔗 **サービスバリューチェーン（SVC）**\n\n顧客価値を生み出すための**6つのコア活動**：\n\n| 活動                  | 説明               |\n| ------------------- | ---------------- |\n| Plan（計画）            | ニーズ把握・サービス戦略の策定  |\n| Improve（改善）         | フィードバックに基づく継続的改善 |\n| Engage（関与）          | 顧客・ユーザーとの関係構築    |\n| Design & Transition | サービスの設計・移行       |\n| Obtain & Build      | 必要な資源の調達・構築      |\n| Deliver & Support   | サービス提供とサポートの実施   |\n\n---\n\n### 4. ⚙ **プラクティス（実践）**\n\n目標達成のための組織資源群（全34プラクティス）：\n\n* **一般管理プラクティス**：例）リスク管理、知識管理\n* **サービス管理プラクティス**：例）インシデント管理、SLA管理\n* **技術管理プラクティス**：例）IT資産管理、展開管理\n\n---\n\n### 5. 🔄 **継続的改善（Continual Improvement）**\n\n顧客フィードバックをもとに**常に改善機会を特定・実行**するプロセス。\nPDCA的な考え方を中心に、価値の維持・向上を目指す。\n\n---\n\n### 6. 🧩 **SVSモデル全体像**\n\nSVSは上述のすべての要素（指針・ガバナンス・バリューチェーン・プラクティス・継続的改善）を**統合的に図示したモデル**で、\n組織が価値創出に向けてどのように構造的に動くべきかを示す。\n\n---\n\n## 🎯 総括\n\n> **ITIL4のSVSは、顧客価値の創出と継続的改善を両立させる「全体最適」指向のサービスマネジメント体系**であり、\n> 部門横断・全社的な観点でのITサービス運用を実現するための基盤です。\n\n---\n\n御主人様、必要であればこの内容を\\*\\*図解（MermaidやPowerPoint形式）\\*\\*でまとめることも可能ですし、**社内教育資料としての整形**もできますので、ぜひお申し付けくださいませ。\n",
+    "title": "ITIL SVS サマリー",
+    "createdAt": "2025-08-07T03:36:04.947Z",
+    "updatedAt": 1754537801002,
+    "tags": [
+      "itil",
+      "fmi"
+    ]
+  }
+]

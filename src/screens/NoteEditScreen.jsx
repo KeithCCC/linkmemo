@@ -7,8 +7,6 @@ import { getNoteById, createNote, updateNote } from "../notesService";
 import MarkdownIt from "markdown-it";
 const md = new MarkdownIt({ breaks: true });
 
-
-
 // 共通：候補付きエディタ（左ペイン） --------------------------------------
 function EditorWithSuggestions({
   content,
@@ -43,8 +41,11 @@ function EditorWithSuggestions({
           {linkSuggestions.map((note, idx) => (
             <div
               key={note.id}
-              className={`px-2 py-1 cursor-pointer ${idx === selectedSuggestion ? "bg-blue-500 text-white" : "hover:bg-gray-100"
-                }`}
+              className={`px-2 py-1 cursor-pointer ${
+                idx === selectedSuggestion
+                  ? "bg-blue-500 text-white"
+                  : "hover:bg-gray-100"
+              }`}
               onMouseDown={() => insertSuggestion(note.title)}
               title={note.title}
             >
@@ -75,55 +76,50 @@ export default function NoteEditScreen({ user: userProp }) {
   const previewRef = useRef(null);
   const wrapperRef = useRef(null);
   const saveTimeoutRef = useRef(null);
-  const noteIdRef = useRef(isNew ? null : id);
+  const noteIdRef = useRef(isNew ? null : id); // ← ここは常に「文字列ID or null」
   const isSyncingScroll = useRef(false);
 
   // UI state
   const [content, setContent] = useState("");
-  const [mode, setMode] = useState(() => localStorage.getItem("noteViewMode") || "edit");
+  const [mode, setMode] = useState(
+    () => localStorage.getItem("noteViewMode") || "edit"
+  );
 
   const titleToId = useCallback(
     (t) => {
-      const hit = allNotes.find((n) => (n.title || "").trim().toLowerCase() === t.trim().toLowerCase());
+      const hit = allNotes.find(
+        (n) => (n.title || "").trim().toLowerCase() === t.trim().toLowerCase()
+      );
       return hit ? hit.id : null;
     },
     [allNotes]
   );
 
-
-  // 文字サイズ（Tailwind の動的クラス対策でマップに変換）
-  const [fontSize, setFontSize] = useState(() => localStorage.getItem("noteFontSize") || "base");
+  // 文字サイズ
+  const [fontSize, setFontSize] = useState(
+    () => localStorage.getItem("noteFontSize") || "base"
+  );
   const changeFontSize = (size) => {
     setFontSize(size);
     localStorage.setItem("noteFontSize", size);
   };
   const fontSizeCls = useMemo(
     () =>
-    ({
-      sm: "text-sm",
-      base: "text-base",
-      lg: "text-lg",
-      xl: "text-xl",
-    }[fontSize] || "text-base"),
+      ({
+        sm: "text-sm",
+        base: "text-base",
+        lg: "text-lg",
+        xl: "text-xl",
+      }[fontSize] || "text-base"),
     [fontSize]
   );
 
-  // 追加：ハッシュタグを <span class="tag"> に変換（日本語・句読点対応）
-  const convertHashtagsToHTML = (text) => {
-    // 例: "#計画", "＃todo", 文末/空白/句読点で終わるパターン
-    return text.replace(
-      /[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}])/gu,
-      '<span class="tag">#$1</span>'
-    );
-  };
-
-
+  // タグ装飾はプレビュー側で適用（Markdown→HTML 後）
   const renderMarkdown = useCallback(
     (txt) => {
-      // まずMarkdownをHTML化
       let html = md.render(txt || "");
 
-      // [[タイトル]] をリンクに置換
+      // [[タイトル]] → 既存ノートへのリンク
       html = html.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
         const noteId = titleToId(p1);
         return noteId
@@ -131,7 +127,7 @@ export default function NoteEditScreen({ user: userProp }) {
           : `<span class="text-gray-400">[[${p1}]]</span>`;
       });
 
-      // 3) #タグ を <span class="tag"> に装飾（日本語・句読点対応）
+      // #タグ を <span class="tag"> に装飾（日本語・句読点対応）
       html = html.replace(
         /(?<![A-Za-z0-9_])[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}<])/gu,
         '<span class="tag">#$1</span>'
@@ -142,34 +138,20 @@ export default function NoteEditScreen({ user: userProp }) {
     [titleToId]
   );
 
-  // [[ サジェスト
+  // [[ サジェスト ------------------------------------------
   const [linkQuery, setLinkQuery] = useState("");
   const [linkSuggestions, setLinkSuggestions] = useState([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
   const [suggestPos, setSuggestPos] = useState({ left: 0, top: 0 });
 
-  // ユーティリティ -----------------------------------------------------------
+  // タイトル抽出
   const deriveTitle = useCallback((txt) => {
-    const first = (txt || "").split(/\r?\n/).find((l) => l.trim().length > 0) || "";
+    const first =
+      (txt || "").split(/\r?\n/).find((l) => l.trim().length > 0) || "";
     return first.replace(/^#\s*/, "").trim() || "Untitled";
   }, []);
 
-
-
-  // const renderMarkdown = useCallback(
-  //   (txt) => {
-  //     const withLinks = (txt || "").replace(/\[\[([^\]]+)\]\]/g, (m, p1) => {
-  //       const noteId = titleToId(p1);
-  //       return noteId
-  //         ? `<a href="/edit/${noteId}" class="text-blue-600 underline">[[${p1}]]</a>`
-  //         : `[[${p1}]]`;
-  //     });
-  //     const escaped = withLinks.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  //     return escaped.replace(/\n/g, "<br/>");
-  //   },
-  //   [titleToId]
-  // );
-
+  // キャレット位置→サジェスト位置計算
   const computeCaretPosition = useCallback(() => {
     const ta = textareaRef.current;
     const wrap = wrapperRef.current;
@@ -234,7 +216,7 @@ export default function NoteEditScreen({ user: userProp }) {
     return { left, top };
   }, []);
 
-  // 入力時処理：[[ サジェスト & 自動保存スケジュール --------------------------
+  // 入力時処理：[[サジェスト & 自動保存スケジュール --------------------------
   const handleContentChange = useCallback(
     (e) => {
       const newContent = e.target.value;
@@ -265,7 +247,7 @@ export default function NoteEditScreen({ user: userProp }) {
         if (!user?.uid) return;
 
         if (!noteIdRef.current) {
-          // 初回保存 → ID でルーティング差し替え
+          // --- 初回保存：ID取得→URLだけ置換、画面はそのまま ---
           const now = new Date().toISOString();
           const newNote = {
             title: deriveTitle(newContent),
@@ -274,16 +256,22 @@ export default function NoteEditScreen({ user: userProp }) {
             updatedAt: now,
           };
           try {
-            const newId = await createNote(user.uid, newNote);
-            noteIdRef.current = newId;
+            const created = await createNote(user.uid, newNote);
+            // 戻り値が string でも {id, ...} でもOK
+            const newId = typeof created === "string" ? created : created.id;
+
+            noteIdRef.current = newId;          // ← 以降は純粋な文字列ID
+            addNote({ id: newId, ...newNote }); // ← 一覧即時反映（任意）
             setMode("edit");
             localStorage.setItem("noteViewMode", "edit");
-            navigate(`/edit/${newId}`, { replace: true });
+
+            // 画面遷移なしで URL だけを新IDに置換
+            window.history.replaceState(null, "", `/edit/${newId}`);
           } catch (err) {
             console.error("初回保存失敗:", err);
           }
         } else {
-          // 更新保存
+          // --- 2回目以降：更新保存 ---
           try {
             const now = new Date().toISOString();
             await updateNote(user.uid, noteIdRef.current, {
@@ -297,7 +285,7 @@ export default function NoteEditScreen({ user: userProp }) {
         }
       }, 800);
     },
-    [allNotes, computeCaretPosition, deriveTitle, navigate, user?.uid]
+    [allNotes, computeCaretPosition, deriveTitle, user?.uid, addNote]
   );
 
   // 候補確定 ---------------------------------------------------------------
@@ -306,7 +294,9 @@ export default function NoteEditScreen({ user: userProp }) {
       const ta = textareaRef.current;
       if (!ta) return;
       const cursorPos = ta.selectionStart;
-      const before = content.slice(0, cursorPos).replace(/\[\[[^\]]*$/, `[[${title}]]`);
+      const before = content
+        .slice(0, cursorPos)
+        .replace(/\[\[[^\]]*$/, `[[${title}]]`);
       const after = content.slice(cursorPos);
       const updated = before + after;
       setContent(updated);
@@ -327,7 +317,9 @@ export default function NoteEditScreen({ user: userProp }) {
         setSuggestPos(computeCaretPosition());
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedSuggestion((i) => (i === 0 ? linkSuggestions.length - 1 : i - 1));
+        setSelectedSuggestion((i) =>
+          i === 0 ? linkSuggestions.length - 1 : i - 1
+        );
         setSuggestPos(computeCaretPosition());
       } else if (e.key === "Enter") {
         const hit = linkSuggestions[selectedSuggestion];
@@ -349,7 +341,8 @@ export default function NoteEditScreen({ user: userProp }) {
     const to = toRef.current;
     if (!from || !to) return;
     isSyncingScroll.current = true;
-    const ratio = from.scrollTop / (from.scrollHeight - from.clientHeight || 1);
+    const ratio =
+      from.scrollTop / (from.scrollHeight - from.clientHeight || 1);
     to.scrollTop = ratio * (to.scrollHeight - to.clientHeight);
     isSyncingScroll.current = false;
   }, []);
@@ -370,7 +363,10 @@ export default function NoteEditScreen({ user: userProp }) {
     localStorage.setItem("noteViewMode", "edit");
   }, [id, isNew, user, navigate]);
 
-  const previewHTML = useMemo(() => ({ __html: renderMarkdown(content) }), [content, renderMarkdown]);
+  const previewHTML = useMemo(
+    () => ({ __html: renderMarkdown(content) }),
+    [content, renderMarkdown]
+  );
 
   // UI ----------------------------------------------------------------------
   return (
@@ -416,15 +412,14 @@ export default function NoteEditScreen({ user: userProp }) {
         </div>
       )}
 
-
-
-
       {/* ツールバー */}
       <div className="flex items-center gap-3 text-sm">
         {/* モード切替 */}
         <div className="flex items-center gap-2">
           <button
-            className={`px-2 py-1 rounded ${mode === "edit" ? "font-bold underline" : ""}`}
+            className={`px-2 py-1 rounded ${
+              mode === "edit" ? "font-bold underline" : ""
+            }`}
             onClick={() => {
               setMode("edit");
               localStorage.setItem("noteViewMode", "edit");
@@ -433,7 +428,9 @@ export default function NoteEditScreen({ user: userProp }) {
             ✏️ 編集
           </button>
           <button
-            className={`px-2 py-1 rounded ${mode === "preview" ? "font-bold underline" : ""}`}
+            className={`px-2 py-1 rounded ${
+              mode === "preview" ? "font-bold underline" : ""
+            }`}
             onClick={() => {
               setMode("preview");
               localStorage.setItem("noteViewMode", "preview");
@@ -442,7 +439,9 @@ export default function NoteEditScreen({ user: userProp }) {
             👁️ プレビュー
           </button>
           <button
-            className={`px-2 py-1 rounded ${mode === "split-right" ? "font-bold underline" : ""}`}
+            className={`px-2 py-1 rounded ${
+              mode === "split-right" ? "font-bold underline" : ""
+            }`}
             onClick={() => {
               setMode("split-right");
               localStorage.setItem("noteViewMode", "split-right");
@@ -455,16 +454,28 @@ export default function NoteEditScreen({ user: userProp }) {
         {/* 文字サイズ */}
         <div className="flex items-center gap-2">
           <span className="opacity-70">文字</span>
-          <button onClick={() => changeFontSize("sm")} className={fontSize === "sm" ? "font-bold underline" : ""}>
+          <button
+            onClick={() => changeFontSize("sm")}
+            className={fontSize === "sm" ? "font-bold underline" : ""}
+          >
             小
           </button>
-          <button onClick={() => changeFontSize("base")} className={fontSize === "base" ? "font-bold underline" : ""}>
+          <button
+            onClick={() => changeFontSize("base")}
+            className={fontSize === "base" ? "font-bold underline" : ""}
+          >
             標準
           </button>
-          <button onClick={() => changeFontSize("lg")} className={fontSize === "lg" ? "font-bold underline" : ""}>
+          <button
+            onClick={() => changeFontSize("lg")}
+            className={fontSize === "lg" ? "font-bold underline" : ""}
+          >
             大
           </button>
-          <button onClick={() => changeFontSize("xl")} className={fontSize === "xl" ? "font-bold underline" : ""}>
+          <button
+            onClick={() => changeFontSize("xl")}
+            className={fontSize === "xl" ? "font-bold underline" : ""}
+          >
             特大
           </button>
         </div>
