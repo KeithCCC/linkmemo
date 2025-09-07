@@ -539,3 +539,5 @@ export default function NoteEditScreen({ user: userProp }) {
     </div>
   );
 }
+
+// (Remove invalid HTML/script tags. If you need service worker registration, do it in a useEffect at the top level of your app, not in JSX.)
