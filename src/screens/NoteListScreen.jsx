@@ -188,9 +188,9 @@ export default function NoteListScreen() {
                     {tags.map((t) => (
                       <button
                         key={t}
-                        onClick={() => setSearchTerm(`#${t}`)}
+                        onClick={() => cycleTagState(t)}
                         className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
-                        title={`#${t} で検索`}
+                        title={`#${t} を選択`}
                       >
                         #{t}
                       </button>
