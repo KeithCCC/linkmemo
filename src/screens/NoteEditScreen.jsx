@@ -81,9 +81,9 @@ export default function NoteEditScreen({ user: userProp }) {
 
   // UI state
   const [content, setContent] = useState("");
-  const [mode, setMode] = useState(
-    () => localStorage.getItem("noteViewMode") || "edit"
-  );
+  const [mode, setMode] = useState(() => {
+    return localStorage.getItem("lastMode") || "edit"; // Default to "edit"
+  });
 
   const titleToId = useCallback(
     (t) => {
@@ -363,10 +363,26 @@ export default function NoteEditScreen({ user: userProp }) {
     localStorage.setItem("noteViewMode", "edit");
   }, [id, isNew, user, navigate]);
 
+  useEffect(() => {
+    const savedMode = localStorage.getItem("lastMode");
+    if (savedMode) {
+      setMode(savedMode);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("lastMode", mode);
+  }, [mode]);
+
   const previewHTML = useMemo(
     () => ({ __html: renderMarkdown(content) }),
     [content, renderMarkdown]
   );
+
+  // モード変更ハンドラ
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+  };
 
   // UI ----------------------------------------------------------------------
   return (
