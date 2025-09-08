@@ -24,6 +24,10 @@ export default function NoteListScreen() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [tagStates, setTagStates] = useState({}); // { [tag]: "include" | "exclude" | "none" }
+  const [isNavVisible, setIsNavVisible] = useState(() => {
+    return localStorage.getItem("isNavVisible") === "true";
+  });
+  const [lastKeyPressed, setLastKeyPressed] = useState("");
 
   // Firestore を使っている場合だけ明示リフレッシュ（存在チェック安全化）
   useEffect(() => {
@@ -124,6 +128,33 @@ export default function NoteListScreen() {
     });
   }, [allTags, searchTerm, tagStates]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      setLastKeyPressed(`Ctrl: ${e.ctrlKey}, Shift: ${e.shiftKey}, Key: ${e.key}`);
+      if (e.ctrlKey && e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        setIsNavVisible((prev) => {
+          const newState = !prev;
+          localStorage.setItem("isNavVisible", newState);
+          return newState;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleNavItemClick = () => {
+    console.log("Nav item clicked");
+    setIsNavVisible(false);
+    console.log("isNavVisible set to false");
+    localStorage.setItem("isNavVisible", false);
+    console.log("isNavVisible saved to localStorage");
+  };
+
   return (
     <div className="max-w-3xl mr-auto text-left p-4">
       <h1 className="text-xl font-bold mb-4">ノート一覧 🗂️</h1>
@@ -206,6 +237,36 @@ export default function NoteListScreen() {
       <div className="mt-6">
         <Link to="/settings" className="underline text-sm">設定へ</Link>
       </div>
+
+      {/* ナビゲーションメニュー */}
+      {isNavVisible && (
+        <nav className="fixed top-0 left-0 h-full w-64 bg-yellow-100 p-4 shadow-md">
+          <h2 className="text-lg font-semibold mb-4">メニュー</h2>
+          <ul className="space-y-2">
+            <li>
+              <Link to="/" className="block p-2 rounded hover:bg-yellow-200" onClick={handleNavItemClick}>
+                ホーム
+              </Link>
+            </li>
+            <li>
+              <Link to="/settings" className="block p-2 rounded hover:bg-yellow-200" onClick={handleNavItemClick}>
+                設定
+              </Link>
+            </li>
+            <li>
+              <Link to="/profile" className="block p-2 rounded hover:bg-yellow-200" onClick={handleNavItemClick}>
+                プロフィール
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      )}
+
+      {/* デバッグ用：最後に押したキーを表示 */}
+      <div className="fixed bottom-4 right-4 bg-white border rounded shadow p-3 text-sm">
+        最後に押したキー: {lastKeyPressed}
+      </div>
     </div>
   );
 }
+
