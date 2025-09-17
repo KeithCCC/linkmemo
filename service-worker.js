@@ -11,15 +11,3 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   console.log('Fetching:', event.request.url);
 });
-
-// Rewrites
-const rewrites = [
-  {
-    source: 'service-worker.js',
-    destination: '/service-worker.js'
-  },
-  {
-    source: '**',
-    destination: '/index.html'
-  }
-];

@@ -20,6 +20,7 @@ function EditorWithSuggestions({
   selectedSuggestion,
   insertSuggestion,
   fontSizeCls,
+  onPaste,
 }) {
   return (
     <div className="flex-1 relative" ref={wrapperRef}>
@@ -29,6 +30,7 @@ function EditorWithSuggestions({
         onChange={onChange}
         onKeyDown={handleKeyDown}
         onScroll={onScroll}
+        onPaste={onPaste}
         className={`w-full border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent`}
         style={{ height: "calc(100vh - 300px)" }}
         placeholder="内容を入力..."
@@ -56,10 +58,14 @@ function EditorWithSuggestions({
       )}
     </div>
   );
+
 }
 
 // 画面本体 -------------------------------------------------------------------
 export default function NoteEditScreen({ user: userProp }) {
+
+
+  // Paste handler for Markdown link (declared later, after content state)
   const { addNote, deleteNote } = useNotesContext();
   const { user: userCtx } = useAuthContext();
   const user = userProp || userCtx;
@@ -81,6 +87,36 @@ export default function NoteEditScreen({ user: userProp }) {
 
   // UI state
   const [content, setContent] = useState("");
+  // Paste handler for Markdown link
+  const handlePaste = useCallback((e) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const clipboard = e.clipboardData;
+    if (!clipboard) return;
+    // Try to get both text and URL
+    const text = clipboard.getData("text/plain");
+    const html = clipboard.getData("text/html");
+    // Try to extract a link from HTML (Edge/Chrome rich copy)
+    let match = html && html.match(/<a [^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/i);
+    if (match) {
+      const url = match[1];
+      const label = match[2];
+      // Insert as Markdown
+      e.preventDefault();
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const before = content.slice(0, start);
+      const after = content.slice(end);
+      const mdLink = `[${label}](${url})`;
+      setContent(before + mdLink + after);
+      // Move caret after inserted link
+      setTimeout(() => {
+        ta.selectionStart = ta.selectionEnd = before.length + mdLink.length;
+      }, 0);
+      return;
+    }
+    // Fallback: if only a URL, just paste as normal
+  }, [content]);
   const [mode, setMode] = useState(() => {
     return localStorage.getItem("lastMode") || "edit"; // Default to "edit"
   });
@@ -513,15 +549,7 @@ export default function NoteEditScreen({ user: userProp }) {
           selectedSuggestion={selectedSuggestion}
           insertSuggestion={insertSuggestion}
           fontSizeCls={fontSizeCls}
-        />
-      )}
-
-      {mode === "preview" && (
-        <div
-          ref={previewRef}
-          dangerouslySetInnerHTML={previewHTML}
-          className={`prose prose-invert max-w-none ${fontSizeCls} bg-yellow-50/40 dark:bg-zinc-900/30 rounded-lg p-3 border`}
-          style={{ minHeight: "40vh" }}
+          onPaste={handlePaste}
         />
       )}
 
@@ -542,6 +570,7 @@ export default function NoteEditScreen({ user: userProp }) {
             selectedSuggestion={selectedSuggestion}
             insertSuggestion={insertSuggestion}
             fontSizeCls={fontSizeCls}
+            onPaste={handlePaste}
           />
           <div
             ref={previewRef}
@@ -554,6 +583,8 @@ export default function NoteEditScreen({ user: userProp }) {
       )}
     </div>
   );
+
 }
 
-// (Remove invalid HTML/script tags. If you need service worker registration, do it in a useEffect at the top level of your app, not in JSX.)
+
+
