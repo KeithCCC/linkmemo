@@ -553,6 +553,15 @@ export default function NoteEditScreen({ user: userProp }) {
         />
       )}
 
+      {mode === "preview" && (
+        <div
+          ref={previewRef}
+          dangerouslySetInnerHTML={previewHTML}
+          className={`prose prose-invert max-w-none ${fontSizeCls} bg-yellow-50/40 dark:bg-zinc-900/30 rounded-lg p-3 border`}
+          style={{ height: "calc(100vh - 300px)", overflow: "auto" }}
+        />
+      )}
+
       {mode === "split-right" && (
         <div className="flex h-full gap-4">
           <EditorWithSuggestions
