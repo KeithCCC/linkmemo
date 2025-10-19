@@ -180,6 +180,25 @@ export default function NoteListScreen() {
         )}
       </div>
 
+      {/* すべてのタグ（約3行・スクロール可） */}
+      {allTags.length > 0 && (
+        <div className="mb-4 border rounded bg-white p-2">
+          <div className="text-xs text-gray-500 mb-2">すべてのタグ</div>
+          <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => cycleTagState(tag)}
+                className={`px-3 py-1 text-sm rounded-full border transition ${tagClass(tagStates[tag] || "none")}`}
+                title={`#${tag} を選択/トグル`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 🏷️ タグ候補 & 三値トグル */}
       {visibleTags.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
