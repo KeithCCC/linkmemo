@@ -1,6 +1,6 @@
 // src/screens/NoteListScreen.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import { useAuthContext } from "../context/AuthContext";
 import { addRecentNote } from "../recentNotes";
@@ -19,6 +19,8 @@ const mineTags = (title = "", content = "") => {
 };
 
 export default function NoteListScreen() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { notes, refreshNotes } = useNotesContext();
   const { user } = useAuthContext();
   const allNotes = Array.isArray(notes) ? notes : [];
@@ -29,6 +31,7 @@ export default function NoteListScreen() {
     return localStorage.getItem("isNavVisible") === "true";
   });
   const [lastKeyPressed, setLastKeyPressed] = useState("");
+  const listRef = useRef(null);
 
   // Firestore を使っている場合だけ明示リフレッシュ（存在チェック安全化）
   useEffect(() => {
@@ -129,6 +132,18 @@ export default function NoteListScreen() {
     });
   }, [allTags, searchTerm, tagStates]);
 
+  // If requested via navigation state, focus the first note link
+  useEffect(() => {
+    if (location?.state?.focusFirst) {
+      requestAnimationFrame(() => {
+        const first = listRef.current?.querySelector('a[href^="/edit/"]');
+        if (first) first.focus();
+        // Clear the state so it doesn't persist on back/forward
+        navigate(location.pathname, { replace: true, state: {} });
+      });
+    }
+  }, [location, navigate, filteredNotes.length]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       setLastKeyPressed(`Ctrl: ${e.ctrlKey}, Shift: ${e.shiftKey}, Key: ${e.key}`);
@@ -219,7 +234,7 @@ export default function NoteListScreen() {
       {filteredNotes.length === 0 ? (
         <p className="text-gray-500 italic">検索結果が見つかりませんでした…</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2" ref={listRef}>
           {filteredNotes.map((note) => {
             const saved = Array.isArray(note.tags) ? note.tags : [];
             const mined = mineTags(note.title, note.content);

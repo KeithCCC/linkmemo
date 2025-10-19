@@ -1,5 +1,5 @@
 // App.jsx
-import { Routes, Route, useParams } from 'react-router-dom';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './auth';
 import NoteDetailScreen from './screens/NoteDetailScreen';
@@ -22,16 +22,37 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
   const deferredPromptRef = useRef(null);
+  const navigate = useNavigate();
   useEffect(() => {
     localStorage.setItem("navCollapsed", collapsed);
   }, [collapsed]);
 
-  // Global shortcut: Ctrl+Shift+C toggles left nav
+  // Global shortcuts
   useEffect(() => {
     const onKey = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && String(e.key).toLowerCase() === 'c') {
+      const mod = (e.ctrlKey || e.metaKey);
+      const modShift = mod && e.shiftKey;
+      const key = String(e.key).toLowerCase();
+
+      // Ctrl+Shift+C: toggle left nav
+      if (modShift && key === 'c') {
         e.preventDefault();
         setCollapsed((prev) => !prev);
+        return;
+      }
+
+      // Ctrl+0: go to note list and focus the first note
+      if (mod && !e.shiftKey && key === '0') {
+        e.preventDefault();
+        navigate('/', { state: { focusFirst: true } });
+        return;
+      }
+
+      // Ctrl+9: create a new note
+      if (mod && !e.shiftKey && key === '9') {
+        e.preventDefault();
+        navigate('/edit/new');
+        return;
       }
     };
     window.addEventListener('keydown', onKey);
