@@ -87,6 +87,35 @@ export default function NoteEditScreen({ user: userProp }) {
 
   // UI state
   const [content, setContent] = useState("");
+  // --- caret/selection helpers ---
+  const getLineInfoAt = useCallback((text, index) => {
+    const start = text.lastIndexOf("\n", Math.max(0, index - 1)) + 1;
+    const endIdx = text.indexOf("\n", index);
+    const end = endIdx === -1 ? text.length : endIdx;
+    const line = text.slice(start, end);
+    return { start, end, line };
+  }, []);
+
+  const setContentAndRestore = useCallback((ta, newText, caretPos) => {
+    setContent(newText);
+    if (ta) {
+      setTimeout(() => {
+        ta.selectionStart = ta.selectionEnd = caretPos;
+        ta.focus();
+      }, 0);
+    }
+  }, []);
+
+  const wrapSelection = useCallback((ta, left, right) => {
+    const start = ta.selectionStart ?? 0;
+    const end = ta.selectionEnd ?? start;
+    const before = content.slice(0, start);
+    const selected = content.slice(start, end);
+    const after = content.slice(end);
+    const inserted = `${left}${selected || ""}${right}`;
+    const nextPos = start + left.length + (selected ? selected.length : 0);
+    setContentAndRestore(ta, before + inserted + after, nextPos);
+  }, [content, setContentAndRestore]);
   // Paste handler for Markdown link
   const handlePaste = useCallback((e) => {
     const ta = textareaRef.current;
@@ -96,6 +125,20 @@ export default function NoteEditScreen({ user: userProp }) {
     // Try to get both text and URL
     const text = clipboard.getData("text/plain");
     const html = clipboard.getData("text/html");
+    // Case: paste a plain URL over a selection -> make [selection](url)
+    const hasSelection = (ta.selectionEnd ?? 0) > (ta.selectionStart ?? 0);
+    const isUrl = /^https?:\/\/\S+$/i.test((text || "").trim());
+    if (hasSelection && isUrl) {
+      e.preventDefault();
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const before = content.slice(0, start);
+      const selected = content.slice(start, end);
+      const after = content.slice(end);
+      const mdLink = `[${selected}](${text.trim()})`;
+      setContentAndRestore(ta, before + mdLink + after, before.length + mdLink.length);
+      return;
+    }
     // Try to extract a link from HTML (Edge/Chrome rich copy)
     let match = html && html.match(/<a [^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/i);
     if (match) {
@@ -108,15 +151,11 @@ export default function NoteEditScreen({ user: userProp }) {
       const before = content.slice(0, start);
       const after = content.slice(end);
       const mdLink = `[${label}](${url})`;
-      setContent(before + mdLink + after);
-      // Move caret after inserted link
-      setTimeout(() => {
-        ta.selectionStart = ta.selectionEnd = before.length + mdLink.length;
-      }, 0);
+      setContentAndRestore(ta, before + mdLink + after, before.length + mdLink.length);
       return;
     }
     // Fallback: if only a URL, just paste as normal
-  }, [content]);
+  }, [content, setContentAndRestore]);
   const [mode, setMode] = useState(() => {
     return localStorage.getItem("lastMode") || "edit"; // Default to "edit"
   });
@@ -346,28 +385,116 @@ export default function NoteEditScreen({ user: userProp }) {
   // キーハンドラ（↑↓Enter/Esc） ------------------------------------------
   const handleKeyDown = useCallback(
     (e) => {
-      if (linkSuggestions.length === 0) return;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedSuggestion((i) => (i + 1) % linkSuggestions.length);
-        setSuggestPos(computeCaretPosition());
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedSuggestion((i) =>
-          i === 0 ? linkSuggestions.length - 1 : i - 1
-        );
-        setSuggestPos(computeCaretPosition());
-      } else if (e.key === "Enter") {
-        const hit = linkSuggestions[selectedSuggestion];
-        if (hit) {
+      const ta = textareaRef.current;
+      // Suggestion navigation first
+      if (linkSuggestions.length > 0) {
+        if (e.key === "ArrowDown") {
           e.preventDefault();
-          insertSuggestion(hit.title);
+          setSelectedSuggestion((i) => (i + 1) % linkSuggestions.length);
+          setSuggestPos(computeCaretPosition());
+          return;
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSelectedSuggestion((i) => (i === 0 ? linkSuggestions.length - 1 : i - 1));
+          setSuggestPos(computeCaretPosition());
+          return;
+        } else if (e.key === "Enter") {
+          const hit = linkSuggestions[selectedSuggestion];
+          if (hit) {
+            e.preventDefault();
+            insertSuggestion(hit.title);
+            return;
+          }
+        } else if (e.key === "Escape") {
+          setLinkSuggestions([]);
+          return;
         }
-      } else if (e.key === "Escape") {
-        setLinkSuggestions([]);
+      }
+
+      if (!ta) return;
+
+      // Formatting shortcuts
+      const key = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && key === 'b') {
+        e.preventDefault();
+        wrapSelection(ta, '**', '**');
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'i') {
+        e.preventDefault();
+        wrapSelection(ta, '_', '_');
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'k') {
+        e.preventDefault();
+        const start = ta.selectionStart ?? 0;
+        const end = ta.selectionEnd ?? start;
+        const sel = content.slice(start, end) || 'リンク';
+        const url = window.prompt('リンク先URLを入力してください', 'https://');
+        if (url) {
+          const before = content.slice(0, start);
+          const after = content.slice(end);
+          const md = `[${sel}](${url})`;
+          setContentAndRestore(ta, before + md + after, before.length + md.length);
+        }
+        return;
+      }
+
+      // Enter logic for lists, quotes, code fences
+      if (e.key === 'Enter') {
+        const cur = ta.selectionStart ?? 0;
+        const { start: ls, end: le, line } = getLineInfoAt(content, cur);
+
+        // Code fence auto-close when line is ``` or ```lang
+        if (/^```\w*\s*$/.test(line)) {
+          e.preventDefault();
+          const before = content.slice(0, cur);
+          const after = content.slice(cur);
+          const insert = "\n\n```";
+          setContentAndRestore(ta, before + insert + after, before.length + 1);
+          return;
+        }
+
+        // Blockquote continuation
+        const quoteMatch = line.match(/^(\s*)>\s?(.*)$/);
+        if (quoteMatch) {
+          e.preventDefault();
+          const indent = quoteMatch[1] || '';
+          const body = (quoteMatch[2] || '').trim();
+          const beforeFull = content.slice(0, cur);
+          const afterFull = content.slice(cur);
+          if (body.length === 0 && cur >= le) {
+            // exit quote on empty line
+            setContentAndRestore(ta, beforeFull + "\n" + afterFull, beforeFull.length + 1);
+          } else {
+            setContentAndRestore(ta, beforeFull + "\n" + indent + "> " + afterFull, beforeFull.length + 1 + indent.length + 2);
+          }
+          return;
+        }
+
+        // List continuation (bulleted / ordered, with optional task [ ] or [x])
+        const listMatch = line.match(/^(\s*)(?:([-*+])|(\d+)\.)\s(?:\[( |x|X)\]\s)?(.*)$/);
+        if (listMatch) {
+          e.preventDefault();
+          const indent = listMatch[1] || '';
+          const bullet = listMatch[2];
+          const num = listMatch[3];
+          const rest = (listMatch[5] || '').trim();
+          const beforeFull = content.slice(0, cur);
+          const afterFull = content.slice(cur);
+          if (rest.length === 0 && cur >= le) {
+            // Exit list on empty item
+            setContentAndRestore(ta, beforeFull + "\n" + afterFull, beforeFull.length + 1);
+          } else {
+            const nextMarker = bullet ? (bullet + ' ') : (String(parseInt(num, 10) + 1) + '. ');
+            const nextPrefix = indent + nextMarker;
+            setContentAndRestore(ta, beforeFull + "\n" + nextPrefix + afterFull, beforeFull.length + 1 + nextPrefix.length);
+          }
+          return;
+        }
       }
     },
-    [linkSuggestions, selectedSuggestion, computeCaretPosition, insertSuggestion]
+    [linkSuggestions, selectedSuggestion, computeCaretPosition, insertSuggestion, content, getLineInfoAt, setContentAndRestore, wrapSelection]
   );
 
   // スクロール同期（split-right） ----------------------------------------
