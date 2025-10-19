@@ -545,6 +545,31 @@ export default function NoteEditScreen({ user: userProp }) {
     localStorage.setItem("lastMode", mode);
   }, [mode]);
 
+  // Keyboard shortcuts for view modes
+  useEffect(() => {
+    const onKey = (e) => {
+      // Support Ctrl on Windows/Linux and Cmd on macOS
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const k = String(e.key);
+      if (k === '1') {
+        e.preventDefault();
+        setMode('edit');
+        localStorage.setItem('noteViewMode', 'edit');
+      } else if (k === '2') {
+        e.preventDefault();
+        setMode('preview');
+        localStorage.setItem('noteViewMode', 'preview');
+      } else if (k === '3') {
+        e.preventDefault();
+        setMode('split-right');
+        localStorage.setItem('noteViewMode', 'split-right');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // After a new note gets its ID, add it to recent notes once
   useEffect(() => {
     if (noteIdRef.current && !recentMarked) {

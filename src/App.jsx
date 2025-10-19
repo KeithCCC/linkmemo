@@ -26,6 +26,18 @@ function App() {
     localStorage.setItem("navCollapsed", collapsed);
   }, [collapsed]);
 
+  // Global shortcut: Ctrl+Shift+C toggles left nav
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && String(e.key).toLowerCase() === 'c') {
+        e.preventDefault();
+        setCollapsed((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
