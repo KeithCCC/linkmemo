@@ -1,4 +1,4 @@
-// src/screens/NoteEditScreen.jsx
+﻿// src/screens/NoteEditScreen.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
@@ -88,6 +88,7 @@ export default function NoteEditScreen({ user: userProp }) {
 
   // UI state
   const [content, setContent] = useState("");
+  const [recentMarked, setRecentMarked] = useState(false);
   // --- caret/selection helpers ---
   const getLineInfoAt = useCallback((text, index) => {
     const start = text.lastIndexOf("\n", Math.max(0, index - 1)) + 1;
@@ -543,6 +544,17 @@ export default function NoteEditScreen({ user: userProp }) {
   useEffect(() => {
     localStorage.setItem("lastMode", mode);
   }, [mode]);
+
+  // After a new note gets its ID, add it to recent notes once
+  useEffect(() => {
+    if (noteIdRef.current && !recentMarked) {
+      try {
+        const title = deriveTitle(content);
+        addRecentNote({ id: noteIdRef.current, title });
+      } catch {}
+      setRecentMarked(true);
+    }
+  }, [recentMarked, content]);
 
   const previewHTML = useMemo(
     () => ({ __html: renderMarkdown(content) }),
