@@ -1,6 +1,6 @@
 // App.jsx
 import { Routes, Route, useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './auth';
 import NoteDetailScreen from './screens/NoteDetailScreen';
 import NoteEditScreen from './screens/NoteEditScreen';
@@ -20,6 +20,8 @@ function App() {
   });
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
+  const deferredPromptRef = useRef(null);
   useEffect(() => {
     localStorage.setItem("navCollapsed", collapsed);
   }, [collapsed]);
@@ -31,6 +33,25 @@ function App() {
       setAuthChecked(true); // ← ログイン状態確認完了フラグ
     });
     return () => unsubscribe();
+  }, []);
+
+  // PWA install prompt handler (appears in preview/prod when installable)
+  useEffect(() => {
+    const onBIP = (e) => {
+      e.preventDefault();
+      deferredPromptRef.current = e;
+      setCanInstall(true);
+    };
+    const onInstalled = () => {
+      deferredPromptRef.current = null;
+      setCanInstall(false);
+    };
+    window.addEventListener('beforeinstallprompt', onBIP);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBIP);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
   }, []);
 
   if (!authChecked) {
@@ -49,6 +70,21 @@ function App() {
       {/* ✅ 上部ヘッダー帯 */}
       <div className="bg-red-500 h-10 w-full flex items-center px-4 text-white font-semibold shadow-sm">
         📝 ASUKA2 TEXT EDITOR BETA
+        {canInstall && (
+          <button
+            onClick={async () => {
+              const dp = deferredPromptRef.current;
+              if (!dp) return;
+              dp.prompt();
+              await dp.userChoice;
+              deferredPromptRef.current = null;
+              setCanInstall(false);
+            }}
+            className="ml-3 bg-white/20 hover:bg-white/30 text-white text-xs px-2 py-1 rounded"
+          >
+            インストール
+          </button>
+        )}
       </div>
 
       <div className="ml-0 flex gap-2 items-center bg-gray-200">
