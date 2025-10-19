@@ -1,13 +1,20 @@
 // src/screens/NoteDetailScreen.jsx
 import { useParams, Link } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
-import React from "react";
+import React, { useEffect } from "react";
 import MarkdownIt from "markdown-it";
+import { addRecentNote } from "../recentNotes";
 
 export default function NoteDetailScreen() {
   const { id } = useParams();
   const { getNoteById, notes } = useNotesContext();
   const note = getNoteById(id);
+
+  useEffect(() => {
+    if (note) {
+      addRecentNote({ id: note.id, title: note.title || "Untitled" });
+    }
+  }, [note && note.id]);
 
   if (!note) {
     return <h2 className="p-4 text-red-500">ノートが見つかりませんでした（ID: {id}）</h2>;

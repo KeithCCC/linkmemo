@@ -1,11 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
+import { getRecentNotes, RECENT_NOTES_EVENT } from "../recentNotes";
 
 export default function Navigation({ collapsed, setCollapsed }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
-  const { notes, addNote } = useNotesContext(); // ✅ addNote追加
+  const { notes, addNote } = useNotesContext();
+
+  const [recent, setRecent] = useState([]);
+
+  useEffect(() => {
+    const refresh = () => setRecent(getRecentNotes());
+    refresh();
+    window.addEventListener("storage", refresh);
+    window.addEventListener(RECENT_NOTES_EVENT, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener(RECENT_NOTES_EVENT, refresh);
+    };
+  }, []);
 
   const handleExportAllNotes = () => {
     const json = JSON.stringify(notes, null, 2);
@@ -33,38 +47,46 @@ export default function Navigation({ collapsed, setCollapsed }) {
             addNote(note);
           }
         });
-        alert("インポートが完了しました！");
+        alert("インポートが完了しました");
       } catch (err) {
-        alert("インポートに失敗しました。形式をご確認ください。");
+        alert("インポートに失敗しました。形式をご確認ください");
       }
     };
     reader.readAsText(file);
   };
 
   return (
-    <aside className={`relative h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium transition-all duration-300 ${collapsed ? "w-0 overflow-hidden" : "w-48"
-      }`}>
-
+    <aside
+      className={`relative min-h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium transition-all duration-300 ${collapsed ? "w-0 overflow-hidden" : "w-48"}`}
+    >
       {!collapsed && (
         <div className="pt-16 px-2 space-y-3">
-          <Link to="/" className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/") ? "text-blue-600 font-bold" : ""}`}>
+          <Link
+            to="/"
+            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/") ? "text-blue-600 font-bold" : ""}`}
+          >
             📁 <span>一覧</span>
           </Link>
-          <Link to="/edit/new" className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/edit/new") ? "text-blue-600 font-bold" : ""}`}>
+          <Link
+            to="/edit/new"
+            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/edit/new") ? "text-blue-600 font-bold" : ""}`}
+          >
             ✏️ <span>新規作成</span>
           </Link>
-          <Link to="/settings" className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/settings") ? "text-blue-600 font-bold" : ""}`}>
+          <Link
+            to="/settings"
+            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/settings") ? "text-blue-600 font-bold" : ""}`}
+          >
             ⚙️ <span>設定(使い方)</span>
           </Link>
           <Link
             to="/tiptap"
-            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/tiptap") ? "text-blue-600 font-bold" : ""
-              }`}
+            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/tiptap") ? "text-blue-600 font-bold" : ""}`}
           >
             🧪 <span>TipTapテスト</span>
           </Link>
 
-          {/* 📤 JSONエクスポート */}
+          {/* JSON エクスポート */}
           <button
             onClick={handleExportAllNotes}
             className="block w-full text-left text-black-600 font-bold hover:text-blue-600"
@@ -72,13 +94,34 @@ export default function Navigation({ collapsed, setCollapsed }) {
             📤 エクスポート
           </button>
 
-          {/* 📥 JSONインポート */}
+          {/* JSON インポート */}
           <label className="block text-red-600 font-bold hover:text-blue-600 cursor-pointer">
             📥 インポート
             <input type="file" accept=".json" onChange={handleImportNotes} className="hidden" />
           </label>
+
+          {/* separator */}
+          <div className="my-3 border-t border-orange-300" />
+
+          {/* 最近のノート */}
+          {recent.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-xs uppercase tracking-wide opacity-70">最近のノート</div>
+              {recent.map((n) => (
+                <Link
+                  key={n.id}
+                  to={`/note/${n.id}`}
+                  className={`block truncate hover:text-blue-700 ${isActive(`/note/${n.id}`) ? "text-blue-700 font-bold" : ""}`}
+                  title={n.title}
+                >
+                  • {n.title}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </aside>
   );
 }
+

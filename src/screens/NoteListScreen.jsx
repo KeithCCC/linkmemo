@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import { useAuthContext } from "../context/AuthContext";
+import { addRecentNote } from "../recentNotes";
 
 // 正規化（大小無視）
 const normalize = (s = "") => s.trim().toLowerCase();
@@ -208,7 +209,13 @@ export default function NoteListScreen() {
             return (
               <li key={note.id} className="p-3 border rounded hover:bg-gray-50">
                 <div className="font-semibold">
-                  <Link className="text-blue-600" to={`/edit/${note.id}`}>{note.title}</Link>
+                  <Link
+                    className="text-blue-600"
+                    to={`/edit/${note.id}`}
+                    onClick={() => addRecentNote({ id: note.id, title: note.title || "Untitled" })}
+                  >
+                    {note.title}
+                  </Link>
                 </div>
                 <div className="text-sm text-gray-500">
                   更新日: {(note.updatedAt?.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)).toLocaleString()}

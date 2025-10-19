@@ -5,6 +5,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
 import { getNoteById, createNote, updateNote } from "../notesService";
 import MarkdownIt from "markdown-it";
+import { addRecentNote } from "../recentNotes";
 const md = new MarkdownIt({ breaks: true });
 
 // 共通：候補付きエディタ（左ペイン） --------------------------------------
@@ -517,7 +518,13 @@ export default function NoteEditScreen({ user: userProp }) {
     if (!isNew && user?.uid) {
       getNoteById(user.uid, id).then((note) => {
         if (!note) navigate("/", { replace: true });
-        else setContent(note.content || "");
+        else {
+          setContent(note.content || "");
+          try {
+            const title = note.title || deriveTitle(note.content || "");
+            addRecentNote({ id: note.id || id, title });
+          } catch {}
+        }
       });
     } else if (isNew) {
       setContent("");

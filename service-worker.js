@@ -1,13 +1,3 @@
-// Basic Service Worker
-
-self.addEventListener('install', (event) => {
-  console.log('Service Worker installing.');
-});
-
-self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating.');
-});
-
-self.addEventListener('fetch', (event) => {
-  console.log('Fetching:', event.request.url);
-});
+// Minimal, quiet Service Worker retained for compatibility
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));

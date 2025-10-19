@@ -1,13 +1,13 @@
-// Basic Service Worker
+// Minimal, quiet Service Worker for production
+// - No noisy logging
+// - Does not intercept network requests (no fetch handler)
 
-self.addEventListener('install', (event) => {
-  console.log('Service Worker installing.');
+self.addEventListener('install', () => {
+  // Activate immediately on install
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating.');
-});
-
-self.addEventListener('fetch', (event) => {
-  console.log('Fetching:', event.request.url);
+  // Take control of open pages
+  event.waitUntil(self.clients.claim());
 });
