@@ -173,7 +173,15 @@ export default function NoteListScreen() {
 
   return (
     <div className="max-w-3xl mr-auto text-left p-4">
-      <h1 className="text-xl font-bold mb-4">ノート一覧 🗂️</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold">ノート一覧 🗂️</h1>
+        <Link
+          to="/edit/new"
+          className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
+        >
+          新規作成
+        </Link>
+      </div>
 
       {/* 🔎 キーワード検索（×で即クリア） */}
       <div className="relative w-full mb-3">

@@ -1,6 +1,6 @@
 ﻿// src/screens/NoteEditScreen.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
 import { getNoteById, createNote, updateNote } from "../notesService";
@@ -602,38 +602,52 @@ export default function NoteEditScreen({ user: userProp }) {
         </span>
       </h1>
 
-      {/* ボタン群 */}
-      {noteIdRef.current && (
-        <div className="flex items-center justify-end gap-2">
-          {/* 📄 テキスト保存 */}
-          <button
-            onClick={() => {
-              const blob = new Blob([content], { type: "text/plain" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `${deriveTitle(content) || "note"}.txt`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-            className="bg-gray-600 text-white px-3 py-0.5 text-sm rounded hover:bg-gray-700"
-          >
-            テキスト保存
-          </button>
-          {/* ❌ 削除 */}
-          <button
-            onClick={async () => {
-              if (confirm("このノートを削除してもよろしいですか？")) {
-                await deleteNote(noteIdRef.current);
-                navigate("/", { replace: true });
-              }
-            }}
-            className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
-          >
-            削除
-          </button>
-        </div>
-      )}
+      {/* 右上アクション（一覧/新規は常時、保存/削除は既存ノート時） */}
+      <div className="flex items-center justify-end gap-2">
+        <Link
+          to="/"
+          className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
+        >
+          一覧
+        </Link>
+        <Link
+          to="/edit/new"
+          className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
+        >
+          新規作成
+        </Link>
+        {noteIdRef.current && (
+          <>
+            {/* 📄 テキスト保存 */}
+            <button
+              onClick={() => {
+                const blob = new Blob([content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${deriveTitle(content) || "note"}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="bg-gray-600 text-white px-3 py-0.5 text-sm rounded hover:bg-gray-700"
+            >
+              テキスト保存
+            </button>
+            {/* ❌ 削除 */}
+            <button
+              onClick={async () => {
+                if (confirm("このノートを削除してもよろしいですか？")) {
+                  await deleteNote(noteIdRef.current);
+                  navigate("/", { replace: true });
+                }
+              }}
+              className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+            >
+              削除
+            </button>
+          </>
+        )}
+      </div>
 
       {/* ツールバー */}
       <div className="flex items-center gap-3 text-sm">
