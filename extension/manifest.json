@@ -1,0 +1,20 @@
+{
+  "name": "Asuka Clipper",
+  "description": "Clip current page to Asuka notes with #clipping tag.",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_title": "Clip to Asuka"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "contextMenus"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html"
+}
+

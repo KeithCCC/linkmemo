@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Asuka Clipper Options</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 16px; }
+      label { display: block; margin-bottom: 8px; }
+      input { width: 100%; padding: 6px 8px; }
+      button { margin-top: 12px; padding: 6px 12px; }
+      .hint { color: #666; font-size: 12px; margin-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Asuka Clipper</h1>
+    <label>
+      App base URL
+      <input id="baseUrl" type="url" placeholder="http://localhost:5173" />
+    </label>
+    <button id="save">Save</button>
+    <div class="hint">Example: http://localhost:5173 or your deployed app URL</div>
+
+    <script src="options.js"></script>
+  </body>
+  </html>
+

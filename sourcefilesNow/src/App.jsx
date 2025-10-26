@@ -11,8 +11,6 @@ import NoteListScreen from './screens/NoteListScreen';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase'; // ← Firebase初期化済みのdbインスタンス
 import TipTapScreen from './screens/TipTapScreen';
-import ClipScreen from './screens/ClipScreen';
-import ExtensionScreen from './screens/ExtensionScreen';
 
 
 function App() {
@@ -154,8 +152,6 @@ function App() {
               <Route path="/note/:id" element={<NoteDetailScreen />} />
               <Route path="/edit/:id" element={<NoteEditScreenWrapper />} />
               <Route path="/new" element={<NoteEditScreenWrapper />} />
-              <Route path="/clip" element={<ClipScreen />} />
-              <Route path="/extension" element={<ExtensionScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
               <Route path="/tiptap" element={<TipTapScreen />} />
             </Routes>

@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "pack:extension": "powershell -ExecutionPolicy Bypass -File scripts/pack-extension.ps1"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",

@@ -100,13 +100,6 @@ export default function Navigation({ collapsed, setCollapsed }) {
             <input type="file" accept=".json" onChange={handleImportNotes} className="hidden" />
           </label>
 
-          <Link
-            to="/extension"
-            className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/extension") ? "text-blue-600 font-bold" : ""}`}
-          >
-            🧩 <span>拡張機能</span>
-          </Link>
-
           {/* separator */}
           <div className="my-3 border-t border-orange-300" />
 
@@ -131,3 +124,4 @@ export default function Navigation({ collapsed, setCollapsed }) {
     </aside>
   );
 }
+
