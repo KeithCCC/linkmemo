@@ -42,8 +42,10 @@ export default function ClipScreen() {
       try {
         const now = new Date().toISOString();
         const title = titleParam || url;
+        // Use Markdown link format for the URL line
+        const linkLine = title && url ? `[${title}](${url})` : (url || "");
         // Minimal markdown body with explicit #clipping tag
-        const body = `# ${title}\n\n${url}\n\n#clipping`;
+        const body = `# ${title}\n\n${linkLine}\n\n#clipping`;
         const note = {
           title,
           content: body,
@@ -80,4 +82,3 @@ export default function ClipScreen() {
     </div>
   );
 }
-
