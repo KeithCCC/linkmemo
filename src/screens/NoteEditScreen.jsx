@@ -164,6 +164,29 @@ export default function NoteEditScreen({ user: userProp }) {
     return localStorage.getItem("lastMode") || "edit"; // Default to "edit"
   });
 
+  // Focus caret to the beginning of the editor when entering edit/split modes
+  const focusEditorTop = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    // Move caret to the very start and scroll to top
+    ta.selectionStart = 0;
+    ta.selectionEnd = 0;
+    ta.scrollTop = 0;
+    ta.focus();
+  }, []);
+
+  // Track previous mode to detect transitions into edit or split-right
+  const prevModeRef = useRef(mode);
+  useEffect(() => {
+    const justEnteredEditor =
+      (mode === "edit" || mode === "split-right") && prevModeRef.current !== mode;
+    if (justEnteredEditor) {
+      // Defer to ensure textarea exists in DOM for the current mode
+      setTimeout(focusEditorTop, 0);
+    }
+    prevModeRef.current = mode;
+  }, [mode, focusEditorTop]);
+
   const titleToId = useCallback(
     (t) => {
       const hit = allNotes.find(
