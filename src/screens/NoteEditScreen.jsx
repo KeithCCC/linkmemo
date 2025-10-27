@@ -187,6 +187,13 @@ export default function NoteEditScreen({ user: userProp }) {
     prevModeRef.current = mode;
   }, [mode, focusEditorTop]);
 
+  // Also move caret to top when a different note is opened
+  useEffect(() => {
+    if (mode === "edit" || mode === "split-right") {
+      setTimeout(focusEditorTop, 0);
+    }
+  }, [id, mode, focusEditorTop]);
+
   const titleToId = useCallback(
     (t) => {
       const hit = allNotes.find(
