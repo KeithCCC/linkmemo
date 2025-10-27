@@ -5,8 +5,10 @@ import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
 import { getNoteById, createNote, updateNote } from "../notesService";
 import MarkdownIt from "markdown-it";
+import taskLists from "markdown-it-task-lists";
 import { addRecentNote } from "../recentNotes";
 const md = new MarkdownIt({ breaks: true });
+md.use(taskLists, { label: true, labelAfter: true });
 
 // 共通：候補付きエディタ（左ペイン） --------------------------------------
 function EditorWithSuggestions({
@@ -196,6 +198,16 @@ export default function NoteEditScreen({ user: userProp }) {
     (txt) => {
       let html = md.render(txt || "");
 
+      // Annotate task checkboxes with sequential indices for toggling
+      {
+        let i = 0;
+        html = html.replace(/<input([^>]*type=["']checkbox["'][^>]*)>/g, (_, attrs) => {
+          const idx = i++;
+          const cleaned = attrs.replace(/\sdisabled(=["'][^"']*["'])?/i, "");
+          return `<input${cleaned} data-task-index="${idx}">`;
+        });
+      }
+
       // [[タイトル]] → 既存ノートへのリンク
       html = html.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
         const noteId = titleToId(p1);
@@ -214,6 +226,54 @@ export default function NoteEditScreen({ user: userProp }) {
     },
     [titleToId]
   );
+
+  const toggleTaskAtIndex = useCallback((text, taskIndex) => {
+    if (taskIndex == null || taskIndex < 0) return text;
+    let i = 0;
+    const lines = (text || "").split(/\r?\n/);
+    for (let li = 0; li < lines.length; li++) {
+      const m = lines[li].match(/^(\s*[-*+] )\[( |x|X)\](.*)$/);
+      if (m) {
+        if (i === taskIndex) {
+          const prefix = m[1];
+          const mark = m[2];
+          const rest = m[3];
+          const nextMark = mark.toLowerCase() === "x" ? " " : "x";
+          lines[li] = `${prefix}[${nextMark}]${rest}`;
+          break;
+        }
+        i++;
+      }
+    }
+    return lines.join("\n");
+  }, []);
+
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    const onClick = (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      let input = null;
+      if (t.tagName.toLowerCase() === "input" && t.getAttribute("type") === "checkbox") {
+        input = t;
+      } else if (t.tagName.toLowerCase() === "label") {
+        const found = t.querySelector('input[type="checkbox"]');
+        if (found) input = found;
+      }
+      if (!input) return;
+      e.preventDefault();
+      let idxAttr = input.getAttribute("data-task-index");
+      let idx = idxAttr != null ? parseInt(idxAttr, 10) : NaN;
+      if (Number.isNaN(idx)) {
+        const all = Array.from(el.querySelectorAll('input[type="checkbox"]'));
+        idx = all.indexOf(input);
+      }
+      setContent((prev) => toggleTaskAtIndex(prev, idx));
+    };
+    el.addEventListener("click", onClick);
+    return () => el.removeEventListener("click", onClick);
+  }, [previewRef, setContent, toggleTaskAtIndex]);
 
   // [[ サジェスト ------------------------------------------
   const [linkQuery, setLinkQuery] = useState("");
