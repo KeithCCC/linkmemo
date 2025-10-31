@@ -202,12 +202,12 @@ export default function NoteListScreen({ embedded = false }) {
       <div className="relative w-full mb-3">
         <input
           type="text"
-          value={anyToggleActive ? "" : searchTerm}
+          value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="キーワード検索（タイトル・本文・タグ） / 例：#todo #env"
           className="w-full border border-gray-300 rounded px-3 py-2 pr-10"
         />
-        {(searchTerm && !anyToggleActive) && (
+        {(searchTerm) && (
           <button
             onClick={() => setSearchTerm('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
