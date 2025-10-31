@@ -1,6 +1,6 @@
 ﻿// src/screens/NoteEditScreen.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
 import { getNoteById, createNote, updateNote } from "../notesService";
@@ -85,6 +85,17 @@ export default function NoteEditScreen({ user: userProp }) {
   const { id } = useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const listHidden = (searchParams.get('list') === 'hidden');
+  const toggleListVisibility = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    if (listHidden) {
+      next.delete('list');
+    } else {
+      next.set('list', 'hidden');
+    }
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, listHidden]);
 
   // Refs
   const textareaRef = useRef(null);
@@ -793,6 +804,14 @@ export default function NoteEditScreen({ user: userProp }) {
 
       {/* 右上アクション（一覧/新規は常時、保存/削除は既存ノート時） */}
       <div className="flex items-center justify-end gap-2">
+        {/* Toggle list panel in split layout */}
+        <button
+          onClick={toggleListVisibility}
+          className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
+          title={listHidden ? "Show list" : "Hide list"}
+        >
+          {listHidden ? "Show List" : "Hide List"}
+        </button>
         {/* 保存（手動） */}
         <button
           onClick={saveNow}

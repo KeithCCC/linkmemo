@@ -1,5 +1,5 @@
 // App.jsx
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './auth';
 import NoteDetailScreen from './screens/NoteDetailScreen';
@@ -101,11 +101,15 @@ function App() {
   // Split layout: list at fixed width (same as nav), editor on the right
   const SplitListAndEditor = () => {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const listHidden = (searchParams.get('list') === 'hidden');
     return (
       <div className="flex gap-4">
-        <div className="w-48 shrink-0 border-r pr-2">
-          <NoteListScreen embedded />
-        </div>
+        {!listHidden && (
+          <div className="w-48 shrink-0 border-r pr-2">
+            <NoteListScreen embedded />
+          </div>
+        )}
         <div className="flex-1">
           <NoteEditScreen key={id || "new"} user={user} />
         </div>
