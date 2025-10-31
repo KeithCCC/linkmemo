@@ -117,8 +117,8 @@ export default function Navigation({ collapsed, setCollapsed }) {
               {recent.map((n) => (
                 <Link
                   key={n.id}
-                  to={`/note/${n.id}`}
-                  className={`block truncate hover:text-blue-700 ${isActive(`/note/${n.id}`) ? "text-blue-700 font-bold" : ""}`}
+                  to={`/edit/${n.id}`}
+                  className={`block truncate hover:text-blue-700 ${isActive(`/edit/${n.id}`) ? "text-blue-700 font-bold" : ""}`}
                   title={n.title}
                 >
                   • {n.title}

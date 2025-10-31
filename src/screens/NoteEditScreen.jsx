@@ -24,6 +24,9 @@ function EditorWithSuggestions({
   insertSuggestion,
   fontSizeCls,
   onPaste,
+  onSelect,
+  onKeyUp,
+  onMouseUp,
 }) {
   return (
     <div className="flex-1 relative" ref={wrapperRef}>
@@ -34,6 +37,9 @@ function EditorWithSuggestions({
         onKeyDown={handleKeyDown}
         onScroll={onScroll}
         onPaste={onPaste}
+        onSelect={onSelect}
+        onKeyUp={onKeyUp}
+        onMouseUp={onMouseUp}
         className={`w-full border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent`}
         style={{ height: "calc(100vh - 300px)" }}
         placeholder="内容を入力..."
@@ -455,6 +461,99 @@ export default function NoteEditScreen({ user: userProp }) {
     [allNotes, computeCaretPosition, deriveTitle, user?.uid, addNote]
   );
 
+  // Caret position store/restore -------------------------------------------
+  const restoredForIdRef = useRef(null);
+  const saveCaret = useCallback(() => {
+    const ta = textareaRef.current;
+    const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (!ta || !curId) return;
+    try {
+      const s = ta.selectionStart ?? 0;
+      const e = ta.selectionEnd ?? s;
+      const st = ta.scrollTop ?? 0;
+      localStorage.setItem(`noteCaret:${curId}`, JSON.stringify({ s, e, st }));
+    } catch {}
+  }, [id, isNew]);
+
+  const restoreCaret = useCallback(() => {
+    const ta = textareaRef.current;
+    const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (!ta || !curId) return;
+    let raw = null;
+    try {
+      raw = localStorage.getItem(`noteCaret:${curId}`);
+    } catch {}
+    if (!raw) return;
+    let obj;
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const len = (content || "").length;
+    const s = Math.min(Math.max(0, (obj?.s ?? 0)), len);
+    const e = Math.min(Math.max(0, (obj?.e ?? s)), len);
+    setTimeout(() => {
+      try {
+        ta.selectionStart = s;
+        ta.selectionEnd = e;
+        if (typeof obj?.st === "number") ta.scrollTop = obj.st;
+        ta.focus();
+      } catch {}
+    }, 0);
+  }, [id, isNew, content]);
+
+  useEffect(() => {
+    const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (!curId) return;
+    if (!(mode === "edit" || mode === "split-right")) return;
+    if (restoredForIdRef.current === curId) return;
+    restoreCaret();
+    restoredForIdRef.current = curId;
+  }, [id, isNew, mode, content, restoreCaret]);
+
+  // Manual save button handler (create or update immediately)
+  const saveNow = useCallback(async () => {
+    if (!user?.uid) return;
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    const newContent = content;
+    if (!noteIdRef.current) {
+      const now = new Date().toISOString();
+      const newNote = {
+        title: deriveTitle(newContent),
+        content: newContent,
+        createdAt: now,
+        updatedAt: now,
+      };
+      try {
+        const created = await createNote(user.uid, newNote);
+        const newId = typeof created === "string" ? created : created.id;
+        noteIdRef.current = newId;
+        addNote({ id: newId, ...newNote });
+        setMode("edit");
+        localStorage.setItem("noteViewMode", "edit");
+        window.history.replaceState(null, "", `/edit/${newId}`);
+      } catch (err) {
+        console.error("手動保存に失敗:", err);
+      }
+    } else {
+      try {
+        const now = new Date().toISOString();
+        await updateNote(user.uid, noteIdRef.current, {
+          title: deriveTitle(newContent),
+          content: newContent,
+          updatedAt: now,
+        });
+      } catch (err) {
+        console.error("手動保存に失敗:", err);
+      }
+    }
+  }, [user?.uid, content, deriveTitle, addNote]);
+
   // 候補確定 ---------------------------------------------------------------
   const insertSuggestion = useCallback(
     (title) => {
@@ -694,6 +793,13 @@ export default function NoteEditScreen({ user: userProp }) {
 
       {/* 右上アクション（一覧/新規は常時、保存/削除は既存ノート時） */}
       <div className="flex items-center justify-end gap-2">
+        {/* 保存（手動） */}
+        <button
+          onClick={saveNow}
+          className="bg-indigo-600 text-white px-3 py-1 text-sm rounded hover:bg-indigo-700"
+        >
+          保存
+        </button>
         <Link
           to="/"
           className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
@@ -815,6 +921,7 @@ export default function NoteEditScreen({ user: userProp }) {
           onChange={handleContentChange}
           onScroll={() => {
             if (linkSuggestions.length) setSuggestPos(computeCaretPosition());
+            saveCaret();
           }}
           textareaRef={textareaRef}
           wrapperRef={wrapperRef}
@@ -825,6 +932,9 @@ export default function NoteEditScreen({ user: userProp }) {
           insertSuggestion={insertSuggestion}
           fontSizeCls={fontSizeCls}
           onPaste={handlePaste}
+          onSelect={saveCaret}
+          onKeyUp={saveCaret}
+          onMouseUp={saveCaret}
         />
       )}
 
@@ -844,6 +954,7 @@ export default function NoteEditScreen({ user: userProp }) {
             onChange={handleContentChange}
             onScroll={() => {
               if (linkSuggestions.length) setSuggestPos(computeCaretPosition());
+              saveCaret();
               syncScroll(textareaRef, previewRef);
             }}
             textareaRef={textareaRef}
@@ -855,6 +966,9 @@ export default function NoteEditScreen({ user: userProp }) {
             insertSuggestion={insertSuggestion}
             fontSizeCls={fontSizeCls}
             onPaste={handlePaste}
+            onSelect={saveCaret}
+            onKeyUp={saveCaret}
+            onMouseUp={saveCaret}
           />
           <div
             ref={previewRef}
