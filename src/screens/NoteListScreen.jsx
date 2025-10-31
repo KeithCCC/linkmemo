@@ -18,15 +18,22 @@ const mineTags = (title = "", content = "") => {
   return [...set];
 };
 
-export default function NoteListScreen() {
+export default function NoteListScreen({ embedded = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { notes, refreshNotes } = useNotesContext();
   const { user } = useAuthContext();
   const allNotes = Array.isArray(notes) ? notes : [];
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [tagStates, setTagStates] = useState({}); // { [tag]: "include" | "exclude" | "none" }
+  const [searchTerm, setSearchTerm] = useState(() => {
+    try { return localStorage.getItem("list.searchTerm") || ""; } catch { return ""; }
+  });
+  const [tagStates, setTagStates] = useState(() => {
+    try {
+      const raw = localStorage.getItem("list.tagStates");
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }); // { [tag]: "include" | "exclude" | "none" }
   const [isNavVisible, setIsNavVisible] = useState(() => {
     return localStorage.getItem("isNavVisible") === "true";
   });
@@ -70,6 +77,14 @@ export default function NoteListScreen() {
 
   // 検索欄とトグルの両立（トグルが有効なら検索語なし優先）
   const anyToggleActive = Object.values(tagStates).some(s => s !== "none");
+
+  // persist filters
+  useEffect(() => {
+    try { localStorage.setItem("list.searchTerm", searchTerm); } catch {}
+  }, [searchTerm]);
+  useEffect(() => {
+    try { localStorage.setItem("list.tagStates", JSON.stringify(tagStates)); } catch {}
+  }, [tagStates]);
 
   // 一覧の並び順：更新降順
   const sortedNotes = useMemo(() => {
@@ -204,7 +219,7 @@ export default function NoteListScreen() {
       </div>
 
       {/* すべてのタグ（約3行・スクロール可） */}
-      {allTags.length > 0 && (
+      {!embedded && allTags.length > 0 && (
         <div className="mb-4 border rounded bg-white p-2">
           <div className="text-xs text-gray-500 mb-2">すべてのタグ</div>
           <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">

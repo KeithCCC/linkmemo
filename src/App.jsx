@@ -98,6 +98,20 @@ function App() {
     return <NoteEditScreen key={id || "new"} user={user} />;
   };
 
+  // Split layout: list at fixed width (same as nav), editor on the right
+  const SplitListAndEditor = () => {
+    const { id } = useParams();
+    return (
+      <div className="flex gap-4">
+        <div className="w-48 shrink-0 border-r pr-2">
+          <NoteListScreen embedded />
+        </div>
+        <div className="flex-1">
+          <NoteEditScreen key={id || "new"} user={user} />
+        </div>
+      </div>
+    );
+  };
 
 
   return (
@@ -152,8 +166,8 @@ function App() {
             <Routes>
               <Route path="/" element={<NoteListScreen />} />
               <Route path="/note/:id" element={<NoteDetailScreen />} />
-              <Route path="/edit/:id" element={<NoteEditScreenWrapper />} />
-              <Route path="/new" element={<NoteEditScreenWrapper />} />
+              <Route path="/edit/:id" element={<SplitListAndEditor />} />
+              <Route path="/new" element={<SplitListAndEditor />} />
               <Route path="/clip" element={<ClipScreen />} />
               <Route path="/extension" element={<ExtensionScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
