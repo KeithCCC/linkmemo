@@ -186,8 +186,10 @@ export default function NoteListScreen({ embedded = false }) {
     console.log("isNavVisible saved to localStorage");
   };
 
+  const containerClass = embedded ? "text-left p-2" : "max-w-3xl mr-auto text-left p-4";
+
   return (
-    <div className="max-w-3xl mr-auto text-left p-4">
+    <div className={containerClass}>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold">ノート一覧 🗂️</h1>
         <Link
@@ -199,7 +201,8 @@ export default function NoteListScreen({ embedded = false }) {
       </div>
 
       {/* 🔎 キーワード検索（×で即クリア） */}
-      <div className="relative w-full mb-3">
+      <div className={embedded ? "sticky top-0 z-10 bg-white pb-2" : ""}>
+        <div className="relative w-full mb-3">
         <input
           type="text"
           value={searchTerm}
@@ -216,7 +219,7 @@ export default function NoteListScreen({ embedded = false }) {
             ×
           </button>
         )}
-      </div>
+        </div>
 
       {/* すべてのタグ（約3行・スクロール可） */}
       {!embedded && allTags.length > 0 && (
@@ -236,6 +239,7 @@ export default function NoteListScreen({ embedded = false }) {
           </div>
         </div>
       )}
+      </div>
 
       {/* 🏷️ タグ候補 & 三値トグル */}
       {visibleTags.length > 0 && (

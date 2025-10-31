@@ -98,19 +98,101 @@ function App() {
     return <NoteEditScreen key={id || "new"} user={user} />;
   };
 
-  // Split layout: list at fixed width (same as nav), editor on the right
+  // Split layout: resizable list (persisted), editor on the right
   const SplitListAndEditor = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
-    const listHidden = (searchParams.get('list') === 'hidden');
+    const containerRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
+    const [containerWidth, setContainerWidth] = useState(0);
+    const [listWidth, setListWidth] = useState(() => {
+      try {
+        const saved = parseInt(localStorage.getItem('list.widthPx'), 10);
+        if (!isNaN(saved) && saved > 0) return saved;
+      } catch {}
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+      if (vw >= 1440) return 360;
+      if (vw >= 1024) return Math.round(Math.min(Math.max(vw * 0.30, 280), 420));
+      if (vw >= 768) return Math.round(Math.min(Math.max(vw * 0.35, 260), 420));
+      return 0; // mobile will hide list
+    });
+
+    useEffect(() => {
+      try { localStorage.setItem('list.widthPx', String(listWidth)); } catch {}
+    }, [listWidth]);
+
+    useEffect(() => {
+      const onResize = () => setViewportWidth(window.innerWidth);
+      window.addEventListener('resize', onResize);
+      return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el || typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry?.contentRect?.width;
+          if (typeof w === 'number') setContainerWidth(w);
+        }
+      });
+      ro.observe(el);
+      return () => ro.disconnect();
+    }, []);
+
+    useEffect(() => {
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const container = containerRef.current;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const minList = 260;
+        const maxList = 520;
+        const handleW = 6;
+        const containerWidth = rect.width;
+        const minEditor = 640;
+        const maxByEditor = containerWidth - minEditor - handleW;
+        const clamped = Math.max(minList, Math.min(Math.min(maxList, maxByEditor), x));
+        setListWidth(clamped);
+        e.preventDefault();
+      };
+      const onUp = () => setIsDragging(false);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      return () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      };
+    }, [isDragging]);
+
+    const listHiddenParam = (searchParams.get('list') === 'hidden');
+    const isMobile = viewportWidth < 768;
+    const minEditor = 640;
+    const minList = 260;
+    const handleW = 6;
+    const tooNarrowForSplit = containerWidth > 0 && (containerWidth < (minEditor + minList + handleW));
+    const listHidden = listHiddenParam || isMobile || tooNarrowForSplit;
+
     return (
-      <div className="flex gap-4">
+      <div ref={containerRef} className="flex items-stretch gap-0 min-h-[70vh]">
         {!listHidden && (
-          <div className="w-48 shrink-0 border-r pr-2">
+          <div
+            className="shrink-0 border-r bg-white overflow-y-auto pr-2"
+            style={{ width: listWidth, maxHeight: 'calc(100vh - 140px)' }}
+          >
             <NoteListScreen embedded />
           </div>
         )}
-        <div className="flex-1">
+        {!listHidden && (
+          <div
+            className={`w-1 cursor-col-resize ${isDragging ? 'bg-gray-400' : 'bg-transparent'} hover:bg-gray-300`}
+            onMouseDown={() => setIsDragging(true)}
+            title="Drag to resize"
+          />
+        )}
+        <div className="flex-1 min-w-[640px]">
           <NoteEditScreen key={id || "new"} user={user} />
         </div>
       </div>
