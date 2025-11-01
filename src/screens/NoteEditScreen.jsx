@@ -745,13 +745,13 @@ export default function NoteEditScreen({ user: userProp }) {
     localStorage.setItem("lastMode", mode);
   }, [mode]);
 
-  // Keyboard shortcuts for view modes
+  // Keyboard shortcuts for view modes and list toggle/hide
   useEffect(() => {
     const onKey = (e) => {
       // Support Ctrl on Windows/Linux and Cmd on macOS
       const mod = e.ctrlKey || e.metaKey;
       if (!mod) return;
-      const k = String(e.key);
+      const k = String(e.key).toLowerCase();
       if (k === '1') {
         e.preventDefault();
         setMode('edit');
@@ -764,11 +764,15 @@ export default function NoteEditScreen({ user: userProp }) {
         e.preventDefault();
         setMode('split-right');
         localStorage.setItem('noteViewMode', 'split-right');
+      } else if (k === 'l') {
+        // Ctrl+L or Ctrl+Shift+L: toggle list panel visibility
+        e.preventDefault();
+        try { toggleListVisibility(); } catch {}
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [toggleListVisibility]);
 
   // After a new note gets its ID, add it to recent notes once
   useEffect(() => {
@@ -808,9 +812,10 @@ export default function NoteEditScreen({ user: userProp }) {
         <button
           onClick={toggleListVisibility}
           className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
-          title={listHidden ? "Show list" : "Hide list"}
+          title="リスト"
+          aria-label="リスト"
         >
-          {listHidden ? "Show List" : "Hide List"}
+          リスト
         </button>
         {/* 保存（手動） */}
         <button
