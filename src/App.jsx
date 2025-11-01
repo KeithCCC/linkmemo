@@ -167,6 +167,19 @@ function App() {
       };
     }, [isDragging]);
 
+    // Clamp list width to fit available space and avoid horizontal scroll
+    useEffect(() => {
+      if (!containerRef.current) return;
+      if (containerWidth > 0) {
+        const minEditor = 640;
+        const handleW = 6;
+        const maxAllowedList = Math.max(0, containerWidth - minEditor - handleW);
+        if (listWidth > maxAllowedList) {
+          setListWidth(Math.max(260, Math.min(520, maxAllowedList)));
+        }
+      }
+    }, [containerWidth, listWidth]);
+
     const listHiddenParam = (searchParams.get('list') === 'hidden');
     const isMobile = viewportWidth < 768;
     const minEditor = 640;
@@ -176,7 +189,7 @@ function App() {
     const listHidden = listHiddenParam || isMobile || tooNarrowForSplit;
 
     return (
-      <div ref={containerRef} className="flex items-stretch gap-0 min-h-[70vh]">
+      <div ref={containerRef} className="flex items-stretch gap-0 min-h-[70vh] overflow-x-hidden">
         {!listHidden && (
           <div
             className="shrink-0 border-r bg-white overflow-y-auto pr-2"
@@ -187,12 +200,12 @@ function App() {
         )}
         {!listHidden && (
           <div
-            className={`w-1 cursor-col-resize ${isDragging ? 'bg-gray-400' : 'bg-transparent'} hover:bg-gray-300`}
+            className={`w-[6px] cursor-col-resize ${isDragging ? 'bg-gray-400' : 'bg-transparent'} hover:bg-gray-300`}
             onMouseDown={() => setIsDragging(true)}
             title="Drag to resize"
           />
         )}
-        <div className="flex-1 min-w-[640px]">
+        <div className={`flex-1 ${listHidden ? 'min-w-0' : 'min-w-[640px]'}`}>
           <NoteEditScreen key={id || "new"} user={user} />
         </div>
       </div>
