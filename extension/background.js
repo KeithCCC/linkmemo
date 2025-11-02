@@ -1,6 +1,6 @@
 // background.js (MV3 service worker)
 
-const DEFAULT_BASE_URL = 'http://localhost:5173';
+const DEFAULT_BASE_URL = 'https://link-memo-e7515.web.app';
 
 async function getBaseUrl() {
   return new Promise((resolve) => {
@@ -44,4 +44,3 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     await openClip(info.linkUrl || '', info.selectionText || tab?.title || '');
   }
 });
-

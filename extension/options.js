@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = 'http://localhost:5173';
+const DEFAULT_BASE_URL = 'https://link-memo-e7515.web.app';
 
 function load() {
   chrome.storage.sync.get({ baseUrl: DEFAULT_BASE_URL }, (items) => {
@@ -18,4 +18,3 @@ function save() {
 
 document.addEventListener('DOMContentLoaded', load);
 document.getElementById('save').addEventListener('click', save);
-
