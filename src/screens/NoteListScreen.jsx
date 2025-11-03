@@ -201,14 +201,14 @@ export default function NoteListScreen({ embedded = false }) {
       </div>
 
       {/* 🔎 キーワード検索（×で即クリア） */}
-      <div className={embedded ? "sticky top-0 z-10 bg-white pb-2" : ""}>
+      <div className={embedded ? "sticky top-0 z-10 bg-white dark:bg-zinc-900 pb-2" : ""}>
         <div className="relative w-full mb-3">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="キーワード検索（タイトル・本文・タグ） / 例：#todo #env"
-          className="w-full border border-gray-300 rounded px-3 py-2 pr-10"
+          className="w-full rounded px-3 py-2 pr-10 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-400"
         />
         {(searchTerm) && (
           <button
@@ -223,7 +223,7 @@ export default function NoteListScreen({ embedded = false }) {
 
       {/* すべてのタグ（約3行・スクロール可） */}
       {!embedded && allTags.length > 0 && (
-        <div className="mb-4 border rounded bg-white p-2">
+        <div className="mb-4 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 p-2">
           <div className="text-xs text-gray-500 mb-2">すべてのタグ</div>
           <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
             {allTags.map((tag) => (
@@ -268,7 +268,7 @@ export default function NoteListScreen({ embedded = false }) {
             const tags = [...new Set([...saved, ...mined])];
 
             return (
-              <li key={note.id} className="p-3 border rounded hover:bg-gray-50">
+              <li key={note.id} className="p-3 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-gray-50 dark:hover:bg-zinc-800">
                 <div className="font-semibold">
                   <Link
                     className="text-blue-600"
@@ -288,7 +288,7 @@ export default function NoteListScreen({ embedded = false }) {
                       <button
                         key={t}
                         onClick={() => cycleTagState(t)}
-                        className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
+                        className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 text-zinc-900 dark:text-zinc-900"
                         title={`#${t} を選択`}
                       >
                         #{t}
@@ -331,7 +331,7 @@ export default function NoteListScreen({ embedded = false }) {
       )}
 
       {/* デバッグ用：最後に押したキーを表示 */}
-      <div className="fixed bottom-4 right-4 bg-white border rounded shadow p-3 text-sm">
+      <div className="fixed bottom-4 right-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded shadow p-3 text-sm">
         最後に押したキー: {lastKeyPressed}
       </div>
     </div>

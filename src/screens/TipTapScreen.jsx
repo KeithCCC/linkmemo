@@ -24,7 +24,7 @@ export default function TipTapScreen() {
     <div className="p-6 space-y-4">
       <h1 className="text-xl font-bold">🧪 TipTap Editor テスト</h1>
 
-      <div className="border border-gray-300 rounded p-2 bg-white min-h-[200px]">
+      <div className="border border-gray-300 dark:border-zinc-700 rounded p-2 bg-white dark:bg-zinc-900 min-h-[200px]">
         <EditorContent editor={editor} />
       </div>
 

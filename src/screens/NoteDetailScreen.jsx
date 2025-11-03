@@ -58,7 +58,7 @@ export default function NoteDetailScreen() {
         </Link>
 
         <div
-          className="prose prose-sm max-w-none border p-3 mt-4 rounded bg-white border-gray-500 overflow-auto"
+          className="prose dark:prose-invert prose-sm max-w-none border border-gray-300 dark:border-zinc-700 p-3 mt-4 rounded bg-zinc-100 dark:bg-zinc-800 overflow-auto"
           style={{ height: "calc(100vh - 300px)" }}
           dangerouslySetInnerHTML={{ __html: contentHTML }}
         />

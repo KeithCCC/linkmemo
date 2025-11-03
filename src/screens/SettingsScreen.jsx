@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function SettingsScreen() {
   return (
-    <div className="prose max-w-prose mx-auto p-6 text-base leading-relaxed">
+    <div className="prose max-w-prose mx-auto p-6 text-base leading-relaxed bg-[#bdbdbd] dark:bg-[#bdbdbd] text-zinc-900 dark:text-zinc-900 rounded border border-zinc-300">
       <h1 className="text-blue-800 text-2xl font-bold mb-4">ASUKA の使い方ガイド</h1>
 
       <h2>📝 ASUKAとは</h2>
@@ -66,4 +66,3 @@ export default function SettingsScreen() {
     </div>
   );
 }
-

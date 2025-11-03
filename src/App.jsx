@@ -192,7 +192,7 @@ function App() {
       <div ref={containerRef} className="flex items-stretch gap-0 min-h-[70vh] overflow-x-hidden">
         {!listHidden && (
           <div
-            className="shrink-0 border-r bg-white overflow-y-auto pr-2"
+            className="shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-y-auto pr-2"
             style={{ width: listWidth, maxHeight: 'calc(100vh - 140px)' }}
           >
             <NoteListScreen embedded />
@@ -228,7 +228,7 @@ function App() {
               deferredPromptRef.current = null;
               setCanInstall(false);
             }}
-            className="ml-3 bg-white/20 hover:bg-white/30 text-white text-xs px-2 py-1 rounded"
+            className="ml-3 bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20 text-white text-xs px-2 py-1 rounded"
           >
             インストール
           </button>

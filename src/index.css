@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global background and text colors */
+body {
+  /* Light fallback if .dark class is removed */
+  @apply bg-white text-zinc-900;
+}
+
+.dark body {
+  /* Default dark background */
+  @apply bg-zinc-900 text-zinc-100;
+}
+
+/* Inputs in dark mode: readable text and placeholders */
+.dark input,
+.dark textarea,
+.dark select {
+  color: rgb(244 244 245); /* zinc-100 */
+  background-color: rgb(24 24 27); /* zinc-900 */
+  border-color: rgb(63 63 70); /* zinc-700 */
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(161 161 170); /* zinc-400 */
+}
+
 /* 🌿 Markdown プレビュー全体設定（密度感・色味） */
 .prose {
   --tw-prose-body: #111827;
@@ -38,6 +62,15 @@
   font-size: 1.6em; /* was 0.95rem: too small */
   line-height: 1.25;
   font-weight: 700;
+}
+
+/* Keyboard labels inside prose */
+.prose kbd {
+  @apply bg-white text-zinc-900 border border-zinc-300 rounded px-2 py-0.5 shadow-sm font-medium;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.dark .prose kbd {
+  @apply bg-white text-zinc-900 border-zinc-300;
 }
 
 .prose h2 {
