@@ -10,7 +10,7 @@ body {
 
 .dark body {
   /* Default dark background */
-  @apply bg-zinc-900 text-zinc-100;
+  @apply bg-[#2b2b2b] text-zinc-100;
 }
 
 /* Inputs in dark mode: readable text and placeholders */
