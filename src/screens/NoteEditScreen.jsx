@@ -41,7 +41,7 @@ function EditorWithSuggestions({
         onKeyUp={onKeyUp}
         onMouseUp={onMouseUp}
         className={`w-full border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent`}
-        style={{ height: "calc(100vh - 300px)" }}
+        style={{ height: "calc(100vh - 240px)" }}
         placeholder="内容を入力..."
       />
       {linkSuggestions.length > 0 && (
@@ -108,6 +108,52 @@ export default function NoteEditScreen({ user: userProp }) {
   // UI state
   const [content, setContent] = useState("");
   const [recentMarked, setRecentMarked] = useState(false);
+  const restoredForIdRef = useRef(null);
+
+  const saveCaret = useCallback(() => {
+    const ta = textareaRef.current;
+    const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (!ta || !curId) return;
+    try {
+      const s = ta.selectionStart ?? 0;
+      const e = ta.selectionEnd ?? s;
+      const st = ta.scrollTop ?? 0;
+      localStorage.setItem(`noteCaret:${curId}`, JSON.stringify({ s, e, st }));
+    } catch {}
+  }, [id, isNew]);
+
+  const restoreCaret = useCallback(() => {
+    const ta = textareaRef.current;
+    const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (!ta || !curId) return;
+    let raw = null;
+    try {
+      raw = localStorage.getItem(`noteCaret:${curId}`);
+    } catch {}
+    if (!raw) return;
+    let obj;
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const len = (content || "").length;
+    const s = Math.min(Math.max(0, obj?.s ?? 0), len);
+    const e = Math.min(Math.max(0, obj?.e ?? s), len);
+    const st = typeof obj?.st === "number" ? obj.st : null;
+    setTimeout(() => {
+      const current = textareaRef.current;
+      if (!current) return;
+      try {
+        current.selectionStart = s;
+        current.selectionEnd = e;
+        if (st !== null) current.scrollTop = st;
+        if (document.activeElement === current || !document.activeElement || document.activeElement === document.body) {
+          current.focus();
+        }
+      } catch {}
+    }, 0);
+  }, [id, isNew, content]);
   // --- caret/selection helpers ---
   const getLineInfoAt = useCallback((text, index) => {
     const start = text.lastIndexOf("\n", Math.max(0, index - 1)) + 1;
@@ -181,35 +227,26 @@ export default function NoteEditScreen({ user: userProp }) {
     return localStorage.getItem("lastMode") || "edit"; // Default to "edit"
   });
 
-  // Focus caret to the beginning of the editor when entering edit/split modes
-  const focusEditorTop = useCallback(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    // Move caret to the very start and scroll to top
-    ta.selectionStart = 0;
-    ta.selectionEnd = 0;
-    ta.scrollTop = 0;
-    ta.focus();
-  }, []);
-
-  // Track previous mode to detect transitions into edit or split-right
-  const prevModeRef = useRef(mode);
   useEffect(() => {
-    const justEnteredEditor =
-      (mode === "edit" || mode === "split-right") && prevModeRef.current !== mode;
-    if (justEnteredEditor) {
-      // Defer to ensure textarea exists in DOM for the current mode
-      setTimeout(focusEditorTop, 0);
-    }
-    prevModeRef.current = mode;
-  }, [mode, focusEditorTop]);
+    const handler = () => saveCaret();
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [saveCaret]);
 
-  // Also move caret to top when a different note is opened
   useEffect(() => {
-    if (mode === "edit" || mode === "split-right") {
-      setTimeout(focusEditorTop, 0);
-    }
-  }, [id, mode, focusEditorTop]);
+    return () => {
+      saveCaret();
+    };
+  }, [id, isNew, saveCaret]);
+
+  useEffect(() => {
+    const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (!curId) return;
+    if (!(mode === "edit" || mode === "split-right")) return;
+    if (restoredForIdRef.current === curId) return;
+    restoreCaret();
+    restoredForIdRef.current = curId;
+  }, [id, isNew, mode, content, restoreCaret]);
 
   const titleToId = useCallback(
     (t) => {
@@ -472,57 +509,6 @@ export default function NoteEditScreen({ user: userProp }) {
     [allNotes, computeCaretPosition, deriveTitle, user?.uid, addNote]
   );
 
-  // Caret position store/restore -------------------------------------------
-  const restoredForIdRef = useRef(null);
-  const saveCaret = useCallback(() => {
-    const ta = textareaRef.current;
-    const curId = noteIdRef.current || (isNew ? "new" : id);
-    if (!ta || !curId) return;
-    try {
-      const s = ta.selectionStart ?? 0;
-      const e = ta.selectionEnd ?? s;
-      const st = ta.scrollTop ?? 0;
-      localStorage.setItem(`noteCaret:${curId}`, JSON.stringify({ s, e, st }));
-    } catch {}
-  }, [id, isNew]);
-
-  const restoreCaret = useCallback(() => {
-    const ta = textareaRef.current;
-    const curId = noteIdRef.current || (isNew ? "new" : id);
-    if (!ta || !curId) return;
-    let raw = null;
-    try {
-      raw = localStorage.getItem(`noteCaret:${curId}`);
-    } catch {}
-    if (!raw) return;
-    let obj;
-    try {
-      obj = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    const len = (content || "").length;
-    const s = Math.min(Math.max(0, (obj?.s ?? 0)), len);
-    const e = Math.min(Math.max(0, (obj?.e ?? s)), len);
-    setTimeout(() => {
-      try {
-        ta.selectionStart = s;
-        ta.selectionEnd = e;
-        if (typeof obj?.st === "number") ta.scrollTop = obj.st;
-        ta.focus();
-      } catch {}
-    }, 0);
-  }, [id, isNew, content]);
-
-  useEffect(() => {
-    const curId = noteIdRef.current || (isNew ? "new" : id);
-    if (!curId) return;
-    if (!(mode === "edit" || mode === "split-right")) return;
-    if (restoredForIdRef.current === curId) return;
-    restoreCaret();
-    restoredForIdRef.current = curId;
-  }, [id, isNew, mode, content, restoreCaret]);
-
   // Manual save button handler (create or update immediately)
   const saveNow = useCallback(async () => {
     if (!user?.uid) return;
@@ -622,6 +608,11 @@ export default function NoteEditScreen({ user: userProp }) {
         wrapSelection(ta, '**', '**');
         return;
       }
+      if ((e.ctrlKey || e.metaKey) && key === '-') {
+        e.preventDefault();
+        wrapSelection(ta, '~~', '~~');
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && key === 'i') {
         e.preventDefault();
         wrapSelection(ta, '_', '_');
@@ -716,6 +707,7 @@ export default function NoteEditScreen({ user: userProp }) {
   useEffect(() => {
     setLinkSuggestions([]);
     setLinkQuery("");
+    restoredForIdRef.current = null;
     if (!isNew && user?.uid) {
       getNoteById(user.uid, id).then((note) => {
         if (!note) navigate("/", { replace: true });
@@ -967,7 +959,7 @@ export default function NoteEditScreen({ user: userProp }) {
           ref={previewRef}
           dangerouslySetInnerHTML={previewHTML}
           className={`prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-3 border border-zinc-300 dark:border-gray-500`}
-          style={{ height: "calc(100vh - 300px)", overflow: "auto" }}
+          style={{ height: "calc(100vh - 240px)", overflow: "auto" }}
         />
       )}
 
@@ -975,30 +967,30 @@ export default function NoteEditScreen({ user: userProp }) {
         <div className="flex h-full gap-4">
           <EditorWithSuggestions
             content={content}
-            onChange={handleContentChange}
-            onScroll={() => {
-              if (linkSuggestions.length) setSuggestPos(computeCaretPosition());
-              saveCaret();
-              syncScroll(textareaRef, previewRef);
-            }}
-            textareaRef={textareaRef}
-            wrapperRef={wrapperRef}
-            handleKeyDown={handleKeyDown}
-            linkSuggestions={linkSuggestions}
-            suggestPos={suggestPos}
-            selectedSuggestion={selectedSuggestion}
-            insertSuggestion={insertSuggestion}
-            fontSizeCls={fontSizeCls}
-            onPaste={handlePaste}
-            onSelect={saveCaret}
-            onKeyUp={saveCaret}
-            onMouseUp={saveCaret}
-          />
+          onChange={handleContentChange}
+          onScroll={() => {
+            if (linkSuggestions.length) setSuggestPos(computeCaretPosition());
+            syncScroll(textareaRef, previewRef);
+            saveCaret();
+          }}
+          textareaRef={textareaRef}
+          wrapperRef={wrapperRef}
+          handleKeyDown={handleKeyDown}
+          linkSuggestions={linkSuggestions}
+          suggestPos={suggestPos}
+          selectedSuggestion={selectedSuggestion}
+          insertSuggestion={insertSuggestion}
+          fontSizeCls={fontSizeCls}
+          onPaste={handlePaste}
+          onSelect={saveCaret}
+          onKeyUp={saveCaret}
+          onMouseUp={saveCaret}
+        />
           <div
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}
             className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-3 border border-zinc-300 dark:border-gray-500`}
-            style={{ height: "calc(100vh - 300px)", overflow: "auto" }}
+            style={{ height: "calc(100vh - 240px)", overflow: "auto" }}
             onScroll={() => syncScroll(previewRef, textareaRef)}
           />
         </div>

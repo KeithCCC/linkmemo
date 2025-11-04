@@ -33,6 +33,7 @@ export default function SettingsScreen() {
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>3</kbd>：分割（右）</li>
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>B</kbd>：選択を太字（<code>**text**</code>）</li>
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>I</kbd>：選択を斜体（<code>_text_</code>）</li>
+        <li><kbd>Ctrl/Cmd</kbd> + <kbd>-</kbd>：選択を打ち消し線（<code>~~text~~</code>）</li>
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>K</kbd>：リンク作成（URL入力で <code>[text](url)</code>）</li>
         <li><code>[[</code> 入力中：<kbd>↑/↓</kbd> 候補移動、<kbd>Enter</kbd> 決定、<kbd>Esc</kbd> 閉じる</li>
       </ul>

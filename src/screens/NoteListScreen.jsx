@@ -37,7 +37,6 @@ export default function NoteListScreen({ embedded = false }) {
   const [isNavVisible, setIsNavVisible] = useState(() => {
     return localStorage.getItem("isNavVisible") === "true";
   });
-  const [lastKeyPressed, setLastKeyPressed] = useState("");
   const listRef = useRef(null);
 
   // Firestore を使っている場合だけ明示リフレッシュ（存在チェック安全化）
@@ -161,7 +160,6 @@ export default function NoteListScreen({ embedded = false }) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      setLastKeyPressed(`Ctrl: ${e.ctrlKey}, Shift: ${e.shiftKey}, Key: ${e.key}`);
       if (e.ctrlKey && e.shiftKey && e.key === "z") {
         e.preventDefault();
         setIsNavVisible((prev) => {
@@ -333,10 +331,6 @@ export default function NoteListScreen({ embedded = false }) {
         </nav>
       )}
 
-      {/* デバッグ用：最後に押したキーを表示 */}
-      <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-700 border border-zinc-200 dark:border-gray-500 rounded shadow p-3 text-sm">
-        最後に押したキー: {lastKeyPressed}
-      </div>
     </div>
   );
 }
