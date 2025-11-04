@@ -46,7 +46,7 @@ function EditorWithSuggestions({
       />
       {linkSuggestions.length > 0 && (
         <div
-          className="absolute z-50 w-72 max-h-56 overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow rounded-sm"
+          className="absolute z-50 w-72 max-h-56 overflow-y-auto bg-white dark:bg-gray-700 border border-zinc-200 dark:border-gray-500 shadow rounded-sm"
           style={{ left: `${suggestPos.left}px`, top: `${suggestPos.top}px` }}
         >
           {linkSuggestions.map((note, idx) => (
@@ -966,7 +966,7 @@ export default function NoteEditScreen({ user: userProp }) {
         <div
           ref={previewRef}
           dangerouslySetInnerHTML={previewHTML}
-          className={`prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-3 border border-zinc-300 dark:border-zinc-700`}
+          className={`prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-3 border border-zinc-300 dark:border-gray-500`}
           style={{ height: "calc(100vh - 300px)", overflow: "auto" }}
         />
       )}
@@ -997,7 +997,7 @@ export default function NoteEditScreen({ user: userProp }) {
           <div
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}
-            className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-3 border border-zinc-300 dark:border-zinc-700`}
+            className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-3 border border-zinc-300 dark:border-gray-500`}
             style={{ height: "calc(100vh - 300px)", overflow: "auto" }}
             onScroll={() => syncScroll(previewRef, textareaRef)}
           />

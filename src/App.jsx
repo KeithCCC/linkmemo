@@ -192,7 +192,7 @@ function App() {
       <div ref={containerRef} className="flex items-stretch gap-0 min-h-[70vh] overflow-x-hidden">
         {!listHidden && (
           <div
-            className="shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-y-auto pr-2"
+            className="shrink-0 border-r border-gray-200 dark:border-gray-500 bg-white dark:bg-[#3a3a3a] overflow-y-auto pr-2"
             style={{ width: listWidth, maxHeight: 'calc(100vh - 140px)' }}
           >
             <NoteListScreen embedded />

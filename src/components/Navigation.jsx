@@ -57,7 +57,7 @@ export default function Navigation({ collapsed, setCollapsed }) {
 
   return (
     <aside
-      className={`relative min-h-screen bg-orange-200 border-r shadow-sm text-gray-700 text-sm font-medium transition-all duration-300 ${collapsed ? "w-0 overflow-hidden" : "w-48"}`}
+      className={`relative min-h-screen bg-gray-50 dark:bg-gray-700 border-r border-gray-200 dark:border-gray-500 shadow-sm text-gray-700 dark:text-gray-100 text-sm font-medium transition-all duration-300 ${collapsed ? "w-0 overflow-hidden" : "w-48"}`}
     >
       {!collapsed && (
         <div className="pt-16 px-2 space-y-3">
@@ -108,7 +108,7 @@ export default function Navigation({ collapsed, setCollapsed }) {
           </Link>
 
           {/* separator */}
-          <div className="my-3 border-t border-orange-300" />
+          <div className="my-3 border-t border-gray-200 dark:border-gray-500" />
 
           {/* 最近のノート */}
           {recent.length > 0 && (

@@ -201,14 +201,14 @@ export default function NoteListScreen({ embedded = false }) {
       </div>
 
       {/* 🔎 キーワード検索（×で即クリア） */}
-      <div className={embedded ? "sticky top-0 z-10 bg-white dark:bg-zinc-900 pb-2" : ""}>
+      <div className={embedded ? "sticky top-0 z-10 bg-white dark:bg-[#3a3a3a] pb-2" : ""}>
         <div className="relative w-full mb-3">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="キーワード検索（タイトル・本文・タグ） / 例：#todo #env"
-          className="w-full rounded px-3 py-2 pr-10 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-400"
+          className="w-full rounded px-3 py-2 pr-10 border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-600 text-zinc-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-300"
         />
         {(searchTerm) && (
           <button
@@ -223,7 +223,7 @@ export default function NoteListScreen({ embedded = false }) {
 
       {/* すべてのタグ（約3行・スクロール可） */}
       {!embedded && allTags.length > 0 && (
-        <div className="mb-4 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 p-2">
+        <div className="mb-4 border border-gray-200 dark:border-gray-500 rounded bg-white dark:bg-gray-700 p-2">
           <div className="text-xs text-gray-500 mb-2">すべてのタグ</div>
           <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
             {allTags.map((tag) => (
@@ -268,7 +268,10 @@ export default function NoteListScreen({ embedded = false }) {
             const tags = [...new Set([...saved, ...mined])];
 
             return (
-              <li key={note.id} className="p-3 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-gray-50 dark:hover:bg-zinc-800">
+              <li
+                key={note.id}
+                className="p-3 border border-zinc-300 dark:border-gray-500 rounded bg-[#bdbdbd] dark:bg-[#bdbdbd] hover:bg-[#c8c8c8] dark:hover:bg-[#c8c8c8]"
+              >
                 <div className="font-semibold">
                   <Link
                     className="text-blue-600"
@@ -331,7 +334,7 @@ export default function NoteListScreen({ embedded = false }) {
       )}
 
       {/* デバッグ用：最後に押したキーを表示 */}
-      <div className="fixed bottom-4 right-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded shadow p-3 text-sm">
+      <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-700 border border-zinc-200 dark:border-gray-500 rounded shadow p-3 text-sm">
         最後に押したキー: {lastKeyPressed}
       </div>
     </div>
