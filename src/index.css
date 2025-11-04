@@ -5,12 +5,12 @@
 /* Global background and text colors */
 body {
   /* Light fallback if .dark class is removed */
-  @apply bg-white text-zinc-900;
+  @apply bg-white text-black;
 }
 
 .dark body {
-  /* Brighter dark background */
-  @apply bg-[#3a3a3a] text-gray-100;
+  /* Richer dark background for higher contrast */
+  @apply bg-[#232323] text-gray-100;
 }
 
 /* Inputs in dark mode: readable text and placeholders */

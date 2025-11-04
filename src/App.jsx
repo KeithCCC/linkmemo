@@ -235,10 +235,10 @@ function App() {
         )}
       </div>
 
-      <div className="ml-0 flex gap-2 items-center bg-gray-200">
+      <div className="ml-0 flex gap-2 items-center bg-gray-200 text-black px-4 py-2">
         {user ? (
           <>
-            <span className="text-sm">[{user.displayName}]</span>
+            <span className="text-sm text-black">[{user.displayName}]</span>
             <button onClick={logout} className="bg-white text-red-500 px-2 py-1 rounded">ログアウト</button>
           </>
         ) : (
