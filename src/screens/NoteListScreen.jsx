@@ -7,6 +7,7 @@ import { addRecentNote } from "../recentNotes";
 
 // 正規化（大小無視）
 const normalize = (s = "") => s.trim().toLowerCase();
+const stripHash = (s = "") => s.replace(/^[#＃]/, "");
 
 // タイトル＋本文から #タグ を抽出（日本語・全角＃・句読点終端OK）
 const mineTags = (title = "", content = "") => {
@@ -50,7 +51,11 @@ export default function NoteListScreen({ embedded = false }) {
   const allTags = useMemo(() => {
     const set = new Set();
     allNotes.forEach(n => {
-      const saved = Array.isArray(n.tags) ? n.tags.map(normalize) : [];
+      const saved = Array.isArray(n.tags)
+        ? n.tags.map(t => normalize(stripHash(t)))
+        : (typeof n.tags === "string" && stripHash(n.tags)
+            ? [normalize(stripHash(n.tags))]
+            : []);
       const mined = mineTags(n.title, n.content);
       [...saved, ...mined].forEach(t => set.add(t));
     });
@@ -96,22 +101,37 @@ export default function NoteListScreen({ embedded = false }) {
 
   // 🔎 フィルタ本体
   const filteredNotes = useMemo(() => {
-    const q = anyToggleActive ? "" : (searchTerm || "");
+    const q = (searchTerm || "");
     const isTagQuery = q.trim().startsWith("#");
 
     // 検索欄でのタグ指定（AND）
     const requiredTags = isTagQuery
-      ? q.trim().split(/\s+/).map(t => normalize(t.replace(/^#/, ""))).filter(Boolean)
+      ? q
+          .trim()
+          .split(/\s+/)
+          .map(t => normalize(stripHash(t)))
+          .filter(Boolean)
       : [];
 
-    // トグルでの include / exclude
-    const includeTags = Object.keys(tagStates).filter(t => tagStates[t] === "include");
-    const excludeTags = Object.keys(tagStates).filter(t => tagStates[t] === "exclude");
+    // トグルでの include / exclude（未知タグは無視する）
+    const universe = new Set(allTags);
+    const pairs = Object.entries(tagStates || {})
+      .map(([k, v]) => [normalize(stripHash(k)), v]);
+    const includeTags = pairs
+      .filter(([k, v]) => v === "include" && k && universe.has(k))
+      .map(([k]) => k);
+    const excludeTags = pairs
+      .filter(([k, v]) => v === "exclude" && k && universe.has(k))
+      .map(([k]) => k);
 
     return sortedNotes.filter(n => {
       const title = n.title || "";
       const content = n.content || "";
-      const saved = Array.isArray(n.tags) ? n.tags.map(normalize) : [];
+      const saved = Array.isArray(n.tags)
+        ? n.tags.map(t => normalize(stripHash(t)))
+        : (typeof n.tags === "string" && stripHash(n.tags)
+            ? [normalize(stripHash(n.tags))]
+            : []);
       const mined = mineTags(title, content);
       const tagSet = new Set([...saved, ...mined]);
 
@@ -133,11 +153,11 @@ export default function NoteListScreen({ embedded = false }) {
 
       return textHit && includeOk && excludeOk;
     });
-  }, [sortedNotes, searchTerm, tagStates, anyToggleActive]);
+  }, [sortedNotes, searchTerm, tagStates, anyToggleActive, allTags]);
 
   // 検索欄上に、候補タグ（typeahead + 選択中）を表示
   const visibleTags = useMemo(() => {
-    const lower = searchTerm.toLowerCase();
+    const lower = stripHash(searchTerm).toLowerCase();
     return allTags.filter(tag => {
       const state = tagStates[tag] || "none";
       const matches = lower && tag.toLowerCase().startsWith(lower);
@@ -261,7 +281,11 @@ export default function NoteListScreen({ embedded = false }) {
       ) : (
         <ul className="space-y-2" ref={listRef}>
           {filteredNotes.map((note) => {
-            const saved = Array.isArray(note.tags) ? note.tags : [];
+            const saved = Array.isArray(note.tags)
+              ? note.tags.map(t => normalize(stripHash(t)))
+              : (typeof note.tags === "string" && stripHash(note.tags)
+                  ? [normalize(stripHash(note.tags))]
+                  : []);
             const mined = mineTags(note.title, note.content);
             const tags = [...new Set([...saved, ...mined])];
 
