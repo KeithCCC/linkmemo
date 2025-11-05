@@ -3,12 +3,23 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
-import { getNoteById, createNote, updateNote } from "../notesService";
+import { getNoteById, createNote, updateNote as updateNoteRemote } from "../notesService";
 import MarkdownIt from "markdown-it";
 import taskLists from "markdown-it-task-lists";
 import { addRecentNote } from "../recentNotes";
 const md = new MarkdownIt({ breaks: true });
 md.use(taskLists, { label: true, labelAfter: true });
+
+// --- tag helpers: normalize, strip leading #/＃, mine from text ---
+const normalize = (s = "") => s.trim().toLowerCase();
+const stripHash = (s = "") => s.replace(/^[#＃]/, "");
+const mineTagsFrom = (title = "", content = "") => {
+  // Support ASCII/full-width hash; end at whitespace, punctuation, brackets, or EOL
+  const re = /(?<![A-Za-z0-9_])[#＃]([A-Za-z0-9\u00C0-\uFFFF._\/-]+)(?=\s|$|[、。,!?:;)\]}<>])/gu;
+  const set = new Set();
+  for (const m of (`${title}\n${content}`).matchAll(re)) set.add(normalize(m[1]));
+  return [...set];
+};
 
 // 共通：候補付きエディタ（左ペイン） --------------------------------------
 function EditorWithSuggestions({
@@ -75,7 +86,7 @@ export default function NoteEditScreen({ user: userProp }) {
 
 
   // Paste handler for Markdown link (declared later, after content state)
-  const { addNote, deleteNote } = useNotesContext();
+  const { addNote, deleteNote, updateNote: updateNoteInContext } = useNotesContext();
   const { user: userCtx } = useAuthContext();
   const user = userProp || userCtx;
 
@@ -470,9 +481,12 @@ export default function NoteEditScreen({ user: userProp }) {
         if (!noteIdRef.current) {
           // --- 初回保存：ID取得→URLだけ置換、画面はそのまま ---
           const now = new Date().toISOString();
+          const newTitle = deriveTitle(newContent);
+          const newTags = mineTagsFrom(newTitle, newContent);
           const newNote = {
-            title: deriveTitle(newContent),
+            title: newTitle,
             content: newContent,
+            tags: newTags,
             createdAt: now,
             updatedAt: now,
           };
@@ -495,11 +509,22 @@ export default function NoteEditScreen({ user: userProp }) {
           // --- 2回目以降：更新保存 ---
           try {
             const now = new Date().toISOString();
-            await updateNote(user.uid, noteIdRef.current, {
-              title: deriveTitle(newContent),
+            const newTitle = deriveTitle(newContent);
+            const newTags = mineTagsFrom(newTitle, newContent);
+            await updateNoteRemote(user.uid, noteIdRef.current, {
+              title: newTitle,
               content: newContent,
+              tags: newTags,
               updatedAt: now,
             });
+            // Keep local context in sync so tag mining/list updates immediately
+            try {
+              updateNoteInContext(noteIdRef.current, {
+                title: newTitle,
+                content: newContent,
+                tags: newTags,
+              });
+            } catch {}
           } catch (err) {
             console.error("自動保存失敗:", err);
           }
@@ -540,11 +565,21 @@ export default function NoteEditScreen({ user: userProp }) {
     } else {
       try {
         const now = new Date().toISOString();
-        await updateNote(user.uid, noteIdRef.current, {
-          title: deriveTitle(newContent),
+        const newTitle = deriveTitle(newContent);
+        const newTags = mineTagsFrom(newTitle, newContent);
+        await updateNoteRemote(user.uid, noteIdRef.current, {
+          title: newTitle,
           content: newContent,
+          tags: newTags,
           updatedAt: now,
         });
+        try {
+          updateNoteInContext(noteIdRef.current, {
+            title: newTitle,
+            content: newContent,
+            tags: newTags,
+          });
+        } catch {}
       } catch (err) {
         console.error("手動保存に失敗:", err);
       }
