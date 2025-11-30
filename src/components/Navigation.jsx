@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import { getRecentNotes, RECENT_NOTES_EVENT } from "../recentNotes";
+import { useAuthContext } from "../context/AuthContext";
 
-export default function Navigation({ collapsed, setCollapsed }) {
+export default function Navigation({ collapsed, setCollapsed, user: userProp, onLogin, onLogout }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
   const { notes, addNote } = useNotesContext();
+  const { user: ctxUser } = useAuthContext() || {};
+  const user = userProp || ctxUser;
 
   const [recent, setRecent] = useState([]);
 
@@ -60,7 +63,29 @@ export default function Navigation({ collapsed, setCollapsed }) {
       className={`relative min-h-screen bg-gray-50 dark:bg-gray-700 border-r border-gray-200 dark:border-gray-500 shadow-sm text-gray-700 dark:text-gray-100 text-sm font-medium transition-all duration-300 ${collapsed ? "w-0 overflow-hidden" : "w-48"}`}
     >
       {!collapsed && (
-        <div className="pt-16 px-2 space-y-3">
+        <div className="pt-4 px-2 space-y-3">
+          <div className="flex items-center justify-between rounded bg-white/80 dark:bg-gray-800 px-2 py-2 text-xs">
+            {user ? (
+              <>
+                <span className="truncate max-w-[8rem]" title={user.displayName || user.email}>
+                  [{user.displayName || user.email || "User"}]
+                </span>
+                <button
+                  onClick={onLogout}
+                  className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                >
+                  ログアウト
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onLogin}
+                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 w-full text-center"
+              >
+                ログイン
+              </button>
+            )}
+          </div>
           <Link
             to="/"
             className={`flex items-center gap-2 hover:text-blue-600 ${isActive("/") ? "text-blue-600 font-bold" : ""}`}

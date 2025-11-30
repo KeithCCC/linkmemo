@@ -118,6 +118,7 @@ export default function NoteEditScreen({ user: userProp }) {
 
   // UI state
   const [content, setContent] = useState("");
+  const [saveState, setSaveState] = useState("*"); // "*" = dirty, "saved" = clean
   const [recentMarked, setRecentMarked] = useState(false);
   const restoredForIdRef = useRef(null);
 
@@ -453,6 +454,7 @@ export default function NoteEditScreen({ user: userProp }) {
     (e) => {
       const newContent = e.target.value;
       setContent(newContent);
+      setSaveState("*");
 
       // [[… の検出
       const cursorPos = e.target.selectionStart ?? newContent.length;
@@ -499,6 +501,7 @@ export default function NoteEditScreen({ user: userProp }) {
             addNote({ id: newId, ...newNote }); // ← 一覧即時反映（任意）
             setMode("edit");
             localStorage.setItem("noteViewMode", "edit");
+            setSaveState("saved");
 
             // 画面遷移なしで URL だけを新IDに置換
             window.history.replaceState(null, "", `/edit/${newId}`);
@@ -525,6 +528,7 @@ export default function NoteEditScreen({ user: userProp }) {
                 tags: newTags,
               });
             } catch {}
+            setSaveState("saved");
           } catch (err) {
             console.error("自動保存失敗:", err);
           }
@@ -559,6 +563,7 @@ export default function NoteEditScreen({ user: userProp }) {
         setMode("edit");
         localStorage.setItem("noteViewMode", "edit");
         window.history.replaceState(null, "", `/edit/${newId}`);
+        setSaveState("saved");
       } catch (err) {
         console.error("手動保存に失敗:", err);
       }
@@ -580,6 +585,7 @@ export default function NoteEditScreen({ user: userProp }) {
             tags: newTags,
           });
         } catch {}
+        setSaveState("saved");
       } catch (err) {
         console.error("手動保存に失敗:", err);
       }
@@ -748,6 +754,7 @@ export default function NoteEditScreen({ user: userProp }) {
         if (!note) navigate("/", { replace: true });
         else {
           setContent(note.content || "");
+          setSaveState("saved");
           try {
             const title = note.title || deriveTitle(note.content || "");
             addRecentNote({ id: note.id || id, title });
@@ -756,6 +763,7 @@ export default function NoteEditScreen({ user: userProp }) {
       });
     } else if (isNew) {
       setContent("");
+      setSaveState("*");
     }
     setMode("edit");
     localStorage.setItem("noteViewMode", "edit");
@@ -830,6 +838,9 @@ export default function NoteEditScreen({ user: userProp }) {
         {deriveTitle(content)}
         <span className="ml-2 text-sm text-gray-500">
           （ID: {noteIdRef.current ?? "未保存"}）
+        </span>
+        <span className="ml-2 text-sm text-gray-500">
+          {saveState === "saved" ? "saved" : "*"}
         </span>
       </h1>
 

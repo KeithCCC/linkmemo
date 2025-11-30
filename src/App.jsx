@@ -1,4 +1,4 @@
-// App.jsx
+﻿// App.jsx
 import { Routes, Route, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './auth';
@@ -9,7 +9,7 @@ import HomeScreen from './screens/HomeScreen';
 import Navigation from './components/Navigation';
 import NoteListScreen from './screens/NoteListScreen';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from './firebase'; // ← Firebase初期化済みのdbインスタンス
+import { db } from './firebase'; // ↁEFirebase初期化済みのdbインスタンス
 import TipTapScreen from './screens/TipTapScreen';
 import ClipScreen from './screens/ClipScreen';
 import ExtensionScreen from './screens/ExtensionScreen';
@@ -22,8 +22,6 @@ function App() {
   });
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [canInstall, setCanInstall] = useState(false);
-  const deferredPromptRef = useRef(null);
   const navigate = useNavigate();
   useEffect(() => {
     localStorage.setItem("navCollapsed", collapsed);
@@ -65,28 +63,9 @@ function App() {
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
       setUser(user);
-      setAuthChecked(true); // ← ログイン状態確認完了フラグ
+      setAuthChecked(true); // ↁEログイン状態確認完亁E��ラグ
     });
     return () => unsubscribe();
-  }, []);
-
-  // PWA install prompt handler (appears in preview/prod when installable)
-  useEffect(() => {
-    const onBIP = (e) => {
-      e.preventDefault();
-      deferredPromptRef.current = e;
-      setCanInstall(true);
-    };
-    const onInstalled = () => {
-      deferredPromptRef.current = null;
-      setCanInstall(false);
-    };
-    window.addEventListener('beforeinstallprompt', onBIP);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBIP);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
   }, []);
 
   if (!authChecked) {
@@ -211,53 +190,22 @@ function App() {
       </div>
     );
   };
-
-
   return (
     <div className="flex flex-col min-h-screen">
-      {/* ✅ 上部ヘッダー帯 */}
-      <div className="bg-red-500 h-10 w-full flex items-center px-4 text-white font-semibold shadow-sm">
-        📝 ASUKA2 TEXT EDITOR BETA
-        {canInstall && (
-          <button
-            onClick={async () => {
-              const dp = deferredPromptRef.current;
-              if (!dp) return;
-              dp.prompt();
-              await dp.userChoice;
-              deferredPromptRef.current = null;
-              setCanInstall(false);
-            }}
-            className="ml-3 bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20 text-white text-xs px-2 py-1 rounded"
-          >
-            インストール
-          </button>
-        )}
-      </div>
-
-      <div className="ml-0 flex gap-2 items-center bg-gray-200 text-black px-4 py-2">
-        {user ? (
-          <>
-            <span className="text-sm text-black">[{user.displayName}]</span>
-            <button onClick={logout} className="bg-white text-red-500 px-2 py-1 rounded">ログアウト</button>
-          </>
-        ) : (
-          <button onClick={loginWithGoogle} className="bg-white text-red-500 px-2 py-1 rounded">ログイン</button>
-        )}
-      </div>
-
-
-      {/* ✅ 本体エリア（サイドバー＋ページ） */}
       <div className="flex flex-1">
-        <Navigation collapsed={collapsed} setCollapsed={setCollapsed} />
+        <Navigation
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          user={user}
+          onLogin={loginWithGoogle}
+          onLogout={logout}
+        />
 
         <div className="flex-1 relative">
-          {/* モバイル用ハンバーガー */}
           <button
-            // className="fixed top-2 left-2 z-50 bg-white shadow px-2 py-1 rounded text-sm text-gray-700 hover:text-black border"
             className="fixed top-2 left-2 z-50 bg-white shadow px-3 py-1 rounded"
             onClick={() => setCollapsed(!collapsed)}
-            aria-label="メニューを開く"
+            aria-label="Toggle menu"
           >
             ☰
           </button>
@@ -281,3 +229,7 @@ function App() {
 }
 
 export default App;
+
+
+
+
