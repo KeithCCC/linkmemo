@@ -204,7 +204,7 @@ export default function NoteListScreen({ embedded = false }) {
     console.log("isNavVisible saved to localStorage");
   };
 
-  const containerClass = embedded ? "text-left p-2" : "max-w-3xl mr-auto text-left p-4";
+  const containerClass = embedded ? "text-left p-1 sm:p-2" : "max-w-3xl mr-auto text-left p-3";
 
   return (
     <div className={containerClass}>
@@ -292,7 +292,7 @@ export default function NoteListScreen({ embedded = false }) {
             return (
               <li
                 key={note.id}
-                className="p-3 border border-zinc-300 dark:border-gray-500 rounded bg-[#bdbdbd] dark:bg-[#bdbdbd] hover:bg-[#c8c8c8] dark:hover:bg-[#c8c8c8]"
+                className="p-2 sm:p-3 border border-zinc-300 dark:border-gray-500 rounded bg-[#bdbdbd] dark:bg-[#bdbdbd] hover:bg-[#c8c8c8] dark:hover:bg-[#c8c8c8]"
               >
                 <div className="font-semibold">
                   <Link
