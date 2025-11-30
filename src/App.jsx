@@ -172,7 +172,7 @@ function App() {
         {!listHidden && (
           <div
             className="shrink-0 border-r border-gray-200 dark:border-gray-500 bg-white dark:bg-[#3a3a3a] overflow-y-auto pr-1"
-            style={{ width: listWidth, maxHeight: 'calc(100vh - 140px)' }}
+            style={{ width: listWidth, maxHeight: 'calc(100vh - 40px)' }}
           >
             <NoteListScreen embedded />
           </div>
@@ -207,7 +207,7 @@ function App() {
             onClick={() => setCollapsed(!collapsed)}
             aria-label="Toggle menu"
           >
-            ☰
+            Menu
           </button>
           <div className="px-2 sm:px-3 pt-4 sm:pt-6">
             <Routes>

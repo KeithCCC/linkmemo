@@ -52,7 +52,7 @@ function EditorWithSuggestions({
         onKeyUp={onKeyUp}
         onMouseUp={onMouseUp}
         className={`w-full border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent`}
-        style={{ height: "calc(100vh - 240px)" }}
+        style={{ height: "calc(100vh - 160px)" }}
         placeholder="内容を入力..."
       />
       {linkSuggestions.length > 0 && (
@@ -994,7 +994,7 @@ export default function NoteEditScreen({ user: userProp }) {
           ref={previewRef}
           dangerouslySetInnerHTML={previewHTML}
           className={`prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500`}
-          style={{ height: "calc(100vh - 240px)", overflow: "auto" }}
+          style={{ height: "calc(100vh - 160px)", overflow: "auto" }}
         />
       )}
 
@@ -1025,7 +1025,7 @@ export default function NoteEditScreen({ user: userProp }) {
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}
             className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500`}
-            style={{ height: "calc(100vh - 240px)", overflow: "auto" }}
+            style={{ height: "calc(100vh - 160px)", overflow: "auto" }}
             onScroll={() => syncScroll(previewRef, textareaRef)}
           />
         </div>
