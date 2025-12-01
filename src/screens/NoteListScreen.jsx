@@ -31,7 +31,7 @@ const mineTags = (title = "", content = "") => {
 export default function NoteListScreen({ embedded = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { notes, refreshNotes, updateNote } = useNotesContext();
+  const { notes, refreshNotes, updateNote, deleteNote } = useNotesContext();
   const { user } = useAuthContext();
   const allNotes = Array.isArray(notes) ? notes : [];
 
@@ -433,14 +433,27 @@ export default function NoteListScreen({ embedded = false }) {
                 key={note.id}
                 className="p-2 sm:p-3 border border-zinc-300 dark:border-gray-500 rounded bg-[#bdbdbd] dark:bg-[#bdbdbd] hover:bg-[#c8c8c8] dark:hover:bg-[#c8c8c8]"
               >
-                <div className="font-semibold">
-                  <Link
-                    className="text-blue-600"
-                    to={`/edit/${note.id}`}
-                    onClick={() => addRecentNote({ id: note.id, title: note.title || "Untitled" })}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold">
+                    <Link
+                      className="text-blue-600"
+                      to={`/edit/${note.id}`}
+                      onClick={() => addRecentNote({ id: note.id, title: note.title || "Untitled" })}
+                    >
+                      {note.title}
+                    </Link>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (confirm("このノートを削除してもよろしいですか？")) {
+                        try { await deleteNote(note.id); } catch {}
+                      }
+                    }}
+                    className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                    aria-label={`ノート「${note.title || "Untitled"}」を削除`}
                   >
-                    {note.title}
-                  </Link>
+                    削除
+                  </button>
                 </div>
                 <div className="text-sm text-gray-500">
                   更新日: {(note.updatedAt?.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)).toLocaleString()}
