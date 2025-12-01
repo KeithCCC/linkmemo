@@ -1,6 +1,6 @@
 ﻿// App.jsx
 import { Routes, Route, useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './auth';
 import NoteDetailScreen from './screens/NoteDetailScreen';
 import NoteEditScreen from './screens/NoteEditScreen';
@@ -80,7 +80,7 @@ function App() {
   // Split layout: resizable list (persisted), editor on the right
   const SplitListAndEditor = () => {
     const { id } = useParams();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const containerRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
@@ -160,6 +160,15 @@ function App() {
     }, [containerWidth, listWidth]);
 
     const listHiddenParam = (searchParams.get('list') === 'hidden');
+    const toggleListVisibility = useCallback(() => {
+      const next = new URLSearchParams(searchParams);
+      if (listHiddenParam) {
+        next.delete('list');
+      } else {
+        next.set('list', 'hidden');
+      }
+      setSearchParams(next, { replace: true });
+    }, [searchParams, listHiddenParam, setSearchParams]);
     const isMobile = viewportWidth < 768;
     const minEditor = 640;
     const minList = 260;
@@ -185,7 +194,12 @@ function App() {
           />
         )}
         <div className={`flex-1 ${listHidden ? 'min-w-0' : 'min-w-[640px]'}`}>
-          <NoteEditScreen key={id || "new"} user={user} />
+          <NoteEditScreen
+            key={id || "new"}
+            user={user}
+            listHidden={listHidden}
+            toggleListVisibility={toggleListVisibility}
+          />
         </div>
       </div>
     );

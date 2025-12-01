@@ -82,7 +82,7 @@ function EditorWithSuggestions({
 }
 
 // 画面本体 -------------------------------------------------------------------
-export default function NoteEditScreen({ user: userProp }) {
+export default function NoteEditScreen({ user: userProp, listHidden = false, toggleListVisibility: toggleListVisibilityProp }) {
 
 
   // Paste handler for Markdown link (declared later, after content state)
@@ -97,16 +97,18 @@ export default function NoteEditScreen({ user: userProp }) {
   const isNew = id === "new";
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const listHidden = (searchParams.get('list') === 'hidden');
-  const toggleListVisibility = useCallback(() => {
+  const listHiddenLocal = (searchParams.get('list') === 'hidden');
+  const toggleListVisibilityLocal = useCallback(() => {
     const next = new URLSearchParams(searchParams);
-    if (listHidden) {
+    if (listHiddenLocal) {
       next.delete('list');
     } else {
       next.set('list', 'hidden');
     }
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams, listHidden]);
+  }, [searchParams, setSearchParams, listHiddenLocal]);
+  const toggleListVisibility = toggleListVisibilityProp || toggleListVisibilityLocal;
+  const effectiveListHidden = toggleListVisibilityProp ? listHidden : listHiddenLocal;
 
   // Refs
   const textareaRef = useRef(null);
@@ -908,12 +910,12 @@ export default function NoteEditScreen({ user: userProp }) {
 
         <div className="flex items-center flex-wrap gap-2 justify-end">
           <button
-            onClick={toggleListVisibility}
+            onClick={() => toggleListVisibility && toggleListVisibility()}
             className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
-            title="リスト"
-            aria-label="リスト"
+            title={effectiveListHidden ? "ノート一覧を表示" : "ノート一覧を隠す"}
+            aria-label="ノート一覧トグル"
           >
-            リスト
+            {effectiveListHidden ? "リスト表示" : "リスト非表示"}
           </button>
           <button
             onClick={saveNow}

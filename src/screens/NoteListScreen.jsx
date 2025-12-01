@@ -1,19 +1,28 @@
-// src/screens/NoteListScreen.jsx
+﻿// src/screens/NoteListScreen.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import { useAuthContext } from "../context/AuthContext";
 import { addRecentNote } from "../recentNotes";
+import { updateNote as updateNoteRemote } from "../notesService";
 
-// 正規化（大小無視）
+const GROUP_PREFIX = "group:";
+
 const normalize = (s = "") => s.trim().toLowerCase();
 const stripHash = (s = "") => s.replace(/^[#＃]/, "");
+const isGroupTag = (t = "") => t.startsWith(GROUP_PREFIX) || t.includes(";");
+const expandTagComponents = (t = "") => {
+  const base = normalize(stripHash(t));
+  if (!base) return [];
+  if (base.includes(";")) {
+    return base.split(";").map((p) => normalize(stripHash(p))).filter(Boolean);
+  }
+  return [base];
+};
 
 // タイトル＋本文から #タグ を抽出（日本語・全角＃・句読点終端OK）
 const mineTags = (title = "", content = "") => {
-  // 単語途中の # を回避、全角＃もサポート、句読点・括弧・空白・行末で終端
-  const re =
-    /(?<![A-Za-z0-9_])[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}<>])/gu;
+  const re = /(?<![A-Za-z0-9_])[#＃]([A-Za-z0-9\u00C0-\uFFFF._/-]+)(?=\s|$|[、。,.!?:;)\]}<>])/gu;
   const set = new Set();
   for (const m of (`${title}\n${content}`).matchAll(re)) set.add(normalize(m[1]));
   return [...set];
@@ -22,7 +31,7 @@ const mineTags = (title = "", content = "") => {
 export default function NoteListScreen({ embedded = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { notes, refreshNotes } = useNotesContext();
+  const { notes, refreshNotes, updateNote } = useNotesContext();
   const { user } = useAuthContext();
   const allNotes = Array.isArray(notes) ? notes : [];
 
@@ -40,14 +49,12 @@ export default function NoteListScreen({ embedded = false }) {
   });
   const listRef = useRef(null);
 
-  // Firestore を使っている場合だけ明示リフレッシュ（存在チェック安全化）
   useEffect(() => {
     if (user?.uid && typeof refreshNotes === "function") {
       refreshNotes().catch(() => {});
     }
   }, [user?.uid, refreshNotes]);
 
-  // すべてのタグ（保存済み tags + 本文/タイトル抽出）を集約
   const allTags = useMemo(() => {
     const set = new Set();
     allNotes.forEach(n => {
@@ -62,7 +69,6 @@ export default function NoteListScreen({ embedded = false }) {
     return [...set].sort();
   }, [allNotes]);
 
-  // 三値トグル：none → include → exclude → none
   const cycleTagState = (tag) => {
     setTagStates(prev => {
       const cur = prev[tag] || "none";
@@ -71,7 +77,6 @@ export default function NoteListScreen({ embedded = false }) {
     });
   };
 
-  // タグピル見た目
   const tagClass = (state) =>
     state === "include"
       ? "bg-blue-600 text-white border-blue-600"
@@ -79,10 +84,24 @@ export default function NoteListScreen({ embedded = false }) {
       ? "bg-red-500 text-white border-red-500"
       : "bg-gray-100 text-gray-700 border-gray-300";
 
-  // 検索欄とトグルの両立（トグルが有効なら検索語なし優先）
   const anyToggleActive = Object.values(tagStates).some(s => s !== "none");
+  const includeSelectedTags = useMemo(
+    () =>
+      Object.entries(tagStates || {})
+        .filter(([, v]) => v === "include")
+        .map(([k]) => normalize(stripHash(k)))
+        .filter(Boolean),
+    [tagStates]
+  );
+  const includeGroupTags = useMemo(
+    () => includeSelectedTags.filter((t) => isGroupTag(t)),
+    [includeSelectedTags]
+  );
+  const groupTagCount = useMemo(
+    () => allTags.filter((t) => isGroupTag(t)).length,
+    [allTags]
+  );
 
-  // persist filters
   useEffect(() => {
     try { localStorage.setItem("list.searchTerm", searchTerm); } catch {}
   }, [searchTerm]);
@@ -90,7 +109,6 @@ export default function NoteListScreen({ embedded = false }) {
     try { localStorage.setItem("list.tagStates", JSON.stringify(tagStates)); } catch {}
   }, [tagStates]);
 
-  // 一覧の並び順：更新降順
   const sortedNotes = useMemo(() => {
     return [...allNotes].sort((a, b) => {
       const A = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(a.updatedAt);
@@ -99,12 +117,10 @@ export default function NoteListScreen({ embedded = false }) {
     });
   }, [allNotes]);
 
-  // 🔎 フィルタ本体
   const filteredNotes = useMemo(() => {
     const q = (searchTerm || "");
     const isTagQuery = q.trim().startsWith("#");
 
-    // 検索欄でのタグ指定（AND）
     const requiredTags = isTagQuery
       ? q
           .trim()
@@ -113,16 +129,17 @@ export default function NoteListScreen({ embedded = false }) {
           .filter(Boolean)
       : [];
 
-    // トグルでの include / exclude（未知タグは無視する）
     const universe = new Set(allTags);
     const pairs = Object.entries(tagStates || {})
       .map(([k, v]) => [normalize(stripHash(k)), v]);
-    const includeTags = pairs
+    const includeTagsRaw = pairs
       .filter(([k, v]) => v === "include" && k && universe.has(k))
       .map(([k]) => k);
     const excludeTags = pairs
       .filter(([k, v]) => v === "exclude" && k && universe.has(k))
       .map(([k]) => k);
+
+    const expandedIncludeTags = includeTagsRaw.flatMap((t) => expandTagComponents(t));
 
     return sortedNotes.filter(n => {
       const title = n.title || "";
@@ -133,12 +150,12 @@ export default function NoteListScreen({ embedded = false }) {
             ? [normalize(stripHash(n.tags))]
             : []);
       const mined = mineTags(title, content);
-      const tagSet = new Set([...saved, ...mined]);
+      const savedExpanded = saved.flatMap(expandTagComponents);
+      const tagSet = new Set([...saved, ...mined, ...savedExpanded]);
 
-      // 1) 検索欄（#タグ or 通常語）
       let textHit = true;
       if (isTagQuery) {
-        textHit = requiredTags.every(t => tagSet.has(t)); // AND
+        textHit = requiredTags.every(t => tagSet.has(t));
       } else if (q) {
         const needle = normalize(q);
         textHit =
@@ -147,15 +164,13 @@ export default function NoteListScreen({ embedded = false }) {
           [...tagSet].some(t => t.includes(needle));
       }
 
-      // 2) トグル（include / exclude）
-      const includeOk = includeTags.every(t => tagSet.has(t));
+      const includeOk = expandedIncludeTags.every(t => tagSet.has(t));
       const excludeOk = !excludeTags.some(t => tagSet.has(t));
 
       return textHit && includeOk && excludeOk;
     });
   }, [sortedNotes, searchTerm, tagStates, anyToggleActive, allTags]);
 
-  // 検索欄上に、候補タグ（typeahead + 選択中）を表示
   const visibleTags = useMemo(() => {
     const lower = stripHash(searchTerm).toLowerCase();
     return allTags.filter(tag => {
@@ -166,13 +181,11 @@ export default function NoteListScreen({ embedded = false }) {
     });
   }, [allTags, searchTerm, tagStates]);
 
-  // If requested via navigation state, focus the first note link
   useEffect(() => {
     if (location?.state?.focusFirst) {
       requestAnimationFrame(() => {
         const first = listRef.current?.querySelector('a[href^="/edit/"]');
         if (first) first.focus();
-        // Clear the state so it doesn't persist on back/forward
         navigate(location.pathname, { replace: true, state: {} });
       });
     }
@@ -197,14 +210,114 @@ export default function NoteListScreen({ embedded = false }) {
   }, []);
 
   const handleNavItemClick = () => {
-    console.log("Nav item clicked");
     setIsNavVisible(false);
-    console.log("isNavVisible set to false");
     localStorage.setItem("isNavVisible", false);
-    console.log("isNavVisible saved to localStorage");
   };
 
   const containerClass = embedded ? "text-left p-1 sm:p-2" : "max-w-3xl mr-auto text-left p-3";
+
+  const handleGroup = async () => {
+    if (includeSelectedTags.length === 0) return;
+    if (groupTagCount >= 256) {
+      alert("グループタグの上限(256)に達しました。");
+      return;
+    }
+    const groupName = includeSelectedTags
+      .map((t) => `#${stripHash(t)}`)
+      .sort()
+      .join(";");
+    const newGroupTag = groupName || `${GROUP_PREFIX}${Date.now()}`;
+    const groupKey = normalize(stripHash(newGroupTag)); // normalized key for filters/state
+    const includeSet = new Set(includeSelectedTags.map((t) => normalize(stripHash(t))));
+
+    const updates = [];
+    allNotes.forEach((note) => {
+      const saved = Array.isArray(note.tags)
+        ? note.tags
+        : typeof note.tags === "string" && note.tags.trim()
+          ? [note.tags.trim()]
+          : [];
+      const savedNorm = saved.map((t) => normalize(stripHash(t)));
+      const mined = mineTags(note.title, note.content);
+      const savedExpanded = savedNorm.flatMap(expandTagComponents);
+      const tagUniverse = new Set([...savedNorm, ...mined, ...savedExpanded]);
+      const hit = [...includeSet].some((t) => tagUniverse.has(t));
+      if (!hit) return;
+
+      const nextTagsSet = new Set(saved);
+      if (!savedNorm.includes(groupKey)) {
+        nextTagsSet.add(newGroupTag);
+      }
+      updates.push({ id: note.id, tags: [...nextTagsSet] });
+    });
+
+    updates.forEach(({ id, tags }) => {
+      try { updateNote(id, { tags }); } catch {}
+    });
+    if (user?.uid) {
+      for (const { id, tags } of updates) {
+        try { await updateNoteRemote(user.uid, id, { tags }); } catch {}
+      }
+    }
+
+    if (updates.length > 0) {
+      setTagStates((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => {
+          if (next[k] === "include") next[k] = "none";
+        });
+        if (groupKey) {
+          next[groupKey] = "include"; // グループ作成後にそのタグをアクティブに
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleDismiss = async () => {
+    if (includeGroupTags.length === 0) return;
+    const targets = new Set(includeGroupTags.map((t) => normalize(stripHash(t))));
+    const updates = [];
+
+    allNotes.forEach((note) => {
+      const saved = Array.isArray(note.tags)
+        ? note.tags
+        : typeof note.tags === "string" && note.tags.trim()
+          ? [note.tags.trim()]
+          : [];
+      const savedNorm = saved.map((t) => normalize(stripHash(t)));
+      let changed = false;
+      const filtered = saved.filter((tag, idx) => {
+        const norm = savedNorm[idx];
+        if (targets.has(norm)) {
+          changed = true;
+          return false;
+        }
+        return true;
+      });
+      if (changed) updates.push({ id: note.id, tags: filtered });
+    });
+
+    updates.forEach(({ id, tags }) => {
+      try { updateNote(id, { tags }); } catch {}
+    });
+    if (user?.uid) {
+      for (const { id, tags } of updates) {
+        try { await updateNoteRemote(user.uid, id, { tags }); } catch {}
+      }
+    }
+
+    if (updates.length > 0) {
+      setTagStates((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => {
+          const norm = normalize(stripHash(k));
+          if (targets.has(norm)) next[k] = "none";
+        });
+        return next;
+      });
+    }
+  };
 
   return (
     <div className={containerClass}>
@@ -274,6 +387,32 @@ export default function NoteListScreen({ embedded = false }) {
           ))}
         </div>
       )}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          onClick={handleGroup}
+          disabled={includeSelectedTags.length === 0 || groupTagCount >= 256}
+          className={`px-3 py-1 text-sm rounded border ${
+            includeSelectedTags.length === 0 || groupTagCount >= 256
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+          }`}
+          title="選択中(include)のタグをまとめてグループ化"
+        >
+          Group
+        </button>
+        <button
+          onClick={handleDismiss}
+          disabled={includeGroupTags.length === 0}
+          className={`px-3 py-1 text-sm rounded border ${
+            includeGroupTags.length === 0
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+          }`}
+          title="選択中のgroup:タグを全ノートから外す"
+        >
+          Dismiss
+        </button>
+      </div>
 
       {/* 📄 ノート一覧 */}
       {filteredNotes.length === 0 ? (
@@ -331,23 +470,22 @@ export default function NoteListScreen({ embedded = false }) {
         <Link to="/settings" className="underline text-sm">設定へ</Link>
       </div>
 
-      {/* ナビゲーションメニュー */}
       {isNavVisible && (
         <nav className="fixed top-0 left-0 h-full w-64 bg-yellow-100 p-4 shadow-md">
           <h2 className="text-lg font-semibold mb-4">メニュー</h2>
           <ul className="space-y-2">
             <li>
-              <Link to="/" className="block p-2 rounded hover:bg-yellow-200" onClick={handleNavItemClick}>
+              <Link to="/" className="block p-2 rounded hover-bg-yellow-200" onClick={handleNavItemClick}>
                 ホーム
               </Link>
             </li>
             <li>
-              <Link to="/settings" className="block p-2 rounded hover:bg-yellow-200" onClick={handleNavItemClick}>
+              <Link to="/settings" className="block p-2 rounded hover-bg-yellow-200" onClick={handleNavItemClick}>
                 設定
               </Link>
             </li>
             <li>
-              <Link to="/profile" className="block p-2 rounded hover:bg-yellow-200" onClick={handleNavItemClick}>
+              <Link to="/profile" className="block p-2 rounded hover-bg-yellow-200" onClick={handleNavItemClick}>
                 プロフィール
               </Link>
             </li>
@@ -358,4 +496,3 @@ export default function NoteListScreen({ embedded = false }) {
     </div>
   );
 }
-
