@@ -122,6 +122,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   const [content, setContent] = useState("");
   const [saveState, setSaveState] = useState("*"); // "*" = dirty, "saved" = clean
   const [recentMarked, setRecentMarked] = useState(false);
+  const [enterPressedOnNewNote, setEnterPressedOnNewNote] = useState(false);
   const restoredForIdRef = useRef(null);
 
   const saveCaret = useCallback(() => {
@@ -238,6 +239,8 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     // Fallback: if only a URL, just paste as normal
   }, [content, setContentAndRestore]);
   const [mode, setMode] = useState(() => {
+    // For new notes, always default to edit mode
+    if (isNew) return "edit";
     return localStorage.getItem("lastMode") || "edit"; // Default to "edit"
   });
 
@@ -477,9 +480,14 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         setLinkSuggestions([]);
       }
 
-      // 自動保存タイマー
+      // 自動保存タイマー - Skip auto-save for new notes until Enter is pressed
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(async () => {
+      
+      // For new notes, only auto-save if Enter has been pressed
+      const shouldAutoSave = !isNew || noteIdRef.current || enterPressedOnNewNote;
+      
+      if (shouldAutoSave) {
+        saveTimeoutRef.current = setTimeout(async () => {
         if (!user?.uid) return;
 
         if (!noteIdRef.current) {
@@ -535,9 +543,10 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             console.error("自動保存失敗:", err);
           }
         }
-      }, 800);
+        }, 800);
+      }
     },
-    [allNotes, computeCaretPosition, deriveTitle, user?.uid, addNote]
+    [allNotes, computeCaretPosition, deriveTitle, user?.uid, addNote, isNew, noteIdRef, enterPressedOnNewNote]
   );
 
   // Manual save button handler (create or update immediately)
@@ -678,6 +687,10 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
       // Enter logic for lists, quotes, code fences
       if (e.key === 'Enter') {
+        // For new notes, mark that Enter has been pressed to enable auto-save
+        if (isNew && !noteIdRef.current && !enterPressedOnNewNote) {
+          setEnterPressedOnNewNote(true);
+        }
         const cur = ta.selectionStart ?? 0;
         const { start: ls, end: le, line } = getLineInfoAt(content, cur);
 
@@ -730,7 +743,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         }
       }
     },
-    [linkSuggestions, selectedSuggestion, computeCaretPosition, insertSuggestion, content, getLineInfoAt, setContentAndRestore, wrapSelection]
+    [linkSuggestions, selectedSuggestion, computeCaretPosition, insertSuggestion, content, getLineInfoAt, setContentAndRestore, wrapSelection, isNew, noteIdRef, enterPressedOnNewNote]
   );
 
   // スクロール同期（split-right） ----------------------------------------
@@ -750,6 +763,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   useEffect(() => {
     setLinkSuggestions([]);
     setLinkQuery("");
+    setEnterPressedOnNewNote(false); // Reset Enter pressed flag when changing notes
     restoredForIdRef.current = null;
     if (!isNew && user?.uid) {
       getNoteById(user.uid, id).then((note) => {
@@ -773,10 +787,13 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
   useEffect(() => {
     const savedMode = localStorage.getItem("lastMode");
-    if (savedMode) {
+    // For new notes, always use edit mode regardless of saved preference
+    if (savedMode && !isNew) {
       setMode(savedMode);
+    } else if (isNew) {
+      setMode("edit");
     }
-  }, []);
+  }, [isNew]);
 
   useEffect(() => {
     localStorage.setItem("lastMode", mode);
