@@ -1,6 +1,6 @@
 {
   "name": "Asuka Clipper",
-  "description": "Clip current page to Asuka notes with #clipping tag.",
+  "description": "Clip current page to Asuka notes with #clipping tag and extract ChatGPT responses.",
   "version": "0.1.0",
   "manifest_version": 3,
   "action": {
@@ -11,6 +11,20 @@
     "tabs",
     "storage",
     "contextMenus"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": ["chatgpt-extractor-simple.js"],
+      "run_at": "document_idle"
+    }
   ],
   "background": {
     "service_worker": "background.js"

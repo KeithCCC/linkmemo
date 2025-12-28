@@ -11,21 +11,51 @@ export default function ClipScreen() {
   const { addNote, refreshNotes } = useNotesContext();
 
   const [status, setStatus] = useState('Preparing clip...');
+  const [debugInfo, setDebugInfo] = useState('');
   const didRunRef = useRef(false);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const url = params.get('url') || '';
   const titleParam = params.get('title') || '';
   const tagsParam = params.get('tags') || '';
+  const contentParam = params.get('content') || '';
+  const contentIdParam = params.get('contentId') || '';
+  const sourceParam = params.get('source') || '';
 
-  // Parse tags from query or default to ["clipping" ]
+  // Debug logging
+  useEffect(() => {
+    const debug = [
+      `URL: ${url}`,
+      `Title: ${titleParam}`,
+      `Source: ${sourceParam}`,
+      `Content Param Length: ${contentParam?.length || 0}`,
+      `Content ID Param: ${contentIdParam}`,
+      `Content Preview: ${contentParam?.substring(0, 100)}...`,
+      `Content End: ...${contentParam?.substring(contentParam?.length - 100)}`
+    ].join('\n');
+    
+    setDebugInfo(debug);
+    console.log('=== ClipScreen Debug ===');
+    console.log(debug);
+  }, [url, titleParam, sourceParam, contentParam, contentIdParam]);
+
+  // Parse tags from query or default based on source
   const tags = useMemo(() => {
+    let defaultTags = ['clipping'];
+    
+    // Add specific tags based on source
+    if (sourceParam === 'chatgpt-ext') {
+      defaultTags = ['chatgpt', 'clipping'];
+    } else if (sourceParam === 'chatgpt') {
+      defaultTags = ['chatgpt'];
+    }
+    
     const list = tagsParam
       ? tagsParam.split(',').map(s => s.trim()).filter(Boolean)
-      : ['clipping'];
+      : defaultTags;
     // Ensure unique, lowercase-like normalization (UI normalizes anyway)
     return Array.from(new Set(list));
-  }, [tagsParam]);
+  }, [tagsParam, sourceParam]);
 
   useEffect(() => {
     const run = async () => {
@@ -34,18 +64,65 @@ export default function ClipScreen() {
         setStatus('Please log in to clip.');
         return;
       }
-      if (!url) {
-        setStatus('Missing url parameter.');
+      if (!url && !contentParam && !contentIdParam) {
+        setStatus('Missing url or content parameter.');
         return;
       }
       didRunRef.current = true;
       try {
         const now = new Date().toISOString();
-        const title = titleParam || url;
-        // Use Markdown link format for the URL line
-        const linkLine = title && url ? `[${title}](${url})` : (url || "");
-        // Minimal markdown body with explicit #clipping tag
-        const body = `# ${title}\n\n${linkLine}\n\n#clipping`;
+        const title = titleParam || url || 'Clipped Content';
+        
+        let finalContent = contentParam;
+        
+        // If contentId is provided, retrieve content from extension storage
+        if (contentIdParam && !finalContent) {
+          try {
+            // Try to get content from Chrome extension storage
+            const result = await new Promise((resolve) => {
+              if (window.chrome && chrome.runtime) {
+                chrome.runtime.sendMessage(
+                  'appbffbdhaodkhhcjctockgcmhkaebmm', // Extension ID
+                  { action: 'getStoredContent', contentId: contentIdParam },
+                  resolve
+                );
+              } else {
+                resolve(null);
+              }
+            });
+            
+            if (result && result.content) {
+              finalContent = result.content;
+            } else {
+              setStatus('Could not retrieve stored content. Content may have expired.');
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to retrieve stored content:', error);
+            setStatus('Failed to retrieve content from extension.');
+            return;
+          }
+        }
+        
+        console.log('Final content length:', finalContent?.length);
+        console.log('Creating note with content length:', finalContent?.length);
+        
+        let body;
+        if (finalContent) {
+          // Content-based clipping (e.g., ChatGPT response)
+          const linkLine = url ? `\n\nSource: [${url}](${url})` : '';
+          const tagLine = tags.map(tag => `#${tag}`).join(' ');
+          body = `# ${title}\n\n${finalContent}${linkLine}\n\n${tagLine}`;
+        } else {
+          // URL-based clipping (traditional)
+          const linkLine = title && url ? `[${title}](${url})` : (url || "");
+          const tagLine = tags.map(tag => `#${tag}`).join(' ');
+          body = `# ${title}\n\n${linkLine}\n\n${tagLine}`;
+        }
+        
+        console.log('Final body length:', body.length);
+        console.log('Body preview:', body.substring(0, 200));
+        console.log('Body end:', body.substring(body.length - 200));
         const note = {
           title,
           content: body,
@@ -70,12 +147,21 @@ export default function ClipScreen() {
       }
     };
     run();
-  }, [user?.uid, url, titleParam, tags, addNote, refreshNotes, navigate]);
+  }, [user?.uid, url, titleParam, contentParam, contentIdParam, sourceParam, tags, addNote, refreshNotes, navigate]);
 
   return (
     <div className="p-4">
       <div className="text-sm text-gray-600">URL: {url || '(none)'}</div>
       <div className="mt-2 font-medium">{status}</div>
+      
+      {/* Debug Information */}
+      <div className="mt-4 p-3 bg-gray-100 border rounded">
+        <h3 className="font-bold text-sm mb-2">Debug Info:</h3>
+        <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-40">
+          {debugInfo}
+        </pre>
+      </div>
+      
       {!user?.uid && (
         <div className="mt-2">Please sign in from the header and retry.</div>
       )}
