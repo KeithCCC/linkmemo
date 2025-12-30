@@ -81,123 +81,19 @@ function App() {
   const SplitListAndEditor = () => {
     const { id } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
-    const containerRef = useRef(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
-    const [containerWidth, setContainerWidth] = useState(0);
-    const [listWidth, setListWidth] = useState(() => {
-      try {
-        const saved = parseInt(localStorage.getItem('list.widthPx'), 10);
-        if (!isNaN(saved) && saved > 0) return saved;
-      } catch {}
-      const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
-      if (vw >= 1440) return 360;
-      if (vw >= 1024) return Math.round(Math.min(Math.max(vw * 0.30, 280), 420));
-      if (vw >= 768) return Math.round(Math.min(Math.max(vw * 0.35, 260), 420));
-      return 0; // mobile will hide list
-    });
 
-    useEffect(() => {
-      try { localStorage.setItem('list.widthPx', String(listWidth)); } catch {}
-    }, [listWidth]);
-
-    useEffect(() => {
-      const onResize = () => setViewportWidth(window.innerWidth);
-      window.addEventListener('resize', onResize);
-      return () => window.removeEventListener('resize', onResize);
-    }, []);
-
-    useEffect(() => {
-      const el = containerRef.current;
-      if (!el || typeof ResizeObserver === 'undefined') return;
-      const ro = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const w = entry?.contentRect?.width;
-          if (typeof w === 'number') setContainerWidth(w);
-        }
-      });
-      ro.observe(el);
-      return () => ro.disconnect();
-    }, []);
-
-    useEffect(() => {
-      const onMove = (e) => {
-        if (!isDragging) return;
-        const container = containerRef.current;
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const minList = 260;
-        const maxList = 520;
-        const handleW = 6;
-        const containerWidth = rect.width;
-        const minEditor = 640;
-        const maxByEditor = containerWidth - minEditor - handleW;
-        const clamped = Math.max(minList, Math.min(Math.min(maxList, maxByEditor), x));
-        setListWidth(clamped);
-        e.preventDefault();
-      };
-      const onUp = () => setIsDragging(false);
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-      return () => {
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-      };
-    }, [isDragging]);
-
-    // Clamp list width to fit available space and avoid horizontal scroll
-    useEffect(() => {
-      if (!containerRef.current) return;
-      if (containerWidth > 0) {
-        const minEditor = 640;
-        const handleW = 6;
-        const maxAllowedList = Math.max(0, containerWidth - minEditor - handleW);
-        if (listWidth > maxAllowedList) {
-          setListWidth(Math.max(260, Math.min(520, maxAllowedList)));
-        }
-      }
-    }, [containerWidth, listWidth]);
-
-    const listHiddenParam = (searchParams.get('list') === 'hidden');
+    // Remove list visibility logic - list is always hidden now
     const toggleListVisibility = useCallback(() => {
-      const next = new URLSearchParams(searchParams);
-      if (listHiddenParam) {
-        next.delete('list');
-      } else {
-        next.set('list', 'hidden');
-      }
-      setSearchParams(next, { replace: true });
-    }, [searchParams, listHiddenParam, setSearchParams]);
-    const isMobile = viewportWidth < 768;
-    const minEditor = 640;
-    const minList = 260;
-    const handleW = 6;
-    const tooNarrowForSplit = containerWidth > 0 && (containerWidth < (minEditor + minList + handleW));
-    const listHidden = listHiddenParam || isMobile || tooNarrowForSplit;
+      setCollapsed((prev) => !prev);
+    }, []);
 
     return (
-      <div ref={containerRef} className="flex items-stretch gap-0 min-h-[70vh] overflow-x-hidden">
-        {!listHidden && (
-          <div
-            className="shrink-0 border-r border-gray-200 dark:border-gray-500 bg-white dark:bg-[#3a3a3a] overflow-y-auto pr-1"
-            style={{ width: listWidth, maxHeight: 'calc(100vh - 40px)' }}
-          >
-            <NoteListScreen embedded />
-          </div>
-        )}
-        {!listHidden && (
-          <div
-            className={`w-[6px] cursor-col-resize ${isDragging ? 'bg-gray-400' : 'bg-transparent'} hover:bg-gray-300`}
-            onMouseDown={() => setIsDragging(true)}
-            title="Drag to resize"
-          />
-        )}
-        <div className={`flex-1 ${listHidden ? 'min-w-0' : 'min-w-[640px]'}`}>
+      <div className="flex items-stretch gap-0 min-h-[70vh] overflow-x-hidden">
+        <div className="flex-1 min-w-0">
           <NoteEditScreen
             key={id || "new"}
             user={user}
-            listHidden={listHidden}
+            listHidden={true}
             toggleListVisibility={toggleListVisibility}
           />
         </div>
