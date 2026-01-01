@@ -50,12 +50,22 @@ export default function NoteDetailScreen() {
             {note.title} {note.id}
               {/* {noteIdRef.current ? `ノート編集（ID: ${noteIdRef.current}）` : "新規ノート作成"} */}
         </h1>
-        <Link
-          to={`/edit/${note.id}`}
-          className="inline-block mt-2 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-        >
-          ✏️ 編集する
-        </Link>
+        <div className="flex gap-2 mt-2">
+          <Link
+            to={`/edit/${note.id}`}
+            className="inline-block text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+          >
+            ✏️ 編集する
+          </Link>
+          
+          <a
+            href="/asuka-clipper.zip"
+            download="asuka-clipper.zip"
+            className="inline-block text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          >
+            📥 Chrome拡張機能をダウンロード
+          </a>
+        </div>
 
         <div
           className="prose dark:prose-invert prose-sm max-w-none border border-gray-300 dark:border-gray-500 p-3 mt-4 rounded bg-gray-100 dark:bg-gray-600 overflow-auto"

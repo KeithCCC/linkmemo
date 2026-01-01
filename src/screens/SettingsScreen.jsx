@@ -8,14 +8,46 @@ export default function SettingsScreen() {
       <h2>📝 ASUKAとは</h2>
       <p>
         ASUKA はシンプルに Markdown ノートを書けるエディタです。表示モードの切り替え、
-        文字装飾、タグ抽出、エクスポート/インポートに対応しています。
+        文字装飾、タグ抽出、エクスポート/インポート、ChatGPT 連携に対応しています。
       </p>
+
+      <h2>🔍 ナビゲーションとノート検索</h2>
+      <h3>サイドバーの使い方</h3>
+      <ul className="list-disc pl-5">
+        <li><strong>一覧</strong>：全ノートの一覧ページを表示</li>
+        <li><strong>新規作成</strong>：新しいノートを作成</li>
+        <li><strong>⚙️</strong>：このヘルプを表示</li>
+        <li><strong>詳細機能</strong>：クリックで展開・折りたたみ
+          <ul className="list-circle pl-5 mt-1">
+            <li>TipTap：リッチテキストエディタ（実験的）</li>
+            <li>エクスポート：全ノートをJSON形式で保存</li>
+            <li>インポート：JSONファイルからノートを復元</li>
+            <li>拡張機能：Chrome拡張のヘルプ</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>ノート検索とフィルタリング</h3>
+      <ul className="list-disc pl-5">
+        <li>サイドバーの検索ボックスでタイトル・内容を検索できます</li>
+        <li>検索ボックスの <strong>×</strong> ボタンでクリア</li>
+        <li>タグをクリックしてフィルタリング：
+          <ul className="list-circle pl-5 mt-1">
+            <li><span className="text-blue-600">青色</span>：include（このタグを含む）</li>
+            <li><span className="text-red-600">赤色</span>：exclude（このタグを除外）</li>
+            <li><span className="text-gray-400">灰色</span>：フィルタなし</li>
+          </ul>
+        </li>
+        <li><strong>Group</strong> ボタン：選択中のタグをグループ化</li>
+        <li><strong>Dismiss</strong> ボタン：グループタグを全ノートから削除</li>
+      </ul>
 
       <h2>🖋 ノートを作成・編集する</h2>
       <ol className="list-decimal pl-5">
-        <li>「新規作成」からノートを作ります（一覧画面右上、またはエディタ右上）。</li>
+        <li>「新規作成」からノートを作ります（サイドバー、またはエディタ右上）。</li>
         <li>1 行目がタイトルになります。</li>
         <li>本文は Markdown で自由に記述できます。</li>
+        <li>エディタは画面の高さに合わせて自動調整されます。</li>
       </ol>
 
       <h2>⌨️ キーボードショートカット</h2>
@@ -46,21 +78,54 @@ export default function SettingsScreen() {
 
       <h2>💾 ノートを保存・エクスポートする</h2>
       <ul className="list-disc pl-5">
-        <li>エディタ右上の「テキスト保存」で <code>.txt</code> として保存できます。</li>
-        <li>左メニューの「エクスポート」で全ノートを <code>.json</code> に保存できます。</li>
+        <li>すべてのノートは自動的にクラウドに保存されます（Firebase）</li>
+        <li>エディタ右上の「テキスト保存」で現在のノートを <code>.txt</code> として保存できます。</li>
+        <li>サイドバーの「エクスポート」で全ノートを <code>.json</code> にバックアップできます。</li>
         <li>「インポート」で保存済み <code>.json</code> を読み込み、ノートを復元します。</li>
       </ul>
 
       <h2>🏷 タグの使い方</h2>
       <p>
-        本文やタイトルに <code>#tag</code> 形式で書くとタグとして自動抽出され、一覧画面で
-        フィルタやトグルができます。
+        本文やタイトルに <code>#tag</code> 形式で書くとタグとして自動抽出され、サイドバーの
+        ノートリストでフィルタリングできます。
       </p>
+      <ul className="list-disc pl-5">
+        <li>タグをクリックして include/exclude/off を切り替え</li>
+        <li>複数のタグを組み合わせて絞り込み可能</li>
+        <li><code>#group:xxx</code> 形式でグループタグを作成可能</li>
+      </ul>
+
+      <h2>🤖 Chrome拡張機能（ChatGPT連携）</h2>
+      <p>
+        Chrome拡張機能をインストールすると、ChatGPTの会話をワンクリックでASUKAに保存できます。
+      </p>
+      <h3>インストール方法</h3>
+      <ol className="list-decimal pl-5">
+        <li>サイドバーの「詳細機能」→「拡張機能」を開く</li>
+        <li>表示される手順に従って拡張機能をインストール</li>
+        <li>ChatGPT のページで右クリックメニューから「Clip to ASUKA」を選択</li>
+        <li>ChatGPT の最後の応答がASUKAに自動保存されます</li>
+      </ol>
 
       <h2>📥 JSONでの入出力</h2>
       <ul className="list-disc pl-5">
         <li>「エクスポート」で全ノートのバックアップを作成します。</li>
         <li>「インポート」でバックアップから復元できます。</li>
+        <li>複数デバイス間でのデータ移行にも利用できます。</li>
+      </ul>
+
+      <h2>🎨 表示設定</h2>
+      <ul className="list-disc pl-5">
+        <li>ダークモード対応：OSの設定に自動追従</li>
+        <li>カスタムスクロールバー：見やすいスクロール表示</li>
+        <li>レスポンシブデザイン：画面サイズに応じて最適化</li>
+      </ul>
+
+      <h2>🔐 認証とデータ</h2>
+      <ul className="list-disc pl-5">
+        <li>Googleアカウントでログイン</li>
+        <li>すべてのノートはFirebaseに安全に保存</li>
+        <li>ログインユーザーごとにデータが分離</li>
       </ul>
 
       <p className="mt-10 text-sm text-gray-500">ASUKA — powered by Nono ✨</p>

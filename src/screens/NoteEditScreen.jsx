@@ -40,7 +40,7 @@ function EditorWithSuggestions({
   onMouseUp,
 }) {
   return (
-    <div className="flex-1 relative" ref={wrapperRef}>
+    <div className="flex-1 relative flex flex-col min-h-0" ref={wrapperRef}>
       <textarea
         ref={textareaRef}
         value={content}
@@ -51,8 +51,7 @@ function EditorWithSuggestions({
         onSelect={onSelect}
         onKeyUp={onKeyUp}
         onMouseUp={onMouseUp}
-        className={`w-full border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent`}
-        style={{ height: "calc(100vh - 160px)" }}
+        className={`w-full flex-1 border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent resize-none`}
         placeholder="内容を入力..."
       />
       {linkSuggestions.length > 0 && (
@@ -108,7 +107,8 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams, listHiddenLocal]);
   const toggleListVisibility = toggleListVisibilityProp || toggleListVisibilityLocal;
-  const effectiveListHidden = toggleListVisibilityProp ? listHidden : listHiddenLocal;
+  // Navigation is never hidden in this context - button always shows
+  const effectiveListHidden = false;
 
   // Refs
   const textareaRef = useRef(null);
@@ -851,9 +851,9 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
   // UI ----------------------------------------------------------------------
   return (
-    <div className="p-2 sm:p-3 space-y-3">
+    <div className="flex flex-col h-screen overflow-hidden p-2 sm:p-3">
       {/* タイトル行 */}
-      <h1 className="note-title font-bold text-lg">
+      <h1 className="note-title font-bold text-lg flex-shrink-0">
         {deriveTitle(content)}
         <span className="ml-2 text-sm text-gray-500">
           （ID: {noteIdRef.current ?? "未保存"}）
@@ -864,7 +864,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
       </h1>
 
       {/* ツールバー */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 text-sm flex-shrink-0 mt-3">
         <div className="flex items-center flex-wrap gap-2">
           <div className="flex items-center gap-1">
             <button
@@ -929,10 +929,10 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
           <button
             onClick={() => toggleListVisibility && toggleListVisibility()}
             className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
-            title={effectiveListHidden ? "ノート一覧を表示" : "ノート一覧を隠す"}
-            aria-label="ノート一覧トグル"
+            title="ナビゲーションバーを表示/非表示"
+            aria-label="ナビゲーションバートグル"
           >
-            {effectiveListHidden ? "リスト表示" : "リスト非表示"}
+            ナビ表示
           </button>
           <button
             onClick={saveNow}
@@ -1012,13 +1012,12 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         <div
           ref={previewRef}
           dangerouslySetInnerHTML={previewHTML}
-          className={`prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500`}
-          style={{ height: "calc(100vh - 160px)", overflow: "auto" }}
+          className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500 overflow-auto min-h-0`}
         />
       )}
 
       {mode === "split-right" && (
-        <div className="flex h-full gap-2 sm:gap-3">
+        <div className="flex flex-1 gap-2 sm:gap-3 min-h-0">
           <EditorWithSuggestions
             content={content}
           onChange={handleContentChange}
@@ -1043,8 +1042,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
           <div
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}
-            className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500`}
-            style={{ height: "calc(100vh - 160px)", overflow: "auto" }}
+            className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500 overflow-auto min-h-0`}
             onScroll={() => syncScroll(previewRef, textareaRef)}
           />
         </div>
