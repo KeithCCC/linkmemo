@@ -560,9 +560,12 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const newContent = content;
     if (!noteIdRef.current) {
       const now = new Date().toISOString();
+      const newTitle = deriveTitle(newContent);
+      const newTags = mineTagsFrom(newTitle, newContent);
       const newNote = {
-        title: deriveTitle(newContent),
+        title: newTitle,
         content: newContent,
+        tags: newTags,
         createdAt: now,
         updatedAt: now,
       };

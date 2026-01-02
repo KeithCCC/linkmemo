@@ -53,8 +53,10 @@ export const createNote = async (uid, note) => {
 // ノートを更新
 export const updateNote = async (uid, noteId, note) => {
   const updates = {
-    ...note,
-    updated_at: new Date().toISOString()
+    title: note.title,
+    content: note.content,
+    tags: note.tags || [],
+    updated_at: note.updatedAt || new Date().toISOString()
   };
   
   const { data, error } = await supabase

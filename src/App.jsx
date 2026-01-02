@@ -8,8 +8,6 @@ import SettingsScreen from './screens/SettingsScreen';
 import HomeScreen from './screens/HomeScreen';
 import Navigation from './components/Navigation';
 import NoteListScreen from './screens/NoteListScreen';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from './firebase'; // ↁEFirebase初期化済みのdbインスタンス
 import TipTapScreen from './screens/TipTapScreen';
 import ClipScreen from './screens/ClipScreen';
 import ExtensionScreen from './screens/ExtensionScreen';
