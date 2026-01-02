@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
-import { getNoteById, createNote, updateNote as updateNoteRemote } from "../notesService";
+import { getNoteById, createNote, updateNote as updateNoteRemote } from "../supabaseNotesService";
 import MarkdownIt from "markdown-it";
 import taskLists from "markdown-it-task-lists";
 import { addRecentNote } from "../recentNotes";
@@ -927,7 +927,10 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
         <div className="flex items-center flex-wrap gap-2 justify-end">
           <button
-            onClick={() => toggleListVisibility && toggleListVisibility()}
+            onClick={async () => {
+              await saveNow();
+              toggleListVisibility && toggleListVisibility();
+            }}
             className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
             title="ナビゲーションバーを表示/非表示"
             aria-label="ナビゲーションバートグル"

@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import { useAuthContext } from "../context/AuthContext";
 import { addRecentNote } from "../recentNotes";
-import { updateNote as updateNoteRemote } from "../notesService";
+import { updateNote as updateNoteRemote } from "../supabaseNotesService";
 
 const GROUP_PREFIX = "group:";
 

@@ -1,7 +1,7 @@
 ﻿// App.jsx
 import { Routes, Route, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { loginWithGoogle, logout, subscribeToAuth } from './auth';
+import { loginWithGoogle, logout, subscribeToAuth } from './supabaseAuth';
 import NoteDetailScreen from './screens/NoteDetailScreen';
 import NoteEditScreen from './screens/NoteEditScreen';
 import SettingsScreen from './screens/SettingsScreen';

@@ -1,7 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import { subscribeToAuth } from '../supabaseAuth';
 
 const AuthContext = createContext();
 
@@ -12,11 +11,11 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = subscribeToAuth((supabaseUser) => {
+      setUser(supabaseUser);
       setAuthChecked(true);
     });
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   return (

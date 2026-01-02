@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { useNotesContext } from '../context/NotesContext';
-import { createNote } from '../notesService';
+import { createNote } from '../supabaseNotesService';
 
 export default function ClipScreen() {
   const navigate = useNavigate();

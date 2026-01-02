@@ -1,10 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { db } from '../firebase'; // ← 必要に応じてパス調整
-import { collection, getDocs } from 'firebase/firestore';
-import { useAuthContext } from './AuthContext'; // ← ログイン中のユーザーを使う前提
-import { doc, deleteDoc } from "firebase/firestore"; // 追加
-import { getNotes } from '../notesService'; // 既存APIを使う
-// import { useNotesContext, extractAllTags } from "../context/NotesContext";
+import { useAuthContext } from './AuthContext';
+import { getNotes, deleteNote as deleteNoteRemote } from '../supabaseNotesService';
 
 const NotesContext = createContext();
 export const useNotesContext = () => useContext(NotesContext);
@@ -33,7 +29,7 @@ export const extractAllTags = (notes) => {
 
 
 export const NotesProvider = ({ children }) => {
-  const { user } = useAuthContext(); // ← これを追加！ 🔥
+  const { user } = useAuthContext();
   const [lastDeletedNoteId, setLastDeletedNoteId] = useState(null);
   // const [notes, setNotes] = useState(() => {
   //   // const stored = localStorage.getItem(STORAGE_KEY);
@@ -114,23 +110,22 @@ export const NotesProvider = ({ children }) => {
 
   const refreshNotes = async () => {
     if (!user) return;
-    const snapshot = await getDocs(collection(db, 'users', user.uid, 'notes'));
-    const fetched = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setNotes(fetched);
+    try {
+      const fetched = await getNotes(user.uid);
+      setNotes(fetched);
+    } catch (error) {
+      console.error('Failed to refresh notes:', error);
+    }
   };
 
 
   const deleteNote = async (id) => {
     if (user) {
-      const ref = doc(db, 'users', user.uid, 'notes', id);
       try {
-        await deleteDoc(ref);
-        console.log(`✅ Firestoreから削除成功: ${id}`);
+        await deleteNoteRemote(user.uid, id);
+        console.log(`✅ Supabaseから削除成功: ${id}`);
       } catch (err) {
-        console.error(`❌ Firestoreからの削除失敗: ${id}`, err);
+        console.error(`❌ Supabaseからの削除失敗: ${id}`, err);
       }
     }
 

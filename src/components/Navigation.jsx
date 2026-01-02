@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import { getRecentNotes, RECENT_NOTES_EVENT } from "../recentNotes";
 import { useAuthContext } from "../context/AuthContext";
-import { updateNote as updateNoteRemote } from "../notesService";
+import { updateNote as updateNoteRemote } from "../supabaseNotesService";
 
 const GROUP_PREFIX = "group:";
 const normalize = (s = "") => s.trim().toLowerCase();
@@ -363,7 +363,8 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
               }`}
             >
               <span className="text-base">⚙️</span>
-              </Link>
+              <span>Usage</span>
+            </Link>
             </nav>
 
             {/* Secondary Navigation Toggle */}
