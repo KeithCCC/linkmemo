@@ -67,6 +67,8 @@ export default function SettingsScreen() {
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>I</kbd>：選択を斜体（<code>_text_</code>）</li>
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>-</kbd>：選択を打ち消し線（<code>~~text~~</code>）</li>
         <li><kbd>Ctrl/Cmd</kbd> + <kbd>K</kbd>：リンク作成（URL入力で <code>[text](url)</code>）</li>
+        <li><kbd>Ctrl/Cmd</kbd> + <kbd>L</kbd>：選択範囲を箇条書きリストに変換（<code>- item</code>）</li>
+        <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>：選択範囲をチェックボックスに変換（<code>- [ ] task</code>）</li>
         <li><code>[[</code> 入力中：<kbd>↑/↓</kbd> 候補移動、<kbd>Enter</kbd> 決定、<kbd>Esc</kbd> 閉じる</li>
       </ul>
 

@@ -203,6 +203,50 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const nextPos = start + left.length + (selected ? selected.length : 0);
     setContentAndRestore(ta, before + inserted + after, nextPos);
   }, [content, setContentAndRestore]);
+
+  // Convert selected lines to bullet list
+  const makeBulletList = useCallback((ta) => {
+    const start = ta.selectionStart ?? 0;
+    const end = ta.selectionEnd ?? start;
+    const before = content.slice(0, start);
+    const selected = content.slice(start, end);
+    const after = content.slice(end);
+    
+    // Convert each line to bullet point
+    const lines = selected.split('\n');
+    const bulletLines = lines.map(line => {
+      const trimmed = line.trim();
+      // Skip if already a bullet
+      if (/^[-*+]\s/.test(trimmed)) return line;
+      // Remove existing list markers
+      const cleaned = trimmed.replace(/^\d+\.\s+/, '');
+      return cleaned ? `- ${cleaned}` : line;
+    }).join('\n');
+    
+    setContentAndRestore(ta, before + bulletLines + after, before.length + bulletLines.length);
+  }, [content, setContentAndRestore]);
+
+  // Convert selected lines to checkbox list
+  const makeCheckboxList = useCallback((ta) => {
+    const start = ta.selectionStart ?? 0;
+    const end = ta.selectionEnd ?? start;
+    const before = content.slice(0, start);
+    const selected = content.slice(start, end);
+    const after = content.slice(end);
+    
+    // Convert each line to checkbox
+    const lines = selected.split('\n');
+    const checkboxLines = lines.map(line => {
+      const trimmed = line.trim();
+      // Skip if already a checkbox
+      if (/^[-*+]\s\[[ xX]\]\s/.test(trimmed)) return line;
+      // Remove existing list markers
+      const cleaned = trimmed.replace(/^(?:[-*+]|\d+\.)\s+/, '');
+      return cleaned ? `- [ ] ${cleaned}` : line;
+    }).join('\n');
+    
+    setContentAndRestore(ta, before + checkboxLines + after, before.length + checkboxLines.length);
+  }, [content, setContentAndRestore]);
   // Paste handler for Markdown link
   const handlePaste = useCallback((e) => {
     const ta = textareaRef.current;
@@ -678,7 +722,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         wrapSelection(ta, '_', '_');
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && key === 'k' && !e.shiftKey) {
         e.preventDefault();
         const start = ta.selectionStart ?? 0;
         const end = ta.selectionEnd ?? start;
@@ -690,6 +734,16 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
           const md = `[${sel}](${url})`;
           setContentAndRestore(ta, before + md + after, before.length + md.length);
         }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'l') {
+        e.preventDefault();
+        makeBulletList(ta);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'k') {
+        e.preventDefault();
+        makeCheckboxList(ta);
         return;
       }
 
@@ -751,7 +805,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         }
       }
     },
-    [linkSuggestions, selectedSuggestion, computeCaretPosition, insertSuggestion, content, getLineInfoAt, setContentAndRestore, wrapSelection, isNew, noteIdRef, enterPressedOnNewNote]
+    [linkSuggestions, selectedSuggestion, computeCaretPosition, insertSuggestion, content, getLineInfoAt, setContentAndRestore, wrapSelection, makeBulletList, makeCheckboxList, isNew, noteIdRef, enterPressedOnNewNote]
   );
 
   // スクロール同期（split-right） ----------------------------------------
@@ -934,6 +988,26 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         </div>
 
         <div className="flex items-center flex-wrap gap-2 justify-end">
+          <button
+            onClick={() => {
+              const ta = textareaRef.current;
+              if (ta) makeBulletList(ta);
+            }}
+            className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
+            title="選択範囲を箇条書きに (Ctrl+L)"
+          >
+            • リスト
+          </button>
+          <button
+            onClick={() => {
+              const ta = textareaRef.current;
+              if (ta) makeCheckboxList(ta);
+            }}
+            className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
+            title="選択範囲をチェックボックスに (Ctrl+Shift+K)"
+          >
+            ☑ タスク
+          </button>
           <button
             onClick={async () => {
               await saveNow();
