@@ -56,8 +56,13 @@ function EditorWithSuggestions({
       />
       {linkSuggestions.length > 0 && (
         <div
-          className="absolute z-50 w-72 max-h-56 overflow-y-auto bg-white dark:bg-gray-700 border border-zinc-200 dark:border-gray-500 shadow rounded-sm"
-          style={{ left: `${suggestPos.left}px`, top: `${suggestPos.top}px` }}
+          className="absolute z-50 w-72 max-h-96 overflow-y-auto bg-white dark:bg-gray-700 border border-zinc-200 dark:border-gray-500 shadow rounded-sm"
+          style={{
+            left: `${suggestPos.left}px`,
+            top: suggestPos.top + 300 > window.innerHeight
+              ? `${suggestPos.top - 300}px`
+              : `${suggestPos.top}px`
+          }}
         >
           {linkSuggestions.map((note, idx) => (
             <div
@@ -513,8 +518,8 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             localStorage.setItem("noteViewMode", "edit");
             setSaveState("saved");
 
-            // 画面遷移なしで URL だけを新IDに置換
-            window.history.replaceState(null, "", `/edit/${newId}`);
+            // URL を新IDに更新
+            navigate(`/edit/${newId}`, { replace: true });
           } catch (err) {
             console.error("初回保存失敗:", err);
           }
@@ -576,7 +581,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         addNote({ id: newId, ...newNote });
         setMode("edit");
         localStorage.setItem("noteViewMode", "edit");
-        window.history.replaceState(null, "", `/edit/${newId}`);
+        navigate(`/edit/${newId}`, { replace: true });
         setSaveState("saved");
       } catch (err) {
         console.error("手動保存に失敗:", err);

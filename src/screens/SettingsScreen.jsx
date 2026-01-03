@@ -78,7 +78,7 @@ export default function SettingsScreen() {
 
       <h2>💾 ノートを保存・エクスポートする</h2>
       <ul className="list-disc pl-5">
-        <li>すべてのノートは自動的にクラウドに保存されます（Firebase）</li>
+        <li>すべてのノートは自動的にクラウドに保存されます（Supabase）</li>
         <li>エディタ右上の「テキスト保存」で現在のノートを <code>.txt</code> として保存できます。</li>
         <li>サイドバーの「エクスポート」で全ノートを <code>.json</code> にバックアップできます。</li>
         <li>「インポート」で保存済み <code>.json</code> を読み込み、ノートを復元します。</li>
@@ -124,7 +124,7 @@ export default function SettingsScreen() {
       <h2>🔐 認証とデータ</h2>
       <ul className="list-disc pl-5">
         <li>Googleアカウントでログイン</li>
-        <li>すべてのノートはFirebaseに安全に保存</li>
+        <li>すべてのノートはSupabaseに安全に保存</li>
         <li>ログインユーザーごとにデータが分離</li>
       </ul>
 

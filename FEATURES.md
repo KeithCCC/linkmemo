@@ -40,7 +40,7 @@
 - **レスポンシブデザイン** - スマートフォン・タブレット対応
 
 ## 💾 データ管理
-- **Firebase連携** - クラウド同期でどこからでもアクセス
+- **Supabase連携** - クラウド同期でどこからでもアクセス
 - **ローカルストレージ** - 設定やカーソル位置を保存
 - **JSON エクスポート** - 全ノートを一括エクスポート
 - **JSON インポート** - ノートデータの一括インポート
@@ -56,7 +56,7 @@
 - **フロントエンド**: React + Vite
 - **スタイリング**: TailwindCSS
 - **マークダウン**: Markdown-it + markdown-it-task-lists
-- **バックエンド**: Firebase (Authentication + Firestore)
+- **バックエンド**: Supabase (Auth + Database)
 - **拡張機能**: Chrome Extension Manifest V3
 
 ## 📋 主な画面
