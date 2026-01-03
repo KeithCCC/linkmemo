@@ -133,15 +133,38 @@ function isAssistantMessage(element) {
 function extractTextContent(element) {
   if (!element) return '';
   
-  // Clone the element to avoid modifying the original
-  const clone = element.cloneNode(true);
+  // First try to find the actual message content container
+  let contentElement = element;
+  const contentSelectors = [
+    '.markdown',
+    '.prose',
+    '[class*="markdown"]',
+    '[class*="prose"]',
+    '.whitespace-pre-wrap',
+    '[data-message-author-role="assistant"] > div > div'
+  ];
   
-  // Remove unwanted elements
+  for (const selector of contentSelectors) {
+    const found = element.querySelector(selector);
+    if (found) {
+      contentElement = found;
+      console.log('Found content with selector:', selector);
+      break;
+    }
+  }
+  
+  // Clone the element to avoid modifying the original
+  const clone = contentElement.cloneNode(true);
+  
+  // Remove unwanted elements (buttons, icons, UI elements)
   const unwantedSelectors = [
+    'button',
+    'svg',
+    '[role="button"]',
     '.copy-button',
     '[class*="copy"]',
     '[class*="button"]',
-    'button',
+    '[class*="icon"]',
     '.timestamp',
     '.meta',
     '[class*="menu"]',
@@ -200,6 +223,10 @@ function extractTextContent(element) {
     .replace(/^\s+|\s+$/gm, '') // Trim each line
     .trim();
   
+  console.log('Extracted text length:', text.length);
+  console.log('Text preview (first 200):', text.substring(0, 200));
+  console.log('Text preview (last 200):', text.substring(Math.max(0, text.length - 200)));
+  
   return text;
 }
 
@@ -236,6 +263,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+
+// Make function globally accessible for testing
+window.extractLastChatGPTResponse = extractLastChatGPTResponse;
+window.testAsukaExtractor = () => {
+  console.log('=== Testing Asuka ChatGPT Extractor ===');
+  console.log('Function exists:', typeof extractLastChatGPTResponse);
+  const result = extractLastChatGPTResponse();
+  console.log('Test result:', result);
+  return result;
+};
+
+console.log('=== Asuka ChatGPT Extractor Ready ===');
+console.log('Test by running: window.testAsukaExtractor()');
+console.log('===========================================');
 
 // Add a visual indicator when the extension is active
 function addExtensionIndicator() {

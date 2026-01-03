@@ -79,28 +79,41 @@ export default function ClipScreen() {
         if (contentIdParam && !finalContent) {
           try {
             // Try to get content from Chrome extension storage
-            const result = await new Promise((resolve) => {
-              if (window.chrome && chrome.runtime) {
-                chrome.runtime.sendMessage(
-                  'appbffbdhaodkhhcjctockgcmhkaebmm', // Extension ID
-                  { action: 'getStoredContent', contentId: contentIdParam },
-                  resolve
-                );
+            // Don't specify extension ID - let Chrome handle it
+            const result = await new Promise((resolve, reject) => {
+              if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+                try {
+                  chrome.runtime.sendMessage(
+                    { action: 'getStoredContent', contentId: contentIdParam },
+                    (response) => {
+                      if (chrome.runtime.lastError) {
+                        console.warn('Chrome runtime error:', chrome.runtime.lastError);
+                        resolve(null);
+                      } else {
+                        resolve(response);
+                      }
+                    }
+                  );
+                } catch (err) {
+                  console.warn('Failed to send message to extension:', err);
+                  resolve(null);
+                }
               } else {
+                console.log('Chrome extension API not available');
                 resolve(null);
               }
             });
             
             if (result && result.content) {
               finalContent = result.content;
+              console.log('Retrieved content from extension storage:', finalContent.length, 'chars');
             } else {
-              setStatus('Could not retrieve stored content. Content may have expired.');
-              return;
+              console.warn('Could not retrieve stored content from extension');
+              // Don't return - continue with content from URL if available
             }
           } catch (error) {
             console.error('Failed to retrieve stored content:', error);
-            setStatus('Failed to retrieve content from extension.');
-            return;
+            // Don't return - continue with content from URL if available
           }
         }
         

@@ -71,26 +71,48 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     await openClip(info.linkUrl || '', info.selectionText || tab?.title || '');
   } else if (info.menuItemId === 'asuka-clip-chatgpt') {
     console.log('ChatGPT clip requested for tab:', tab.id);
+    console.log('Tab URL:', tab.url);
+    console.log('Tab title:', tab.title);
+    
     // Extract ChatGPT response
     try {
       console.log('Sending message to content script...');
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'extractLastResponse' });
       console.log('Received response from content script:', response);
+      console.log('Response object:', JSON.stringify(response));
       console.log('Response content length:', response?.content?.length);
       
-      if (response?.content) {
-        console.log('Calling openClip with content...');
-        await openClip(
-          tab.url,
-          `ChatGPT Response: ${response.title || 'Untitled'}`,
-          response.content
-        );
-        console.log('openClip completed');
+      const base = await getBaseUrl();
+      console.log('Base URL:', base);
+      
+      if (response?.content && response.content.length > 0) {
+        console.log('Content extracted successfully, creating clip URL...');
+        // Add source parameter for better tracking
+        let clipUrl = `${base.replace(/\/$/, '')}/clip?url=${encodeURIComponent(tab.url || '')}&title=${encodeURIComponent(`ChatGPT: ${response.title || 'Response'}`)}&source=chatgpt-ext`;
+        
+        // For large content, use chrome.storage
+        if (response.content.length > 2000) {
+          console.log('Using storage for large content');
+          const contentId = 'clip_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          await chrome.storage.local.set({ [contentId]: response.content });
+          clipUrl += `&contentId=${encodeURIComponent(contentId)}`;
+        } else {
+          console.log('Using URL parameter for content');
+          clipUrl += `&content=${encodeURIComponent(response.content)}`;
+        }
+        
+        console.log('Creating tab with URL:', clipUrl.substring(0, 200) + '...');
+        chrome.tabs.create({ url: clipUrl });
+        console.log('Tab created successfully');
       } else {
-        console.log('No ChatGPT response found');
+        console.error('No content extracted from ChatGPT response');
+        console.log('Response details:', response);
+        alert('Could not extract ChatGPT response. Please make sure there is a visible assistant message on the page.');
       }
     } catch (error) {
       console.error('Failed to extract ChatGPT response:', error);
+      console.error('Error stack:', error.stack);
+      alert('Failed to clip ChatGPT response: ' + error.message);
     }
   }
 });
