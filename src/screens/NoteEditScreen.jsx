@@ -204,7 +204,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     setContentAndRestore(ta, before + inserted + after, nextPos);
   }, [content, setContentAndRestore]);
 
-  // Convert selected lines to bullet list
+  // Toggle bullet list formatting
   const makeBulletList = useCallback((ta) => {
     const start = ta.selectionStart ?? 0;
     const end = ta.selectionEnd ?? start;
@@ -212,21 +212,39 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const selected = content.slice(start, end);
     const after = content.slice(end);
     
-    // Convert each line to bullet point
     const lines = selected.split('\n');
-    const bulletLines = lines.map(line => {
+    // Check if all non-empty lines are already bullets
+    const nonEmptyLines = lines.filter(line => line.trim());
+    const allAreBullets = nonEmptyLines.length > 0 && nonEmptyLines.every(line => /^\s*[-*+]\s/.test(line));
+    
+    const processedLines = lines.map(line => {
       const trimmed = line.trim();
-      // Skip if already a bullet
-      if (/^[-*+]\s/.test(trimmed)) return line;
-      // Remove existing list markers
-      const cleaned = trimmed.replace(/^\d+\.\s+/, '');
-      return cleaned ? `- ${cleaned}` : line;
+      if (!trimmed) return line; // Keep empty lines as is
+      
+      if (allAreBullets) {
+        // Remove bullet formatting
+        const match = line.match(/^(\s*)[-*+]\s(.*)$/);
+        if (match) {
+          return match[1] + match[2]; // Keep indentation, remove bullet
+        }
+        return line;
+      } else {
+        // Add bullet formatting
+        if (/^\s*[-*+]\s/.test(line)) return line; // Already a bullet
+        const match = line.match(/^(\s*)(.*)$/);
+        if (match) {
+          const indent = match[1];
+          const text = match[2].replace(/^\d+\.\s+/, ''); // Remove numbered list marker
+          return indent + '- ' + text;
+        }
+        return line;
+      }
     }).join('\n');
     
-    setContentAndRestore(ta, before + bulletLines + after, before.length + bulletLines.length);
+    setContentAndRestore(ta, before + processedLines + after, before.length + processedLines.length);
   }, [content, setContentAndRestore]);
 
-  // Convert selected lines to checkbox list
+  // Toggle checkbox list formatting
   const makeCheckboxList = useCallback((ta) => {
     const start = ta.selectionStart ?? 0;
     const end = ta.selectionEnd ?? start;
@@ -234,18 +252,36 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const selected = content.slice(start, end);
     const after = content.slice(end);
     
-    // Convert each line to checkbox
     const lines = selected.split('\n');
-    const checkboxLines = lines.map(line => {
+    // Check if all non-empty lines are already checkboxes
+    const nonEmptyLines = lines.filter(line => line.trim());
+    const allAreCheckboxes = nonEmptyLines.length > 0 && nonEmptyLines.every(line => /^\s*[-*+]\s\[[ xX]\]\s/.test(line));
+    
+    const processedLines = lines.map(line => {
       const trimmed = line.trim();
-      // Skip if already a checkbox
-      if (/^[-*+]\s\[[ xX]\]\s/.test(trimmed)) return line;
-      // Remove existing list markers
-      const cleaned = trimmed.replace(/^(?:[-*+]|\d+\.)\s+/, '');
-      return cleaned ? `- [ ] ${cleaned}` : line;
+      if (!trimmed) return line; // Keep empty lines as is
+      
+      if (allAreCheckboxes) {
+        // Remove checkbox formatting
+        const match = line.match(/^(\s*)[-*+]\s\[[ xX]\]\s(.*)$/);
+        if (match) {
+          return match[1] + match[2]; // Keep indentation, remove checkbox
+        }
+        return line;
+      } else {
+        // Add checkbox formatting
+        if (/^\s*[-*+]\s\[[ xX]\]\s/.test(line)) return line; // Already a checkbox
+        const match = line.match(/^(\s*)(.*)$/);
+        if (match) {
+          const indent = match[1];
+          const text = match[2].replace(/^(?:[-*+]|\d+\.)\s+/, ''); // Remove any list markers
+          return indent + '- [ ] ' + text;
+        }
+        return line;
+      }
     }).join('\n');
     
-    setContentAndRestore(ta, before + checkboxLines + after, before.length + checkboxLines.length);
+    setContentAndRestore(ta, before + processedLines + after, before.length + processedLines.length);
   }, [content, setContentAndRestore]);
   // Paste handler for Markdown link
   const handlePaste = useCallback((e) => {
