@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = 'https://link-memo-e7515.web.app';
+const DEFAULT_BASE_URL = 'https://linkmemo.vercel.app';
 
 function load() {
   chrome.storage.sync.get({ baseUrl: DEFAULT_BASE_URL }, (items) => {

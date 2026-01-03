@@ -1,6 +1,6 @@
 // background.js (MV3 service worker)
 
-const DEFAULT_BASE_URL = 'https://link-memo-e7515.web.app';
+const DEFAULT_BASE_URL = 'https://linkmemo.vercel.app';
 
 async function getBaseUrl() {
   return new Promise((resolve) => {
