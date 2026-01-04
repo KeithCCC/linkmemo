@@ -47,7 +47,29 @@ export default function NoteListScreen({ embedded = false }) {
   const [isNavVisible, setIsNavVisible] = useState(() => {
     return localStorage.getItem("isNavVisible") === "true";
   });
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem("list.viewMode") || "card";
+    } catch { return "card"; }
+  }); // "auto" | "card" | "list"
+  const [autoDetectedView, setAutoDetectedView] = useState("list");
   const listRef = useRef(null);
+
+  // Responsive breakpoint: switch to card view when width < 768px
+  useEffect(() => {
+    const checkWidth = () => {
+      setAutoDetectedView(window.innerWidth < 768 ? "card" : "list");
+    };
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+    return () => window.removeEventListener('resize', checkWidth);
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem("list.viewMode", viewMode); } catch {}
+  }, [viewMode]);
+
+  const isCardView = viewMode === "auto" ? autoDetectedView === "card" : viewMode === "card";
 
   useEffect(() => {
     if (user?.uid && typeof refreshNotes === "function") {
@@ -214,7 +236,7 @@ export default function NoteListScreen({ embedded = false }) {
     localStorage.setItem("isNavVisible", false);
   };
 
-  const containerClass = embedded ? "text-left p-1 sm:p-2" : "max-w-3xl mr-auto text-left p-3";
+  const containerClass = embedded ? "text-left p-1 sm:p-2" : "w-full text-left p-3 px-4 sm:px-6 lg:px-8";
 
   const handleGroup = async () => {
     if (includeSelectedTags.length === 0) return;
@@ -323,12 +345,21 @@ export default function NoteListScreen({ embedded = false }) {
     <div className={containerClass}>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold">ノート一覧 🗂️</h1>
-        <Link
-          to="/edit/new"
-          className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
-        >
-          新規作成
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode(prev => prev === "card" ? "list" : prev === "list" ? "auto" : "card")}
+            className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
+            title="表示切替: カード / リスト / 自動"
+          >
+            {viewMode === "auto" ? "🔄 自動" : viewMode === "card" ? "🗂️ カード" : "📋 リスト"}
+          </button>
+          <Link
+            to="/edit/new"
+            className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
+          >
+            新規作成
+          </Link>
+        </div>
       </div>
 
       {/* 🔎 キーワード検索（×で即クリア） */}
@@ -417,7 +448,68 @@ export default function NoteListScreen({ embedded = false }) {
       {/* 📄 ノート一覧 */}
       {filteredNotes.length === 0 ? (
         <p className="text-gray-500 italic">検索結果が見つかりませんでした…</p>
+      ) : isCardView ? (
+        // Card View for narrow screens (< 768px)
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ref={listRef}>
+          {filteredNotes.map((note) => {
+            const saved = Array.isArray(note.tags)
+              ? note.tags.map(t => normalize(stripHash(t)))
+              : (typeof note.tags === "string" && stripHash(note.tags)
+                  ? [normalize(stripHash(note.tags))]
+                  : []);
+            const mined = mineTags(note.title, note.content);
+            const tags = [...new Set([...saved, ...mined])];
+
+            return (
+              <div
+                key={note.id}
+                className="p-4 border border-zinc-300 dark:border-gray-500 rounded-lg bg-[#bdbdbd] dark:bg-[#bdbdbd] hover:bg-[#c8c8c8] dark:hover:bg-[#c8c8c8] shadow-md"
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <Link
+                    className="text-blue-600 font-bold text-lg flex-1"
+                    to={`/edit/${note.id}`}
+                    onClick={() => addRecentNote({ id: note.id, title: note.title || "Untitled" })}
+                  >
+                    {note.title || "Untitled"}
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      if (confirm("このノートを削除してもよろしいですか？")) {
+                        try { await deleteNote(note.id); } catch {}
+                      }
+                    }}
+                    className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 flex-shrink-0"
+                    aria-label={`ノート「${note.title || "Untitled"}」を削除`}
+                  >
+                    削除
+                  </button>
+                </div>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  更新日: {(note.updatedAt?.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)).toLocaleString()}
+                </div>
+
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => cycleTagState(t)}
+                        className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 text-zinc-900 dark:text-zinc-900"
+                        title={`#${t} を選択`}
+                      >
+                        #{t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       ) : (
+        // List View for wider screens (>= 768px)
         <ul className="space-y-2" ref={listRef}>
           {filteredNotes.map((note) => {
             const saved = Array.isArray(note.tags)
