@@ -394,11 +394,24 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
                   </Link>
                   
                   <button
+                    onClick={() => {
+                      const path = location.pathname;
+                      if (path.startsWith('/edit/')) {
+                        window.dispatchEvent(new CustomEvent('asuka-export-text'));
+                      }
+                    }}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs w-full text-left hover:bg-gray-100 dark:hover:bg-gray-600 opacity-75 transition-colors"
+                  >
+                    <span className="text-sm">💾</span>
+                    <span>テキスト保存</span>
+                  </button>
+                  
+                  <button
                     onClick={handleExportAllNotes}
                     className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs w-full text-left hover:bg-gray-100 dark:hover:bg-gray-600 opacity-75 transition-colors"
                   >
                     <span className="text-sm">📤</span>
-                    <span>エクスポート</span>
+                    <span>全エクスポート</span>
                   </button>
                   
                   <label className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 opacity-75 transition-colors">

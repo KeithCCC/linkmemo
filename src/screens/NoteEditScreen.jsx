@@ -897,6 +897,22 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     localStorage.setItem("lastMode", mode);
   }, [mode]);
 
+  // Listen for text export event from Navigation
+  useEffect(() => {
+    const handleExportEvent = () => {
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${deriveTitle(content) || "note"}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+    
+    window.addEventListener('asuka-export-text', handleExportEvent);
+    return () => window.removeEventListener('asuka-export-text', handleExportEvent);
+  }, [content]);
+
   // Keyboard shortcuts for view modes and list toggle/hide
   useEffect(() => {
     const onKey = (e) => {
@@ -1032,7 +1048,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
             title="選択範囲を箇条書きに (Ctrl+L)"
           >
-            • リスト
+            •
           </button>
           <button
             onClick={() => {
@@ -1042,7 +1058,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
             title="選択範囲をチェックボックスに (Ctrl+Shift+K)"
           >
-            ☑ タスク
+            ☑
           </button>
           <button
             onClick={async () => {
@@ -1053,7 +1069,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             title="ナビゲーションバーを表示/非表示"
             aria-label="ナビゲーションバートグル"
           >
-            ナビ表示
+            ☰
           </button>
           <button
             onClick={saveNow}
@@ -1074,33 +1090,17 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             新規作成
           </button>
           {noteIdRef.current && (
-            <>
-              <button
-                onClick={() => {
-                  const blob = new Blob([content], { type: "text/plain" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `${deriveTitle(content) || "note"}.txt`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="bg-gray-600 text-white px-3 py-0.5 text-sm rounded hover:bg-gray-700"
-              >
-                テキスト保存
-              </button>
-              <button
-                onClick={async () => {
-                  if (confirm("このノートを削除してもよろしいですか？")) {
-                    await deleteNote(noteIdRef.current);
-                    navigate("/", { replace: true });
-                  }
-                }}
-                className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
-              >
-                削除
-              </button>
-            </>
+            <button
+              onClick={async () => {
+                if (confirm("このノートを削除してもよろしいですか？")) {
+                  await deleteNote(noteIdRef.current);
+                  navigate("/", { replace: true });
+                }
+              }}
+              className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+            >
+              削除
+            </button>
           )}
         </div>
       </div>
