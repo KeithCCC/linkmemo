@@ -38,6 +38,24 @@ export default function NoteDetailScreen() {
     linkify: true,        // URL自動リンク
   });
 
+  // 外部リンクを新しいウィンドウで開く
+  const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+  md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    const hrefIndex = token.attrIndex('href');
+    if (hrefIndex >= 0) {
+      const href = token.attrs[hrefIndex][1];
+      // 外部リンク（http/httpsで始まる）の場合、target="_blank"を追加
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        token.attrPush(['target', '_blank']);
+        token.attrPush(['rel', 'noopener noreferrer']);
+      }
+    }
+    return defaultRender(tokens, idx, options, env, self);
+  };
+
   const contentHTML = md.render(convertWikiLinksToHTML(note.content));
 
   // 🔁 被リンクノートを抽出

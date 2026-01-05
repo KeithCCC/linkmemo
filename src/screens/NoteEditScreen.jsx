@@ -10,6 +10,24 @@ import { addRecentNote } from "../recentNotes";
 const md = new MarkdownIt({ breaks: true });
 md.use(taskLists, { label: true, labelAfter: true });
 
+// 外部リンクを新しいウィンドウで開く
+const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+  return self.renderToken(tokens, idx, options);
+};
+md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+  const token = tokens[idx];
+  const hrefIndex = token.attrIndex('href');
+  if (hrefIndex >= 0) {
+    const href = token.attrs[hrefIndex][1];
+    // 外部リンク（http/httpsで始まる）の場合、target="_blank"を追加
+    if (href.startsWith('http://') || href.startsWith('https://')) {
+      token.attrPush(['target', '_blank']);
+      token.attrPush(['rel', 'noopener noreferrer']);
+    }
+  }
+  return defaultRender(tokens, idx, options, env, self);
+};
+
 // --- tag helpers: normalize, strip leading #/＃, mine from text ---
 const normalize = (s = "") => s.trim().toLowerCase();
 const stripHash = (s = "") => s.replace(/^[#＃]/, "");
