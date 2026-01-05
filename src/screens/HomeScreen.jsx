@@ -25,7 +25,7 @@ export default function HomeScreen({ user }) {
   }, [user]);
 
   return (
-    <div className="p-4 py-1">
+    <div className="p-2 py-1">
       <h1 className="text-xl font-bold mb-2">ノート一覧 🗂️</h1>
 
       {loading ? (

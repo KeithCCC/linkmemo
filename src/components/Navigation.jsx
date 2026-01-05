@@ -509,9 +509,9 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
             </div>
 
             {/* Notes List */}
-            <div className="flex-1 overflow-y-scroll px-3 pb-3 space-y-1">
+            <div className="flex-1 overflow-y-scroll px-2 pb-2 space-y-1">
               {filteredNotes.length === 0 ? (
-                <div className="text-xs text-gray-400 text-center py-4">
+                <div className="text-xs text-gray-400 text-center py-2">
                   {searchTerm ? "該当なし" : "ノートなし"}
                 </div>
               ) : (
@@ -525,7 +525,7 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
                     <Link
                       key={note.id}
                       to={`/edit/${note.id}`}
-                      className={`block px-3 py-2 rounded-lg transition-colors ${
+                      className={`block px-2 py-1.5 rounded-lg transition-colors ${
                         isActive(`/edit/${note.id}`)
                           ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                           : "hover:bg-gray-100 dark:hover:bg-gray-600"

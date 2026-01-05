@@ -163,7 +163,7 @@ export default function ClipScreen() {
   }, [user?.uid, url, titleParam, contentParam, contentIdParam, sourceParam, tags, addNote, refreshNotes, navigate]);
 
   return (
-    <div className="p-4">
+    <div className="p-2">
       <div className="text-sm text-gray-600">URL: {url || '(none)'}</div>
       <div className="mt-2 font-medium">{status}</div>
       

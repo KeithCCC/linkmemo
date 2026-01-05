@@ -983,7 +983,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
   // UI ----------------------------------------------------------------------
   return (
-    <div className="flex flex-col h-screen overflow-hidden p-2 sm:p-3">
+    <div className="flex flex-col h-screen overflow-hidden p-1 sm:p-1.5">
       {/* タイトル行 */}
       <h1 className="note-title font-bold text-lg flex-shrink-0">
         {deriveTitle(content)}
@@ -996,7 +996,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
       </h1>
 
       {/* ツールバー */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 text-sm flex-shrink-0 mt-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 text-sm flex-shrink-0 mt-2">
         <div className="flex items-center flex-wrap gap-2">
           <div className="flex items-center gap-1">
             <button
