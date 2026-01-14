@@ -153,6 +153,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
   const saveCaret = useCallback(() => {
     const ta = textareaRef.current;
+    if (isNew && !noteIdRef.current) return;
     const curId = noteIdRef.current || (isNew ? "new" : id);
     if (!ta || !curId) return;
     try {
@@ -165,6 +166,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
   const restoreCaret = useCallback(() => {
     const ta = textareaRef.current;
+    if (isNew && !noteIdRef.current) return;
     const curId = noteIdRef.current || (isNew ? "new" : id);
     if (!ta || !curId) return;
     let raw = null;
@@ -364,6 +366,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
   useEffect(() => {
     const curId = noteIdRef.current || (isNew ? "new" : id);
+    if (isNew && !noteIdRef.current) return;
     if (!curId) return;
     if (!(mode === "edit" || mode === "split-right")) return;
     if (restoredForIdRef.current === curId) return;
@@ -946,6 +949,9 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     } else if (isNew) {
       setContent("");
       setSaveState("*");
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
     }
     setMode("edit");
     localStorage.setItem("noteViewMode", "edit");
