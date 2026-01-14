@@ -6,9 +6,5 @@
   "devCommand": "npm run dev",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "toolbar": false,
-  "env": {
-    "VERCEL_TOOLBAR": "0"
-  }
+  ]
 }
