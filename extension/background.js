@@ -31,8 +31,13 @@ async function openClip(url, title, content = null) {
   }
   
   console.log('Final clip URL:', clipUrl);
-  console.log('Creating new tab...');
-  chrome.tabs.create({ url: clipUrl });
+  console.log('Creating new window...');
+  chrome.windows.create({ 
+    url: clipUrl,
+    type: 'popup',
+    width: 800,
+    height: 600
+  });
 }
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -101,9 +106,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           clipUrl += `&content=${encodeURIComponent(response.content)}`;
         }
         
-        console.log('Creating tab with URL:', clipUrl.substring(0, 200) + '...');
-        chrome.tabs.create({ url: clipUrl });
-        console.log('Tab created successfully');
+        console.log('Creating window with URL:', clipUrl.substring(0, 200) + '...');
+        chrome.windows.create({ 
+          url: clipUrl,
+          type: 'popup',
+          width: 800,
+          height: 600
+        });
+        console.log('Window created successfully');
       } else {
         console.error('No content extracted from ChatGPT response');
         console.log('Response details:', response);
