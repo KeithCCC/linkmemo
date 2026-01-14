@@ -413,12 +413,12 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         });
       }
 
-      // [[タイトル]] → 既存ノートへのリンク
+      // [[タイトル]] → 既存ノートへのリンク or クリック可能な新規作成リンク
       html = html.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
         const noteId = titleToId(p1);
         return noteId
           ? `<a href="/edit/${noteId}" class="text-blue-600 underline">${p1}</a>`
-          : `<span class="text-gray-400">[[${p1}]]</span>`;
+          : `<a href="#" data-create-note="${p1.replace(/"/g, '&quot;')}" class="text-gray-400 underline cursor-pointer hover:text-gray-600">[[${p1}]]</a>`;
       });
 
       // #タグ を <span class="tag"> に装飾（日本語・句読点対応）
@@ -456,9 +456,39 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   useEffect(() => {
     const el = previewRef.current;
     if (!el) return;
-    const onClick = (e) => {
+    const onClick = async (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
+      
+      // Handle wiki link creation
+      const createNoteTitle = t.getAttribute("data-create-note");
+      if (createNoteTitle) {
+        e.preventDefault();
+        if (!user?.uid) return;
+        
+        // Create new note with the title
+        const now = new Date().toISOString();
+        const newNote = {
+          title: createNoteTitle,
+          content: `# ${createNoteTitle}\n\n`,
+          tags: [],
+          createdAt: now,
+          updatedAt: now,
+        };
+        
+        try {
+          const created = await createNote(user.uid, newNote);
+          const newId = typeof created === "string" ? created : created.id;
+          addNote({ id: newId, ...newNote });
+          // Navigate to the new note
+          navigate(`/edit/${newId}`);
+        } catch (err) {
+          console.error("Failed to create note:", err);
+        }
+        return;
+      }
+      
+      // Handle checkbox toggling
       let input = null;
       if (t.tagName.toLowerCase() === "input" && t.getAttribute("type") === "checkbox") {
         input = t;
@@ -478,7 +508,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     };
     el.addEventListener("click", onClick);
     return () => el.removeEventListener("click", onClick);
-  }, [previewRef, setContent, toggleTaskAtIndex]);
+  }, [previewRef, setContent, toggleTaskAtIndex, user, addNote, navigate]);
 
   // [[ サジェスト ------------------------------------------
   const [linkQuery, setLinkQuery] = useState("");
