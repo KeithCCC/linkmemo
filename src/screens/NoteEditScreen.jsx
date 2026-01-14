@@ -138,6 +138,8 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   const previewRef = useRef(null);
   const wrapperRef = useRef(null);
   const saveTimeoutRef = useRef(null);
+  // Track if we should focus textarea after navigation (new note creation)
+  const shouldFocusTextareaRef = useRef(false);
   const noteIdRef = useRef(isNew ? null : id); // ← ここは常に「文字列ID or null」
   const isSyncingScroll = useRef(false);
   const justCreatedNoteRef = useRef(false); // Track when we just created a note to skip reload
@@ -647,7 +649,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             localStorage.setItem("noteViewMode", "edit");
             setSaveState("saved");
             justCreatedNoteRef.current = true; // Mark that we just created this note
-
+            shouldFocusTextareaRef.current = true; // Focus textarea after navigation
             // URL を新IDに更新
             navigate(`/edit/${newId}`, { replace: true });
           } catch (err) {
@@ -914,13 +916,21 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     setLinkQuery("");
     setEnterPressedOnNewNote(false); // Reset Enter pressed flag when changing notes
     restoredForIdRef.current = null;
-    
+
+    // Focus textarea if flagged (after new note creation and navigation)
+    if (shouldFocusTextareaRef.current) {
+      shouldFocusTextareaRef.current = false;
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    }
+
     // Skip reload if we just created this note (content is already current)
     if (justCreatedNoteRef.current) {
       justCreatedNoteRef.current = false;
       return;
     }
-    
+
     if (!isNew && user?.uid) {
       getNoteById(user.uid, id).then((note) => {
         if (!note) navigate("/", { replace: true });
