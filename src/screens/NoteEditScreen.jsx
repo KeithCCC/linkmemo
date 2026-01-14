@@ -140,6 +140,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   const saveTimeoutRef = useRef(null);
   const noteIdRef = useRef(isNew ? null : id); // ← ここは常に「文字列ID or null」
   const isSyncingScroll = useRef(false);
+  const justCreatedNoteRef = useRef(false); // Track when we just created a note to skip reload
 
   // UI state
   const [content, setContent] = useState("");
@@ -615,6 +616,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             setMode("edit");
             localStorage.setItem("noteViewMode", "edit");
             setSaveState("saved");
+            justCreatedNoteRef.current = true; // Mark that we just created this note
 
             // URL を新IDに更新
             navigate(`/edit/${newId}`, { replace: true });
@@ -679,6 +681,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         addNote({ id: newId, ...newNote });
         setMode("edit");
         localStorage.setItem("noteViewMode", "edit");
+        justCreatedNoteRef.current = true; // Mark that we just created this note
         navigate(`/edit/${newId}`, { replace: true });
         setSaveState("saved");
       } catch (err) {
@@ -881,6 +884,13 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     setLinkQuery("");
     setEnterPressedOnNewNote(false); // Reset Enter pressed flag when changing notes
     restoredForIdRef.current = null;
+    
+    // Skip reload if we just created this note (content is already current)
+    if (justCreatedNoteRef.current) {
+      justCreatedNoteRef.current = false;
+      return;
+    }
+    
     if (!isNew && user?.uid) {
       getNoteById(user.uid, id).then((note) => {
         if (!note) navigate("/", { replace: true });
