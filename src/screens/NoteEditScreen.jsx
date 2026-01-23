@@ -408,6 +408,12 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     (txt) => {
       let html = md.render(txt || "");
 
+      // Fix markdown-it-task-lists + strikethrough nesting bug (unclosed <s> before <label>)
+      html = html.replace(
+        /(<li[^>]*>\s*<input[^>]*>\s*)<s>([^<]*)(<label[^>]*>)/g,
+        '$1<s>$2</s>$3'
+      );
+
       // Annotate task checkboxes with sequential indices for toggling
       {
         let i = 0;
