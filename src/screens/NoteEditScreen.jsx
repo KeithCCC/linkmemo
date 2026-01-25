@@ -11,7 +11,7 @@ const md = new MarkdownIt({ breaks: true });
 md.use(taskLists, { label: true, labelAfter: true });
 
 // 外部リンクを新しいウィンドウで開く
-const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+const defaultRender = md.renderer.rules.link_open || function (tokens, idx, options, env, self) {
   return self.renderToken(tokens, idx, options);
 };
 md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
@@ -85,11 +85,10 @@ function EditorWithSuggestions({
           {linkSuggestions.map((note, idx) => (
             <div
               key={note.id}
-              className={`px-2 py-1 cursor-pointer ${
-                idx === selectedSuggestion
+              className={`px-2 py-1 cursor-pointer ${idx === selectedSuggestion
                   ? "bg-blue-500 text-white"
                   : "hover:bg-gray-100"
-              }`}
+                }`}
               onMouseDown={() => insertSuggestion(note.title)}
               title={note.title}
             >
@@ -104,7 +103,12 @@ function EditorWithSuggestions({
 }
 
 // 画面本体 -------------------------------------------------------------------
-export default function NoteEditScreen({ user: userProp, listHidden = false, toggleListVisibility: toggleListVisibilityProp }) {
+export default function NoteEditScreen({
+  user: userProp,
+  listHidden = false,
+  toggleListVisibility: toggleListVisibilityProp,
+  setNavCollapsed,
+}) {
 
 
   // Paste handler for Markdown link (declared later, after content state)
@@ -161,7 +165,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
       const e = ta.selectionEnd ?? s;
       const st = ta.scrollTop ?? 0;
       localStorage.setItem(`noteCaret:${curId}`, JSON.stringify({ s, e, st }));
-    } catch {}
+    } catch { }
   }, [id, isNew]);
 
   const restoreCaret = useCallback(() => {
@@ -172,7 +176,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     let raw = null;
     try {
       raw = localStorage.getItem(`noteCaret:${curId}`);
-    } catch {}
+    } catch { }
     if (!raw) return;
     let obj;
     try {
@@ -194,7 +198,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         if (document.activeElement === current || !document.activeElement || document.activeElement === document.body) {
           current.focus();
         }
-      } catch {}
+      } catch { }
     }, 0);
   }, [id, isNew, content]);
   // --- caret/selection helpers ---
@@ -234,16 +238,16 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const before = content.slice(0, start);
     const selected = content.slice(start, end);
     const after = content.slice(end);
-    
+
     const lines = selected.split('\n');
     // Check if all non-empty lines are already bullets
     const nonEmptyLines = lines.filter(line => line.trim());
     const allAreBullets = nonEmptyLines.length > 0 && nonEmptyLines.every(line => /^\s*[-*+]\s/.test(line));
-    
+
     const processedLines = lines.map(line => {
       const trimmed = line.trim();
       if (!trimmed) return line; // Keep empty lines as is
-      
+
       if (allAreBullets) {
         // Remove bullet formatting
         const match = line.match(/^(\s*)[-*+]\s(.*)$/);
@@ -263,7 +267,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         return line;
       }
     }).join('\n');
-    
+
     setContentAndRestore(ta, before + processedLines + after, before.length + processedLines.length);
   }, [content, setContentAndRestore]);
 
@@ -274,16 +278,16 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const before = content.slice(0, start);
     const selected = content.slice(start, end);
     const after = content.slice(end);
-    
+
     const lines = selected.split('\n');
     // Check if all non-empty lines are already checkboxes
     const nonEmptyLines = lines.filter(line => line.trim());
     const allAreCheckboxes = nonEmptyLines.length > 0 && nonEmptyLines.every(line => /^\s*[-*+]\s\[[ xX]\]\s/.test(line));
-    
+
     const processedLines = lines.map(line => {
       const trimmed = line.trim();
       if (!trimmed) return line; // Keep empty lines as is
-      
+
       if (allAreCheckboxes) {
         // Remove checkbox formatting
         const match = line.match(/^(\s*)[-*+]\s\[[ xX]\]\s(.*)$/);
@@ -303,7 +307,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         return line;
       }
     }).join('\n');
-    
+
     setContentAndRestore(ta, before + processedLines + after, before.length + processedLines.length);
   }, [content, setContentAndRestore]);
   // Paste handler for Markdown link
@@ -394,12 +398,12 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   };
   const fontSizeCls = useMemo(
     () =>
-      ({
-        sm: "text-sm",
-        base: "text-base",
-        lg: "text-lg",
-        xl: "text-xl",
-      }[fontSize] || "text-base"),
+    ({
+      sm: "text-sm",
+      base: "text-base",
+      lg: "text-lg",
+      xl: "text-xl",
+    }[fontSize] || "text-base"),
     [fontSize]
   );
 
@@ -470,13 +474,13 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
     const onClick = async (e) => {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
-      
+
       // Handle wiki link creation
       const createNoteTitle = t.getAttribute("data-create-note");
       if (createNoteTitle) {
         e.preventDefault();
         if (!user?.uid) return;
-        
+
         // Create new note with the title
         const now = new Date().toISOString();
         const newNote = {
@@ -486,7 +490,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
           createdAt: now,
           updatedAt: now,
         };
-        
+
         try {
           const created = await createNote(user.uid, newNote);
           const newId = typeof created === "string" ? created : created.id;
@@ -498,7 +502,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         }
         return;
       }
-      
+
       // Handle checkbox toggling
       let input = null;
       if (t.tagName.toLowerCase() === "input" && t.getAttribute("type") === "checkbox") {
@@ -627,68 +631,68 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
 
       // 自動保存タイマー - Skip auto-save for new notes until Enter is pressed
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      
+
       // For new notes, only auto-save if Enter has been pressed
       const shouldAutoSave = !isNew || noteIdRef.current || enterPressedOnNewNote;
-      
+
       if (shouldAutoSave) {
         saveTimeoutRef.current = setTimeout(async () => {
-        if (!user?.uid) return;
+          if (!user?.uid) return;
 
-        if (!noteIdRef.current) {
-          // --- 初回保存：ID取得→URLだけ置換、画面はそのまま ---
-          const now = new Date().toISOString();
-          const newTitle = deriveTitle(newContent);
-          const newTags = mineTagsFrom(newTitle, newContent);
-          const newNote = {
-            title: newTitle,
-            content: newContent,
-            tags: newTags,
-            createdAt: now,
-            updatedAt: now,
-          };
-          try {
-            const created = await createNote(user.uid, newNote);
-            // 戻り値が string でも {id, ...} でもOK
-            const newId = typeof created === "string" ? created : created.id;
-
-            noteIdRef.current = newId;          // ← 以降は純粋な文字列ID
-            addNote({ id: newId, ...newNote }); // ← 一覧即時反映（任意）
-            setMode("edit");
-            localStorage.setItem("noteViewMode", "edit");
-            setSaveState("saved");
-            justCreatedNoteRef.current = true; // Mark that we just created this note
-            shouldFocusTextareaRef.current = true; // Focus textarea after navigation
-            // URL を新IDに更新
-            navigate(`/edit/${newId}`, { replace: true });
-          } catch (err) {
-            console.error("初回保存失敗:", err);
-          }
-        } else {
-          // --- 2回目以降：更新保存 ---
-          try {
+          if (!noteIdRef.current) {
+            // --- 初回保存：ID取得→URLだけ置換、画面はそのまま ---
             const now = new Date().toISOString();
             const newTitle = deriveTitle(newContent);
             const newTags = mineTagsFrom(newTitle, newContent);
-            await updateNoteRemote(user.uid, noteIdRef.current, {
+            const newNote = {
               title: newTitle,
               content: newContent,
               tags: newTags,
+              createdAt: now,
               updatedAt: now,
-            });
-            // Keep local context in sync so tag mining/list updates immediately
+            };
             try {
-              updateNoteInContext(noteIdRef.current, {
+              const created = await createNote(user.uid, newNote);
+              // 戻り値が string でも {id, ...} でもOK
+              const newId = typeof created === "string" ? created : created.id;
+
+              noteIdRef.current = newId;          // ← 以降は純粋な文字列ID
+              addNote({ id: newId, ...newNote }); // ← 一覧即時反映（任意）
+              setMode("edit");
+              localStorage.setItem("noteViewMode", "edit");
+              setSaveState("saved");
+              justCreatedNoteRef.current = true; // Mark that we just created this note
+              shouldFocusTextareaRef.current = true; // Focus textarea after navigation
+              // URL を新IDに更新
+              navigate(`/edit/${newId}`, { replace: true });
+            } catch (err) {
+              console.error("初回保存失敗:", err);
+            }
+          } else {
+            // --- 2回目以降：更新保存 ---
+            try {
+              const now = new Date().toISOString();
+              const newTitle = deriveTitle(newContent);
+              const newTags = mineTagsFrom(newTitle, newContent);
+              await updateNoteRemote(user.uid, noteIdRef.current, {
                 title: newTitle,
                 content: newContent,
                 tags: newTags,
+                updatedAt: now,
               });
-            } catch {}
-            setSaveState("saved");
-          } catch (err) {
-            console.error("自動保存失敗:", err);
+              // Keep local context in sync so tag mining/list updates immediately
+              try {
+                updateNoteInContext(noteIdRef.current, {
+                  title: newTitle,
+                  content: newContent,
+                  tags: newTags,
+                });
+              } catch { }
+              setSaveState("saved");
+            } catch (err) {
+              console.error("自動保存失敗:", err);
+            }
           }
-        }
         }, 800);
       }
     },
@@ -745,7 +749,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
             content: newContent,
             tags: newTags,
           });
-        } catch {}
+        } catch { }
         setSaveState("saved");
       } catch (err) {
         console.error("手動保存に失敗:", err);
@@ -949,7 +953,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
           try {
             const title = note.title || deriveTitle(note.content || "");
             addRecentNote({ id: note.id || id, title });
-          } catch {}
+          } catch { }
         }
       });
     } else if (isNew) {
@@ -988,7 +992,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
       a.click();
       URL.revokeObjectURL(url);
     };
-    
+
     window.addEventListener('asuka-export-text', handleExportEvent);
     return () => window.removeEventListener('asuka-export-text', handleExportEvent);
   }, [content]);
@@ -1015,7 +1019,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
       } else if (k === 'l') {
         // Ctrl+L or Ctrl+Shift+L: toggle list panel visibility
         e.preventDefault();
-        try { toggleListVisibility(); } catch {}
+        try { toggleListVisibility(); } catch { }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -1028,7 +1032,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
       try {
         const title = deriveTitle(content);
         addRecentNote({ id: noteIdRef.current, title });
-      } catch {}
+      } catch { }
       setRecentMarked(true);
     }
   }, [recentMarked, content]);
@@ -1047,15 +1051,13 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
   return (
     <div className="flex flex-col h-screen overflow-hidden p-1 sm:p-1.5">
       {/* タイトル行 */}
-      <h1 className="note-title font-bold text-lg flex-shrink-0">
-        {deriveTitle(content)}
-        <span className="ml-2 text-sm text-gray-500">
-          （ID: {noteIdRef.current ?? "未保存"}）
-        </span>
-        <span className="ml-2 text-sm text-gray-500">
-          {saveState === "saved" ? "saved" : "*"}
-        </span>
-      </h1>
+      <div className="note-title flex-shrink-0">
+        <div className="font-bold text-lg">{deriveTitle(content)}</div>
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <span>（ID: {noteIdRef.current ?? "未保存"}）</span>
+          <span>{saveState === "saved" ? "saved" : "*"}</span>
+        </div>
+      </div>
 
       {/* ツールバー */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 text-sm flex-shrink-0 mt-2">
@@ -1068,7 +1070,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
                 localStorage.setItem("noteViewMode", "edit");
               }}
             >
-              ✏️ 編集
+              ✏️
             </button>
             <button
               className={`px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 ${mode === "preview" ? "font-bold underline" : ""}`}
@@ -1077,7 +1079,7 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
                 localStorage.setItem("noteViewMode", "preview");
               }}
             >
-              👁️ プレビュー
+              👁️
             </button>
             <button
               className={`px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 ${mode === "split-right" ? "font-bold underline" : ""}`}
@@ -1086,35 +1088,35 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
                 localStorage.setItem("noteViewMode", "split-right");
               }}
             >
-              ↔️ 分割（右）
+              ↔️
             </button>
           </div>
 
           <div className="flex items-center gap-1">
-            <span className="opacity-70">文字</span>
+            <span className="opacity-70">aA</span>
             <button
               onClick={() => changeFontSize("sm")}
               className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "sm" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
             >
-              小
+              s
             </button>
             <button
               onClick={() => changeFontSize("base")}
               className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "base" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
             >
-              標準
+              M
             </button>
             <button
               onClick={() => changeFontSize("lg")}
               className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "lg" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
             >
-              大
+              L
             </button>
             <button
               onClick={() => changeFontSize("xl")}
               className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "xl" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
             >
-              特大
+              XL
             </button>
           </div>
         </div>
@@ -1140,34 +1142,12 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
           >
             ☑
           </button>
-          <button
-            onClick={async () => {
-              await saveNow();
-              toggleListVisibility && toggleListVisibility();
-            }}
-            className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
-            title="ナビゲーションバーを表示/非表示"
-            aria-label="ナビゲーションバートグル"
-          >
-            ☰
-          </button>
-          <button
-            onClick={saveNow}
-            className="bg-indigo-600 text-white px-3 py-1 text-sm rounded hover:bg-indigo-700"
-          >
-            保存
-          </button>
-          <button
-            onClick={() => navigate("/")}
-            className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
-          >
-            一覧
-          </button>
+
           <button
             onClick={() => navigate("/edit/new")}
             className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
           >
-            新規作成
+            ＋
           </button>
           {noteIdRef.current && (
             <button
@@ -1179,9 +1159,38 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
               }}
               className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
             >
-              削除
+              ×
             </button>
+
           )}
+          <button
+            onClick={saveNow}
+            className="bg-indigo-600 text-white px-3 py-1 text-sm rounded hover:bg-indigo-700"
+          >
+            ✓
+          </button>
+          <button
+            onClick={() => {
+              if (setNavCollapsed) {
+                setNavCollapsed(true);
+              }
+              navigate("/");
+            }}
+            className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
+          >
+            L
+          </button>
+          <button
+            onClick={async () => {
+              await saveNow();
+              toggleListVisibility && toggleListVisibility();
+            }}
+            className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
+            title="ナビゲーションバーを表示/非表示"
+            aria-label="ナビゲーションバートグル"
+          >
+            ☰
+          </button>
         </div>
       </div>
 
@@ -1221,25 +1230,25 @@ export default function NoteEditScreen({ user: userProp, listHidden = false, tog
         <div className="flex flex-1 gap-2 sm:gap-3 min-h-0">
           <EditorWithSuggestions
             content={content}
-          onChange={handleContentChange}
-          onScroll={() => {
-            if (linkSuggestions.length) setSuggestPos(computeCaretPosition());
-            syncScroll(textareaRef, previewRef);
-            saveCaret();
-          }}
-          textareaRef={textareaRef}
-          wrapperRef={wrapperRef}
-          handleKeyDown={handleKeyDown}
-          linkSuggestions={linkSuggestions}
-          suggestPos={suggestPos}
-          selectedSuggestion={selectedSuggestion}
-          insertSuggestion={insertSuggestion}
-          fontSizeCls={fontSizeCls}
-          onPaste={handlePaste}
-          onSelect={saveCaret}
-          onKeyUp={saveCaret}
-          onMouseUp={saveCaret}
-        />
+            onChange={handleContentChange}
+            onScroll={() => {
+              if (linkSuggestions.length) setSuggestPos(computeCaretPosition());
+              syncScroll(textareaRef, previewRef);
+              saveCaret();
+            }}
+            textareaRef={textareaRef}
+            wrapperRef={wrapperRef}
+            handleKeyDown={handleKeyDown}
+            linkSuggestions={linkSuggestions}
+            suggestPos={suggestPos}
+            selectedSuggestion={selectedSuggestion}
+            insertSuggestion={insertSuggestion}
+            fontSizeCls={fontSizeCls}
+            onPaste={handlePaste}
+            onSelect={saveCaret}
+            onKeyUp={saveCaret}
+            onMouseUp={saveCaret}
+          />
           <div
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}

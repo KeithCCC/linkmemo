@@ -1,0 +1,21 @@
+{
+  "productName": "Asuka Editor",
+  "version": "0.0.1",
+  "identifier": "com.asuka.editor",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Asuka Editor",
+        "width": 1200,
+        "height": 820,
+        "resizable": true
+      }
+    ]
+  }
+}

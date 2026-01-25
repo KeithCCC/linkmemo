@@ -1,0 +1,13 @@
+{
+  "identifier": "main-capability",
+  "description": "Default permissions for the main window.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "fs:allow-home-read-recursive",
+    "fs:allow-home-write-recursive"
+  ],
+  "platforms": ["windows"]
+}

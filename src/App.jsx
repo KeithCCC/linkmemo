@@ -93,6 +93,7 @@ function App() {
             user={user}
             listHidden={true}
             toggleListVisibility={toggleListVisibility}
+            setNavCollapsed={setCollapsed}
           />
         </div>
       </div>
@@ -111,7 +112,7 @@ function App() {
 
         <div className="flex-1 relative">
           <button
-            className="fixed top-2 left-2 z-50 bg-white shadow px-3 py-1 rounded"
+            className="fixed top-2 left-2 z-50 bg-white shadow px-2 py-1 rounded text-sm"
             onClick={() => setCollapsed(!collapsed)}
             aria-label="Toggle menu"
           >
