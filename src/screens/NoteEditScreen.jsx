@@ -9,6 +9,7 @@ import taskLists from "markdown-it-task-lists";
 import { addRecentNote } from "../recentNotes";
 const md = new MarkdownIt({ breaks: true });
 md.use(taskLists, { label: true, labelAfter: true });
+const CARET_DEBUG = false && import.meta.env.DEV;
 
 // 外部リンクを新しいウィンドウで開く
 const defaultRender = md.renderer.rules.link_open || function (tokens, idx, options, env, self) {
@@ -56,6 +57,8 @@ function EditorWithSuggestions({
   onSelect,
   onKeyUp,
   onMouseUp,
+  onFocus,
+  onBlur,
 }) {
   return (
     <div className="flex-1 relative flex flex-col min-h-0" ref={wrapperRef}>
@@ -69,6 +72,8 @@ function EditorWithSuggestions({
         onSelect={onSelect}
         onKeyUp={onKeyUp}
         onMouseUp={onMouseUp}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className={`w-full flex-1 border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent resize-none`}
         placeholder="内容を入力..."
       />
@@ -144,6 +149,7 @@ export default function NoteEditScreen({
   const saveTimeoutRef = useRef(null);
   // Track if we should focus textarea after navigation (new note creation)
   const shouldFocusTextareaRef = useRef(false);
+  const pendingCreatedCaretRef = useRef(null);
   const noteIdRef = useRef(isNew ? null : id); // ← ここは常に「文字列ID or null」
   const isSyncingScroll = useRef(false);
   const justCreatedNoteRef = useRef(false); // Track when we just created a note to skip reload
@@ -154,40 +160,97 @@ export default function NoteEditScreen({
   const [recentMarked, setRecentMarked] = useState(false);
   const [enterPressedOnNewNote, setEnterPressedOnNewNote] = useState(false);
   const restoredForIdRef = useRef(null);
+  const debugFlowSeqRef = useRef(0);
+  const activeDebugFlowRef = useRef(null);
+
+  const debugCaret = useCallback((event, extra = {}) => {
+    if (!CARET_DEBUG) return;
+    const ta = textareaRef.current;
+    const flow = activeDebugFlowRef.current ?? "-";
+    console.log(`[CARET flow=${flow}] ${event}`, {
+      routeId: id,
+      isNew,
+      noteIdRef: noteIdRef.current,
+      selStart: ta?.selectionStart ?? null,
+      selEnd: ta?.selectionEnd ?? null,
+      scrollTop: ta?.scrollTop ?? null,
+      taValueLen: ta?.value?.length ?? null,
+      contentLen: content.length,
+      pendingCreatedCaret: pendingCreatedCaretRef.current,
+      justCreated: justCreatedNoteRef.current,
+      restoredForId: restoredForIdRef.current,
+      ...extra,
+    });
+  }, [content.length, id, isNew]);
 
   const saveCaret = useCallback(() => {
     const ta = textareaRef.current;
-    if (isNew && !noteIdRef.current) return;
+    if (isNew && !noteIdRef.current) {
+      debugCaret("saveCaret.skip.new-without-id");
+      return;
+    }
+    if (pendingCreatedCaretRef.current) {
+      debugCaret("saveCaret.skip.pending-created-caret");
+      return;
+    }
+    // During first-create navigation (/edit/new -> /edit/:id),
+    // keep the captured caret instead of overwriting it with a transient value.
+    if (isNew && justCreatedNoteRef.current) {
+      debugCaret("saveCaret.skip.just-created-transition");
+      return;
+    }
     const curId = noteIdRef.current || (isNew ? "new" : id);
-    if (!ta || !curId) return;
+    if (!ta || !curId) {
+      debugCaret("saveCaret.skip.no-ta-or-id", { curId });
+      return;
+    }
     try {
       const s = ta.selectionStart ?? 0;
       const e = ta.selectionEnd ?? s;
       const st = ta.scrollTop ?? 0;
       localStorage.setItem(`noteCaret:${curId}`, JSON.stringify({ s, e, st }));
+      debugCaret("saveCaret.saved", { curId, s, e, st });
     } catch { }
-  }, [id, isNew]);
+  }, [debugCaret, id, isNew]);
 
   const restoreCaret = useCallback(() => {
     const ta = textareaRef.current;
-    if (isNew && !noteIdRef.current) return;
+    if (isNew && !noteIdRef.current) {
+      debugCaret("restoreCaret.skip.new-without-id");
+      return false;
+    }
     const curId = noteIdRef.current || (isNew ? "new" : id);
-    if (!ta || !curId) return;
+    if (!ta || !curId) {
+      debugCaret("restoreCaret.skip.no-ta-or-id", { curId });
+      return false;
+    }
     let raw = null;
     try {
       raw = localStorage.getItem(`noteCaret:${curId}`);
     } catch { }
-    if (!raw) return;
+    if (!raw) {
+      debugCaret("restoreCaret.skip.no-localstorage", { curId });
+      return false;
+    }
     let obj;
     try {
       obj = JSON.parse(raw);
     } catch {
-      return;
+      debugCaret("restoreCaret.skip.invalid-json", { curId, raw });
+      return false;
     }
     const len = (content || "").length;
+    const rawS = Math.max(0, obj?.s ?? 0);
+    const rawE = Math.max(0, obj?.e ?? rawS);
+    // If content is not yet loaded (e.g. right after route switch), defer restore.
+    if (len === 0 && (rawS > 0 || rawE > 0)) {
+      debugCaret("restoreCaret.defer.content-not-ready", { curId, rawS, rawE, len });
+      return false;
+    }
     const s = Math.min(Math.max(0, obj?.s ?? 0), len);
     const e = Math.min(Math.max(0, obj?.e ?? s), len);
     const st = typeof obj?.st === "number" ? obj.st : null;
+    debugCaret("restoreCaret.apply.scheduled", { curId, s, e, st, len });
     setTimeout(() => {
       const current = textareaRef.current;
       if (!current) return;
@@ -198,9 +261,11 @@ export default function NoteEditScreen({
         if (document.activeElement === current || !document.activeElement || document.activeElement === document.body) {
           current.focus();
         }
+        debugCaret("restoreCaret.apply.done", { curId, s: current.selectionStart, e: current.selectionEnd, st: current.scrollTop });
       } catch { }
     }, 0);
-  }, [id, isNew, content]);
+    return true;
+  }, [content, debugCaret, id, isNew]);
   // --- caret/selection helpers ---
   const getLineInfoAt = useCallback((text, index) => {
     const start = text.lastIndexOf("\n", Math.max(0, index - 1)) + 1;
@@ -231,13 +296,21 @@ export default function NoteEditScreen({
     setContentAndRestore(ta, before + inserted + after, nextPos);
   }, [content, setContentAndRestore]);
 
-  // Toggle bullet list formatting
-  const makeBulletList = useCallback((ta) => {
+  const getAffectedLineRange = useCallback((ta) => {
     const start = ta.selectionStart ?? 0;
     const end = ta.selectionEnd ?? start;
-    const before = content.slice(0, start);
-    const selected = content.slice(start, end);
-    const after = content.slice(end);
+    const startLine = getLineInfoAt(content, start);
+    const effectiveEnd = end > start ? end - 1 : end;
+    const endLine = getLineInfoAt(content, effectiveEnd);
+    return { start: startLine.start, end: endLine.end };
+  }, [content, getLineInfoAt]);
+
+  // Toggle bullet list formatting
+  const makeBulletList = useCallback((ta) => {
+    const range = getAffectedLineRange(ta);
+    const before = content.slice(0, range.start);
+    const selected = content.slice(range.start, range.end);
+    const after = content.slice(range.end);
 
     const lines = selected.split('\n');
     // Check if all non-empty lines are already bullets
@@ -269,15 +342,14 @@ export default function NoteEditScreen({
     }).join('\n');
 
     setContentAndRestore(ta, before + processedLines + after, before.length + processedLines.length);
-  }, [content, setContentAndRestore]);
+  }, [content, getAffectedLineRange, setContentAndRestore]);
 
   // Toggle checkbox list formatting
   const makeCheckboxList = useCallback((ta) => {
-    const start = ta.selectionStart ?? 0;
-    const end = ta.selectionEnd ?? start;
-    const before = content.slice(0, start);
-    const selected = content.slice(start, end);
-    const after = content.slice(end);
+    const range = getAffectedLineRange(ta);
+    const before = content.slice(0, range.start);
+    const selected = content.slice(range.start, range.end);
+    const after = content.slice(range.end);
 
     const lines = selected.split('\n');
     // Check if all non-empty lines are already checkboxes
@@ -309,7 +381,7 @@ export default function NoteEditScreen({
     }).join('\n');
 
     setContentAndRestore(ta, before + processedLines + after, before.length + processedLines.length);
-  }, [content, setContentAndRestore]);
+  }, [content, getAffectedLineRange, setContentAndRestore]);
   // Paste handler for Markdown link
   const handlePaste = useCallback((e) => {
     const ta = textareaRef.current;
@@ -372,10 +444,11 @@ export default function NoteEditScreen({
     const curId = noteIdRef.current || (isNew ? "new" : id);
     if (isNew && !noteIdRef.current) return;
     if (!curId) return;
+    if (pendingCreatedCaretRef.current) return;
     if (!(mode === "edit" || mode === "split-right")) return;
     if (restoredForIdRef.current === curId) return;
-    restoreCaret();
-    restoredForIdRef.current = curId;
+    const restored = restoreCaret();
+    if (restored) restoredForIdRef.current = curId;
   }, [id, isNew, mode, content, restoreCaret]);
 
   const titleToId = useCallback(
@@ -609,6 +682,10 @@ export default function NoteEditScreen({
       const newContent = e.target.value;
       setContent(newContent);
       setSaveState("*");
+      debugCaret("handleContentChange", {
+        newContentLen: newContent.length,
+        cursorPos: e.target.selectionStart ?? null,
+      });
 
       // [[… の検出
       const cursorPos = e.target.selectionStart ?? newContent.length;
@@ -641,6 +718,19 @@ export default function NoteEditScreen({
 
           if (!noteIdRef.current) {
             // --- 初回保存：ID取得→URLだけ置換、画面はそのまま ---
+            if (activeDebugFlowRef.current == null) {
+              debugFlowSeqRef.current += 1;
+              activeDebugFlowRef.current = debugFlowSeqRef.current;
+            }
+            const ta = textareaRef.current;
+            const firstSaveCaret = ta
+              ? {
+                s: ta.selectionStart ?? 0,
+                e: ta.selectionEnd ?? (ta.selectionStart ?? 0),
+                st: ta.scrollTop ?? 0,
+              }
+              : null;
+            debugCaret("firstSave.beforeCreateNote", { firstSaveCaret, newContentLen: newContent.length });
             const now = new Date().toISOString();
             const newTitle = deriveTitle(newContent);
             const newTags = mineTagsFrom(newTitle, newContent);
@@ -658,6 +748,16 @@ export default function NoteEditScreen({
 
               noteIdRef.current = newId;          // ← 以降は純粋な文字列ID
               addNote({ id: newId, ...newNote }); // ← 一覧即時反映（任意）
+              if (firstSaveCaret) {
+                pendingCreatedCaretRef.current = firstSaveCaret;
+                try {
+                  localStorage.setItem(`noteCaret:${newId}`, JSON.stringify(firstSaveCaret));
+                } catch { }
+              }
+              debugCaret("firstSave.afterCreate.beforeNavigate", {
+                newId,
+                firstSaveCaret,
+              });
               setMode("edit");
               localStorage.setItem("noteViewMode", "edit");
               setSaveState("saved");
@@ -667,6 +767,7 @@ export default function NoteEditScreen({
               navigate(`/edit/${newId}`, { replace: true });
             } catch (err) {
               console.error("初回保存失敗:", err);
+              debugCaret("firstSave.createNote.error", { message: String(err?.message || err) });
             }
           } else {
             // --- 2回目以降：更新保存 ---
@@ -696,7 +797,7 @@ export default function NoteEditScreen({
         }, 800);
       }
     },
-    [allNotes, computeCaretPosition, deriveTitle, user?.uid, addNote, isNew, noteIdRef, enterPressedOnNewNote]
+    [allNotes, computeCaretPosition, debugCaret, deriveTitle, user?.uid, addNote, isNew, noteIdRef, enterPressedOnNewNote]
   );
 
   // Manual save button handler (create or update immediately)
@@ -709,6 +810,14 @@ export default function NoteEditScreen({
 
     const newContent = content;
     if (!noteIdRef.current) {
+      const ta = textareaRef.current;
+      const firstSaveCaret = ta
+        ? {
+          s: ta.selectionStart ?? 0,
+          e: ta.selectionEnd ?? (ta.selectionStart ?? 0),
+          st: ta.scrollTop ?? 0,
+        }
+        : null;
       const now = new Date().toISOString();
       const newTitle = deriveTitle(newContent);
       const newTags = mineTagsFrom(newTitle, newContent);
@@ -724,9 +833,16 @@ export default function NoteEditScreen({
         const newId = typeof created === "string" ? created : created.id;
         noteIdRef.current = newId;
         addNote({ id: newId, ...newNote });
+        if (firstSaveCaret) {
+          pendingCreatedCaretRef.current = firstSaveCaret;
+          try {
+            localStorage.setItem(`noteCaret:${newId}`, JSON.stringify(firstSaveCaret));
+          } catch { }
+        }
         setMode("edit");
         localStorage.setItem("noteViewMode", "edit");
         justCreatedNoteRef.current = true; // Mark that we just created this note
+        shouldFocusTextareaRef.current = true;
         navigate(`/edit/${newId}`, { replace: true });
         setSaveState("saved");
       } catch (err) {
@@ -925,23 +1041,60 @@ export default function NoteEditScreen({
 
   // ルート変更時の読み込み・初期化 ------------------------------------------
   useEffect(() => {
+    debugCaret("routeEffect.enter", { idParam: id, isNewParam: isNew });
     setLinkSuggestions([]);
     setLinkQuery("");
     setEnterPressedOnNewNote(false); // Reset Enter pressed flag when changing notes
-    restoredForIdRef.current = null;
-
-    // Focus textarea if flagged (after new note creation and navigation)
-    if (shouldFocusTextareaRef.current) {
-      shouldFocusTextareaRef.current = false;
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 0);
-    }
 
     // Skip reload if we just created this note (content is already current)
     if (justCreatedNoteRef.current) {
+      // First-create transition: restore once from pending caret and mark as restored.
+      debugCaret("routeEffect.justCreated.enter");
+      if (shouldFocusTextareaRef.current) {
+        shouldFocusTextareaRef.current = false;
+        setTimeout(() => {
+          const ta = textareaRef.current;
+          if (!ta) return;
+          const pending = pendingCreatedCaretRef.current;
+          debugCaret("routeEffect.justCreated.restore.before", { pending });
+          if (pending) {
+            const len = ta.value.length;
+            ta.selectionStart = Math.min(Math.max(0, pending.s ?? 0), len);
+            ta.selectionEnd = Math.min(Math.max(0, pending.e ?? pending.s ?? 0), len);
+            if (typeof pending.st === "number") ta.scrollTop = pending.st;
+            if ((pending.s ?? 0) > 0 && ta.selectionStart === 0) {
+              console.trace("[CARET] pending restore expected >0 but ended at 0", { pending, len });
+            }
+            pendingCreatedCaretRef.current = null;
+          }
+          ta.focus();
+          requestAnimationFrame(() => {
+            debugCaret("routeEffect.justCreated.restore.raf", {
+              selStart: ta.selectionStart,
+              selEnd: ta.selectionEnd,
+              scrollTop: ta.scrollTop,
+            });
+          });
+        }, 0);
+      }
+      const curId = noteIdRef.current || (isNew ? "new" : id);
+      if (curId) restoredForIdRef.current = curId;
       justCreatedNoteRef.current = false;
+      debugCaret("routeEffect.justCreated.exit");
       return;
+    }
+
+    restoredForIdRef.current = null;
+
+    // Focus textarea if flagged in non-create transitions
+    if (shouldFocusTextareaRef.current) {
+      shouldFocusTextareaRef.current = false;
+      setTimeout(() => {
+        const ta = textareaRef.current;
+        if (!ta) return;
+        ta.focus();
+        debugCaret("routeEffect.focus.non-create");
+      }, 0);
     }
 
     if (!isNew && user?.uid) {
@@ -1119,30 +1272,32 @@ export default function NoteEditScreen({
               XL
             </button>
           </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const ta = textareaRef.current;
+                if (ta) makeBulletList(ta);
+              }}
+              className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
+              title="選択範囲を箇条書きに (Ctrl+L)"
+            >
+              •
+            </button>
+            <button
+              onClick={() => {
+                const ta = textareaRef.current;
+                if (ta) makeCheckboxList(ta);
+              }}
+              className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
+              title="選択範囲をチェックボックスに (Ctrl+Shift+K)"
+            >
+              ☑
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-2 justify-end">
-          <button
-            onClick={() => {
-              const ta = textareaRef.current;
-              if (ta) makeBulletList(ta);
-            }}
-            className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
-            title="選択範囲を箇条書きに (Ctrl+L)"
-          >
-            •
-          </button>
-          <button
-            onClick={() => {
-              const ta = textareaRef.current;
-              if (ta) makeCheckboxList(ta);
-            }}
-            className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
-            title="選択範囲をチェックボックスに (Ctrl+Shift+K)"
-          >
-            ☑
-          </button>
-
           <button
             onClick={() => navigate("/edit/new")}
             className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
@@ -1212,9 +1367,20 @@ export default function NoteEditScreen({
           insertSuggestion={insertSuggestion}
           fontSizeCls={fontSizeCls}
           onPaste={handlePaste}
-          onSelect={saveCaret}
-          onKeyUp={saveCaret}
-          onMouseUp={saveCaret}
+          onSelect={() => {
+            debugCaret("textarea.onSelect");
+            saveCaret();
+          }}
+          onKeyUp={() => {
+            debugCaret("textarea.onKeyUp");
+            saveCaret();
+          }}
+          onMouseUp={() => {
+            debugCaret("textarea.onMouseUp");
+            saveCaret();
+          }}
+          onFocus={() => debugCaret("textarea.onFocus")}
+          onBlur={() => debugCaret("textarea.onBlur")}
         />
       )}
 
@@ -1245,9 +1411,20 @@ export default function NoteEditScreen({
             insertSuggestion={insertSuggestion}
             fontSizeCls={fontSizeCls}
             onPaste={handlePaste}
-            onSelect={saveCaret}
-            onKeyUp={saveCaret}
-            onMouseUp={saveCaret}
+            onSelect={() => {
+              debugCaret("textarea.onSelect.split");
+              saveCaret();
+            }}
+            onKeyUp={() => {
+              debugCaret("textarea.onKeyUp.split");
+              saveCaret();
+            }}
+            onMouseUp={() => {
+              debugCaret("textarea.onMouseUp.split");
+              saveCaret();
+            }}
+            onFocus={() => debugCaret("textarea.onFocus.split")}
+            onBlur={() => debugCaret("textarea.onBlur.split")}
           />
           <div
             ref={previewRef}
