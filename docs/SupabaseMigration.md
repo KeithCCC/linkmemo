@@ -49,6 +49,7 @@ CREATE TABLE notes (
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   tags TEXT[] DEFAULT '{}',
+  focus BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)

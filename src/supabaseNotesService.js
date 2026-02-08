@@ -20,6 +20,7 @@ export const getNotes = async (uid) => {
     title: note.title,
     content: note.content,
     tags: note.tags,
+    focus: Boolean(note.focus),
     createdAt: note.created_at,
     updatedAt: note.updated_at,
   }));
@@ -36,6 +37,7 @@ export const createNote = async (uid, note) => {
       title: note.title || '',
       content: note.content || '',
       tags: note.tags || [],
+      focus: Boolean(note.focus),
       created_at: now,
       updated_at: now
     }])
@@ -53,11 +55,12 @@ export const createNote = async (uid, note) => {
 // ノートを更新
 export const updateNote = async (uid, noteId, note) => {
   const updates = {
-    title: note.title,
-    content: note.content,
-    tags: note.tags || [],
     updated_at: note.updatedAt || new Date().toISOString()
   };
+  if (note.title !== undefined) updates.title = note.title;
+  if (note.content !== undefined) updates.content = note.content;
+  if (note.tags !== undefined) updates.tags = note.tags || [];
+  if (note.focus !== undefined) updates.focus = Boolean(note.focus);
   
   const { data, error } = await supabase
     .from('notes')
@@ -113,6 +116,7 @@ export const getNoteById = async (uid, noteId) => {
     title: data.title,
     content: data.content,
     tags: data.tags,
+    focus: Boolean(data.focus),
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   } : null;

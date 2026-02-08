@@ -156,6 +156,7 @@ export default function NoteEditScreen({
 
   // UI state
   const [content, setContent] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const [saveState, setSaveState] = useState("*"); // "*" = dirty, "saved" = clean
   const [recentMarked, setRecentMarked] = useState(false);
   const [enterPressedOnNewNote, setEnterPressedOnNewNote] = useState(false);
@@ -560,6 +561,7 @@ export default function NoteEditScreen({
           title: createNoteTitle,
           content: `# ${createNoteTitle}\n\n`,
           tags: [],
+          focus: false,
           createdAt: now,
           updatedAt: now,
         };
@@ -738,6 +740,7 @@ export default function NoteEditScreen({
               title: newTitle,
               content: newContent,
               tags: newTags,
+              focus: isFocused,
               createdAt: now,
               updatedAt: now,
             };
@@ -779,6 +782,7 @@ export default function NoteEditScreen({
                 title: newTitle,
                 content: newContent,
                 tags: newTags,
+                focus: isFocused,
                 updatedAt: now,
               });
               // Keep local context in sync so tag mining/list updates immediately
@@ -787,6 +791,7 @@ export default function NoteEditScreen({
                   title: newTitle,
                   content: newContent,
                   tags: newTags,
+                  focus: isFocused,
                 });
               } catch { }
               setSaveState("saved");
@@ -797,7 +802,7 @@ export default function NoteEditScreen({
         }, 800);
       }
     },
-    [allNotes, computeCaretPosition, debugCaret, deriveTitle, user?.uid, addNote, isNew, noteIdRef, enterPressedOnNewNote]
+    [allNotes, computeCaretPosition, debugCaret, deriveTitle, user?.uid, addNote, isFocused, isNew, noteIdRef, enterPressedOnNewNote]
   );
 
   // Manual save button handler (create or update immediately)
@@ -825,6 +830,7 @@ export default function NoteEditScreen({
         title: newTitle,
         content: newContent,
         tags: newTags,
+        focus: isFocused,
         createdAt: now,
         updatedAt: now,
       };
@@ -857,6 +863,7 @@ export default function NoteEditScreen({
           title: newTitle,
           content: newContent,
           tags: newTags,
+          focus: isFocused,
           updatedAt: now,
         });
         try {
@@ -864,6 +871,7 @@ export default function NoteEditScreen({
             title: newTitle,
             content: newContent,
             tags: newTags,
+            focus: isFocused,
           });
         } catch { }
         setSaveState("saved");
@@ -871,7 +879,24 @@ export default function NoteEditScreen({
         console.error("手動保存に失敗:", err);
       }
     }
-  }, [user?.uid, content, deriveTitle, addNote]);
+  }, [user?.uid, content, deriveTitle, addNote, isFocused]);
+
+  const toggleFocusStatus = useCallback(async () => {
+    const nextFocus = !isFocused;
+    setIsFocused(nextFocus);
+    setSaveState("*");
+
+    if (!noteIdRef.current || !user?.uid) return;
+    try {
+      await updateNoteRemote(user.uid, noteIdRef.current, { focus: nextFocus });
+      try {
+        updateNoteInContext(noteIdRef.current, { focus: nextFocus });
+      } catch {}
+      setSaveState("saved");
+    } catch (err) {
+      console.error("Focus 更新に失敗:", err);
+    }
+  }, [isFocused, user?.uid, updateNoteInContext]);
 
   // 候補確定 ---------------------------------------------------------------
   const insertSuggestion = useCallback(
@@ -1102,6 +1127,7 @@ export default function NoteEditScreen({
         if (!note) navigate("/", { replace: true });
         else {
           setContent(note.content || "");
+          setIsFocused(Boolean(note.focus));
           setSaveState("saved");
           try {
             const title = note.title || deriveTitle(note.content || "");
@@ -1111,6 +1137,7 @@ export default function NoteEditScreen({
       });
     } else if (isNew) {
       setContent("");
+      setIsFocused(false);
       setSaveState("*");
       setTimeout(() => {
         textareaRef.current?.focus();
@@ -1303,6 +1330,18 @@ export default function NoteEditScreen({
             className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
           >
             ＋
+          </button>
+          <button
+            onClick={toggleFocusStatus}
+            className={`px-3 py-1 text-sm rounded border font-semibold transition-colors ${
+              isFocused
+                ? "border-orange-700 text-white bg-orange-600 hover:bg-orange-700"
+                : "border-gray-400 text-gray-700 bg-white hover:bg-gray-100"
+            }`}
+            title="Focus status toggle"
+            aria-pressed={isFocused}
+          >
+            {isFocused ? "Focus ON" : "Focus OFF"}
           </button>
           {noteIdRef.current && (
             <button

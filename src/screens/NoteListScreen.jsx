@@ -75,7 +75,7 @@ export default function NoteListScreen({ embedded = false }) {
     if (user?.uid && typeof refreshNotes === "function") {
       refreshNotes().catch(() => {});
     }
-  }, [user?.uid, refreshNotes]);
+  }, [user?.uid]);
 
   const allTags = useMemo(() => {
     const set = new Set();
@@ -192,6 +192,15 @@ export default function NoteListScreen({ embedded = false }) {
       return textHit && includeOk && excludeOk;
     });
   }, [sortedNotes, searchTerm, tagStates, anyToggleActive, allTags]);
+
+  const focusedNotes = useMemo(
+    () => filteredNotes.filter((n) => Boolean(n.focus)),
+    [filteredNotes]
+  );
+  const regularNotes = useMemo(
+    () => filteredNotes.filter((n) => !n.focus),
+    [filteredNotes]
+  );
 
   const visibleTags = useMemo(() => {
     const lower = stripHash(searchTerm).toLowerCase();
@@ -341,6 +350,22 @@ export default function NoteListScreen({ embedded = false }) {
     }
   };
 
+  const handleToggleFocus = async (note) => {
+    const prevFocus = Boolean(note.focus);
+    const nextFocus = !Boolean(note.focus);
+    try {
+      updateNote(note.id, { focus: nextFocus });
+    } catch {}
+    if (user?.uid) {
+      try {
+        await updateNoteRemote(user.uid, note.id, { focus: nextFocus });
+      } catch (err) {
+        try { updateNote(note.id, { focus: prevFocus }); } catch {}
+        console.error("Focus update failed:", err);
+      }
+    }
+  };
+
   return (
     <div className={containerClass}>
       <div className="flex items-center justify-between mb-4">
@@ -361,6 +386,37 @@ export default function NoteListScreen({ embedded = false }) {
           </Link>
         </div>
       </div>
+
+      {focusedNotes.length > 0 && (
+        <section className="mb-4 rounded-2xl border border-red-400 bg-red-50 p-3">
+          <div className="mb-2 text-sm font-semibold text-red-700">Focus Notes</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {focusedNotes.map((note) => (
+              <div
+                key={`focus-${note.id}`}
+                className="rounded-xl border border-blue-500 bg-white p-3 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <Link
+                    className="text-blue-700 font-semibold"
+                    to={`/edit/${note.id}`}
+                    onClick={() => addRecentNote({ id: note.id, title: note.title || "Untitled" })}
+                  >
+                    {note.title || "Untitled"}
+                  </Link>
+                  <button
+                    onClick={() => handleToggleFocus(note)}
+                    className="text-xs rounded border border-orange-500 px-2 py-1 text-orange-600 hover:bg-orange-100"
+                    title="Forcus toggle"
+                  >
+                    Forcus
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 🔎 キーワード検索（×で即クリア） */}
       <div className={embedded ? "sticky top-0 z-10 bg-white dark:bg-[#3a3a3a] pb-2" : ""}>
@@ -448,10 +504,12 @@ export default function NoteListScreen({ embedded = false }) {
       {/* 📄 ノート一覧 */}
       {filteredNotes.length === 0 ? (
         <p className="text-gray-500 italic">検索結果が見つかりませんでした…</p>
+      ) : regularNotes.length === 0 ? (
+        <p className="text-gray-500 italic">通常ノートはありません（すべて Focus セクションに表示中）</p>
       ) : isCardView ? (
         // Card View for narrow screens (< 768px)
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ref={listRef}>
-          {filteredNotes.map((note) => {
+          {regularNotes.map((note) => {
             const saved = Array.isArray(note.tags)
               ? note.tags.map(t => normalize(stripHash(t)))
               : (typeof note.tags === "string" && stripHash(note.tags)
@@ -473,17 +531,26 @@ export default function NoteListScreen({ embedded = false }) {
                   >
                     {note.title || "Untitled"}
                   </Link>
-                  <button
-                    onClick={async () => {
-                      if (confirm("このノートを削除してもよろしいですか？")) {
-                        try { await deleteNote(note.id); } catch {}
-                      }
-                    }}
-                    className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 flex-shrink-0"
-                    aria-label={`ノート「${note.title || "Untitled"}」を削除`}
-                  >
-                    削除
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleFocus(note)}
+                      className="text-xs rounded border border-orange-500 px-2 py-1 text-orange-600 hover:bg-orange-100"
+                      title="Forcus toggle"
+                    >
+                      Forcus
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm("このノートを削除してもよろしいですか？")) {
+                          try { await deleteNote(note.id); } catch {}
+                        }
+                      }}
+                      className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 flex-shrink-0"
+                      aria-label={`ノート「${note.title || "Untitled"}」を削除`}
+                    >
+                      削除
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -511,7 +578,7 @@ export default function NoteListScreen({ embedded = false }) {
       ) : (
         // List View for wider screens (>= 768px)
         <ul className="space-y-2" ref={listRef}>
-          {filteredNotes.map((note) => {
+          {regularNotes.map((note) => {
             const saved = Array.isArray(note.tags)
               ? note.tags.map(t => normalize(stripHash(t)))
               : (typeof note.tags === "string" && stripHash(note.tags)
@@ -535,17 +602,26 @@ export default function NoteListScreen({ embedded = false }) {
                       {note.title}
                     </Link>
                   </div>
-                  <button
-                    onClick={async () => {
-                      if (confirm("このノートを削除してもよろしいですか？")) {
-                        try { await deleteNote(note.id); } catch {}
-                      }
-                    }}
-                    className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
-                    aria-label={`ノート「${note.title || "Untitled"}」を削除`}
-                  >
-                    削除
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleFocus(note)}
+                      className="text-xs rounded border border-orange-500 px-2 py-1 text-orange-600 hover:bg-orange-100"
+                      title="Forcus toggle"
+                    >
+                      Forcus
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm("このノートを削除してもよろしいですか？")) {
+                          try { await deleteNote(note.id); } catch {}
+                        }
+                      }}
+                      className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                      aria-label={`ノート「${note.title || "Untitled"}」を削除`}
+                    >
+                      削除
+                    </button>
+                  </div>
                 </div>
                 <div className="text-sm text-gray-500">
                   更新日: {(note.updatedAt?.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)).toLocaleString()}

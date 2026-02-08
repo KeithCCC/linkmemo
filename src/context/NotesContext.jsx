@@ -86,6 +86,7 @@ export const NotesProvider = ({ children }) => {
     const newNote = {
       ...note,
       id: note.id, // ← Firebaseから渡されたIDを使う
+      focus: Boolean(note.focus),
       createdAt: note.createdAt || now,
       updatedAt: now,
     };
