@@ -11,6 +11,7 @@ import NoteListScreen from './screens/NoteListScreen';
 import TipTapScreen from './screens/TipTapScreen';
 import ClipScreen from './screens/ClipScreen';
 import ExtensionScreen from './screens/ExtensionScreen';
+import CommandPalette from './components/CommandPalette';
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
   });
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     localStorage.setItem("navCollapsed", collapsed);
@@ -31,6 +33,19 @@ function App() {
       const mod = (e.ctrlKey || e.metaKey);
       const modShift = mod && e.shiftKey;
       const key = String(e.key).toLowerCase();
+
+      const target = e.target;
+      const isTypingTarget =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable;
+
+      // Ctrl/Cmd+K: command palette (avoid conflicts while typing)
+      if (mod && !e.shiftKey && key === 'k' && !isTypingTarget) {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
 
       // Ctrl+Shift+C: toggle left nav
       if (modShift && key === 'c') {
@@ -56,6 +71,51 @@ function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  const commandPaletteActions = [
+    {
+      id: 'new-note',
+      label: '新規作成',
+      hint: '/edit/new へ移動',
+      keywords: 'new create note',
+      onSelect: () => navigate('/edit/new'),
+    },
+    {
+      id: 'go-list',
+      label: 'ノート一覧へ移動',
+      hint: '先頭ノートへフォーカス',
+      keywords: 'list home notes',
+      onSelect: () => navigate('/', { state: { focusFirst: true } }),
+    },
+    {
+      id: 'focus-search',
+      label: '検索フォーカス',
+      hint: '一覧の検索ボックスにフォーカス',
+      keywords: 'search filter',
+      onSelect: () => window.dispatchEvent(new CustomEvent('asuka-list-focus-search')),
+    },
+    {
+      id: 'toggle-view',
+      label: '表示切替',
+      hint: 'カード / リスト / 自動',
+      keywords: 'view mode card list',
+      onSelect: () => window.dispatchEvent(new CustomEvent('asuka-list-cycle-view')),
+    },
+    {
+      id: 'toggle-focus',
+      label: 'フォーカス切替',
+      hint: '一覧の先頭ノートの Focus を切替',
+      keywords: 'focus toggle',
+      onSelect: () => window.dispatchEvent(new CustomEvent('asuka-list-toggle-focus-first')),
+    },
+    {
+      id: 'open-settings',
+      label: '使い方を開く',
+      hint: '/settings へ移動',
+      keywords: 'settings help usage',
+      onSelect: () => navigate('/settings'),
+    },
+  ];
 
 
   useEffect(() => {
@@ -112,7 +172,7 @@ function App() {
 
         <div className="flex-1 relative">
           <button
-            className="fixed top-2 left-2 z-50 bg-white shadow px-2 py-1 rounded text-sm"
+            className={`fixed top-2 left-2 z-50 bg-white shadow px-2 py-1 rounded text-sm ${collapsed ? "block" : "hidden"}`}
             onClick={() => setCollapsed(!collapsed)}
             aria-label="Toggle menu"
           >
@@ -131,6 +191,11 @@ function App() {
             </Routes>
 
           </div>
+          <CommandPalette
+            open={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            actions={commandPaletteActions}
+          />
         </div>
       </div>
     </div>

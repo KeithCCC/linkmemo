@@ -2,24 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global background and text colors */
-body {
-  /* Light fallback if .dark class is removed */
-  @apply bg-white text-black;
+:root {
+  --app-bg: #f4f7fb;
+  --app-surface: #ffffff;
+  --app-panel: #eef3f9;
+  --app-panel-hover: #e3ebf5;
+  --app-border: #c9d4e3;
+  --app-text: #1f2937;
+  --app-muted: #5f6b7a;
+  --app-chip: #dde6f2;
 }
 
-.dark body {
-  /* Richer dark background for higher contrast */
-  @apply bg-[#232323] text-gray-100;
+.dark {
+  --app-bg: #141922;
+  --app-surface: #1f2836;
+  --app-panel: #273142;
+  --app-panel-hover: #2f3b4f;
+  --app-border: #435268;
+  --app-text: #e5edf7;
+  --app-muted: #a3b2c6;
+  --app-chip: #34445b;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+.app-surface {
+  background-color: var(--app-surface);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.app-panel {
+  background-color: var(--app-panel);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.app-panel-hover {
+  transition: background-color 160ms ease;
+}
+
+.app-panel-hover:hover {
+  background-color: var(--app-panel-hover);
+}
+
+.app-input {
+  background-color: var(--app-surface);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.app-chip {
+  background-color: var(--app-chip);
+  color: var(--app-text);
+}
+
+.app-muted-text {
+  color: var(--app-muted);
 }
 
 /* Inputs in dark mode: readable text and placeholders */
 .dark input,
 .dark textarea,
 .dark select {
-  /* Brighter surfaces and clearer borders in dark mode */
   color: rgb(243, 244, 246); /* gray-100 */
-  background-color: #4a4a4a; /* lighter than body for separation */
+  background-color: var(--app-surface);
   border-color: #666666; /* brighter border for clarity */
 }
 .dark input::placeholder,
@@ -46,6 +96,20 @@ body {
   max-width: none;
 }
 
+.dark .prose {
+  --tw-prose-body: #e6edf7;
+  --tw-prose-headings: #f4f7ff;
+  --tw-prose-links: #8ec5ff;
+  --tw-prose-bold: #ffffff;
+  --tw-prose-bullets: #b8c7da;
+  --tw-prose-quotes: #b8c7da;
+  --tw-prose-code: #ff8ab7;
+  --tw-prose-pre-bg: #1a2330;
+  --tw-prose-pre-code: #dbe7f7;
+  --tw-prose-th-borders: #425167;
+  --tw-prose-td-borders: #334156;
+}
+
 /* ✍ 本文・リストの余白を最小化 */
 .prose p,
 .prose ul,
@@ -63,6 +127,11 @@ body {
   font-size: 1.6em; /* was 0.95rem: too small */
   line-height: 1.25;
   font-weight: 700;
+}
+
+/* Preview pane: give the first memo title clearer separation from body text */
+.preview-pane.prose h1:first-of-type {
+  margin-bottom: 0.9rem !important;
 }
 
 /* Keyboard labels inside prose */

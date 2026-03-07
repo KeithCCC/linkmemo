@@ -61,7 +61,7 @@ function EditorWithSuggestions({
   onBlur,
 }) {
   return (
-    <div className="flex-1 relative flex flex-col min-h-0" ref={wrapperRef}>
+    <div className="flex-1 min-w-0 relative flex flex-col min-h-0" ref={wrapperRef}>
       <textarea
         ref={textareaRef}
         value={content}
@@ -79,7 +79,7 @@ function EditorWithSuggestions({
       />
       {linkSuggestions.length > 0 && (
         <div
-          className="absolute z-50 w-72 max-h-96 overflow-y-auto bg-white dark:bg-gray-700 border border-zinc-200 dark:border-gray-500 shadow rounded-sm"
+          className="absolute z-50 w-72 max-h-96 overflow-y-auto app-surface border shadow rounded-sm"
           style={{
             left: `${suggestPos.left}px`,
             top: suggestPos.top + 300 > window.innerHeight
@@ -92,7 +92,7 @@ function EditorWithSuggestions({
               key={note.id}
               className={`px-2 py-1 cursor-pointer ${idx === selectedSuggestion
                   ? "bg-blue-500 text-white"
-                  : "hover:bg-gray-100"
+                  : "app-panel-hover"
                 }`}
               onMouseDown={() => insertSuggestion(note.title)}
               title={note.title}
@@ -159,6 +159,7 @@ export default function NoteEditScreen({
   const [isFocused, setIsFocused] = useState(false);
   const [saveState, setSaveState] = useState("*"); // "*" = dirty, "saved" = clean
   const [recentMarked, setRecentMarked] = useState(false);
+  const [showMoreTools, setShowMoreTools] = useState(false);
   const [enterPressedOnNewNote, setEnterPressedOnNewNote] = useState(false);
   const restoredForIdRef = useRef(null);
   const debugFlowSeqRef = useRef(0);
@@ -1240,8 +1241,8 @@ export default function NoteEditScreen({
       </div>
 
       {/* ツールバー */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 text-sm flex-shrink-0 mt-2">
-        <div className="flex items-center flex-wrap gap-2">
+      <div className="flex flex-col sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start gap-1.5 sm:gap-2 text-sm flex-shrink-0 mt-2">
+        <div className="flex items-center flex-wrap gap-2 min-w-0">
           <div className="flex items-center gap-1">
             <button
               className={`px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 ${mode === "edit" ? "font-bold underline" : ""}`}
@@ -1272,59 +1273,16 @@ export default function NoteEditScreen({
             </button>
           </div>
 
-          <div className="flex items-center gap-1">
-            <span className="opacity-70">aA</span>
-            <button
-              onClick={() => changeFontSize("sm")}
-              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "sm" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
-            >
-              s
-            </button>
-            <button
-              onClick={() => changeFontSize("base")}
-              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "base" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
-            >
-              M
-            </button>
-            <button
-              onClick={() => changeFontSize("lg")}
-              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "lg" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
-            >
-              L
-            </button>
-            <button
-              onClick={() => changeFontSize("xl")}
-              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "xl" ? "font-bold underline bg-white/70 dark:bg-gray-700" : "bg-white/60 dark:bg-gray-700"}`}
-            >
-              XL
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                const ta = textareaRef.current;
-                if (ta) makeBulletList(ta);
-              }}
-              className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
-              title="選択範囲を箇条書きに (Ctrl+L)"
-            >
-              •
-            </button>
-            <button
-              onClick={() => {
-                const ta = textareaRef.current;
-                if (ta) makeCheckboxList(ta);
-              }}
-              className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded hover:bg-gray-300"
-              title="選択範囲をチェックボックスに (Ctrl+Shift+K)"
-            >
-              ☑
-            </button>
-          </div>
+          <button
+            onClick={() => setShowMoreTools((prev) => !prev)}
+            className="px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
+            title="フォントサイズやリスト整形を表示"
+          >
+            その他
+          </button>
         </div>
 
-        <div className="flex items-center flex-wrap gap-2 justify-end">
+        <div className="flex items-center flex-wrap gap-2 justify-end max-w-full">
           <button
             onClick={() => navigate("/edit/new")}
             className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
@@ -1379,7 +1337,7 @@ export default function NoteEditScreen({
               await saveNow();
               toggleListVisibility && toggleListVisibility();
             }}
-            className="bg-gray-300 text-gray-800 px-3 py-1 text-sm rounded hover:bg-gray-400"
+            className="app-chip text-gray-800 px-3 py-1 text-sm rounded app-panel-hover"
             title="ナビゲーションバーを表示/非表示"
             aria-label="ナビゲーションバートグル"
           >
@@ -1387,6 +1345,61 @@ export default function NoteEditScreen({
           </button>
         </div>
       </div>
+
+      {showMoreTools && (
+        <div className="mt-2 mb-1 flex flex-wrap items-center gap-2 rounded border app-surface p-2 text-sm">
+          <div className="flex items-center gap-1">
+            <span className="opacity-70">文字サイズ</span>
+            <button
+              onClick={() => changeFontSize("sm")}
+              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "sm" ? "font-bold underline app-chip" : "app-surface"}`}
+            >
+              S
+            </button>
+            <button
+              onClick={() => changeFontSize("base")}
+              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "base" ? "font-bold underline app-chip" : "app-surface"}`}
+            >
+              M
+            </button>
+            <button
+              onClick={() => changeFontSize("lg")}
+              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "lg" ? "font-bold underline app-chip" : "app-surface"}`}
+            >
+              L
+            </button>
+            <button
+              onClick={() => changeFontSize("xl")}
+              className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "xl" ? "font-bold underline app-chip" : "app-surface"}`}
+            >
+              XL
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const ta = textareaRef.current;
+                if (ta) makeBulletList(ta);
+              }}
+              className="app-chip text-gray-800 px-2 py-1 text-xs rounded app-panel-hover"
+              title="選択範囲を箇条書きに"
+            >
+              箇条書き
+            </button>
+            <button
+              onClick={() => {
+                const ta = textareaRef.current;
+                if (ta) makeCheckboxList(ta);
+              }}
+              className="app-chip text-gray-800 px-2 py-1 text-xs rounded app-panel-hover"
+              title="選択範囲をチェックボックスに"
+            >
+              チェック
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 本体 */}
       {mode === "edit" && (
@@ -1427,12 +1440,12 @@ export default function NoteEditScreen({
         <div
           ref={previewRef}
           dangerouslySetInnerHTML={previewHTML}
-          className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500 overflow-auto min-h-0`}
+          className={`preview-pane flex-1 prose prose-invert max-w-none ${fontSizeCls} app-panel rounded-lg p-2 sm:p-3 border overflow-auto min-h-0`}
         />
       )}
 
       {mode === "split-right" && (
-        <div className="flex flex-1 gap-2 sm:gap-3 min-h-0">
+        <div className="grid grid-cols-2 flex-1 gap-2 sm:gap-3 min-h-0">
           <EditorWithSuggestions
             content={content}
             onChange={handleContentChange}
@@ -1468,7 +1481,7 @@ export default function NoteEditScreen({
           <div
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}
-            className={`flex-1 prose prose-invert max-w-none ${fontSizeCls} bg-[#bdbdbd] dark:bg-[#bdbdbd] rounded-lg p-2 sm:p-3 border border-zinc-300 dark:border-gray-500 overflow-auto min-h-0`}
+            className={`preview-pane flex-1 min-w-0 prose prose-invert max-w-none ${fontSizeCls} app-panel rounded-lg p-2 sm:p-3 border overflow-auto min-h-0`}
             onScroll={() => syncScroll(previewRef, textareaRef)}
           />
         </div>
