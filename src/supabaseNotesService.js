@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 export const getNotes = async (uid) => {
   const { data, error } = await supabase
     .from('notes')
-    .select('*')
+    .select('id, title, tags, focus, created_at, updated_at')
     .eq('user_id', uid)
     .order('updated_at', { ascending: false });
   
@@ -18,7 +18,7 @@ export const getNotes = async (uid) => {
   return (data || []).map(note => ({
     id: note.id,
     title: note.title,
-    content: note.content,
+    content: '',
     tags: note.tags,
     focus: Boolean(note.focus),
     createdAt: note.created_at,
@@ -41,7 +41,7 @@ export const createNote = async (uid, note) => {
       created_at: now,
       updated_at: now
     }])
-    .select()
+    .select('id')
     .single();
   
   if (error) {
@@ -62,20 +62,18 @@ export const updateNote = async (uid, noteId, note) => {
   if (note.tags !== undefined) updates.tags = note.tags || [];
   if (note.focus !== undefined) updates.focus = Boolean(note.focus);
   
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('notes')
     .update(updates)
     .eq('id', noteId)
-    .eq('user_id', uid)
-    .select()
-    .single();
+    .eq('user_id', uid);
   
   if (error) {
     console.error('Failed to update note:', error);
     throw error;
   }
   
-  return data;
+  return noteId;
 };
 
 // ノートを削除

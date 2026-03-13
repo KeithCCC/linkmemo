@@ -5,8 +5,6 @@ import { getNotes, deleteNote as deleteNoteRemote } from '../supabaseNotesServic
 const NotesContext = createContext();
 export const useNotesContext = () => useContext(NotesContext);
 
-const STORAGE_KEY = "notes";
-
 // NotesContext.jsx
 export const extractAllTags = (notes) => {
   const tagSet = new Set();
@@ -132,8 +130,6 @@ export const NotesProvider = ({ children }) => {
 
     setNotes((prev) => prev.filter((note) => note.id.toString() !== id.toString()));
     setLastDeletedNoteId(id);
-
-    await refreshNotes();
   };
 
   useEffect(() => {

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
-import { useAuthContext } from "../context/AuthContext";
 import { addRecentNote, getRecentNotes } from "../recentNotes";
 import { updateNote as updateNoteRemote } from "../supabaseNotesService";
 
@@ -52,8 +51,7 @@ function formatDate(value) {
 export default function NoteListScreen({ embedded = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { notes, refreshNotes, updateNote, deleteNote } = useNotesContext();
-  const { user } = useAuthContext();
+  const { notes, updateNote, deleteNote } = useNotesContext();
   const allNotes = Array.isArray(notes) ? notes : [];
 
   const [searchTerm, setSearchTerm] = useState(() => {
@@ -99,11 +97,6 @@ export default function NoteListScreen({ embedded = false }) {
     return () => window.removeEventListener("resize", checkWidth);
   }, []);
 
-  useEffect(() => {
-    if (user?.uid && typeof refreshNotes === "function") {
-      refreshNotes().catch(() => {});
-    }
-  }, [user?.uid, refreshNotes]);
 
   useEffect(() => {
     try { localStorage.setItem("list.searchTerm", searchTerm); } catch {}
@@ -633,7 +626,7 @@ export default function NoteListScreen({ embedded = false }) {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="検索（タイトル・本文・タグ） 例: #todo #env"
+          placeholder="検索（タイトル・タグ） 例: #todo #env"
           className="w-full rounded px-3 py-2 pr-10 border app-input"
         />
         {searchTerm && (
