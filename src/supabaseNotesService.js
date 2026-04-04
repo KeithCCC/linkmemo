@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 export const getNotes = async (uid) => {
   const { data, error } = await supabase
     .from('notes')
-    .select('id, title, tags, focus, created_at, updated_at')
+    .select('id, title, content, tags, focus, created_at, updated_at')
     .eq('user_id', uid)
     .order('updated_at', { ascending: false });
   
@@ -18,7 +18,7 @@ export const getNotes = async (uid) => {
   return (data || []).map(note => ({
     id: note.id,
     title: note.title,
-    content: '',
+    content: note.content ?? '',
     tags: note.tags,
     focus: Boolean(note.focus),
     createdAt: note.created_at,
