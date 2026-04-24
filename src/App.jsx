@@ -25,6 +25,7 @@ function App() {
   });
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authFallbackUsed, setAuthFallbackUsed] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isMobileNav, setIsMobileNav] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   const navigate = useNavigate();
@@ -148,11 +149,22 @@ function App() {
 
 
   useEffect(() => {
+    const fallbackTimer = window.setTimeout(() => {
+      setAuthFallbackUsed(true);
+      setAuthChecked(true);
+    }, 4000);
+
     const unsubscribe = subscribeToAuth((user) => {
+      window.clearTimeout(fallbackTimer);
+      setAuthFallbackUsed(false);
       setUser(user);
-      setAuthChecked(true); // ↁEログイン状態確認完亁E��ラグ
+      setAuthChecked(true);
     });
-    return () => unsubscribe();
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      unsubscribe();
+    };
   }, []);
 
   if (!authChecked) {
@@ -207,6 +219,11 @@ function App() {
           {isUxTestMode && (
             <div className="fixed right-3 top-3 z-50 rounded-full border border-amber-400 bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-950 shadow">
               UX Test Mode
+            </div>
+          )}
+          {authFallbackUsed && (
+            <div className="mx-auto mb-3 max-w-4xl rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm">
+              Sign-in check took too long. The app loaded in a signed-out state so you can keep using the UI.
             </div>
           )}
           <button
