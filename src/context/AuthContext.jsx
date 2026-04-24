@@ -1,6 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
-import { subscribeToAuth } from '../supabaseAuth';
+import { subscribeToAuth } from '../services/authService';
 
 const AuthContext = createContext();
 

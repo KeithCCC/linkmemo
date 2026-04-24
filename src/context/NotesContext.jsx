@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuthContext } from './AuthContext';
-import { getNotes, deleteNote as deleteNoteRemote } from '../supabaseNotesService';
+import { getNotes, deleteNote as deleteNoteRemote } from '../services/notesService';
 
 const NotesContext = createContext();
 export const useNotesContext = () => useContext(NotesContext);

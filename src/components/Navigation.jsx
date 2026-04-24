@@ -4,7 +4,15 @@ import { useNotesContext } from "../context/NotesContext";
 import { getRecentNotes, RECENT_NOTES_EVENT } from "../recentNotes";
 import { useAuthContext } from "../context/AuthContext";
 
-export default function Navigation({ collapsed, setCollapsed, user: userProp, onLogin, onLogout }) {
+function NavMark({ children }) {
+  return (
+    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--app-panel)] text-[11px] font-bold">
+      {children}
+    </span>
+  );
+}
+
+export default function Navigation({ collapsed, setCollapsed, user: userProp, onLogin, onLogout, isMobileNav = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;
@@ -51,9 +59,9 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
         importedNotes.forEach((note) => {
           if (note.title && note.content) addNote(note);
         });
-        alert("インポートが完了しました。");
+        alert("Notes imported.");
       } catch {
-        alert("インポートに失敗しました。JSON形式を確認してください。");
+        alert("Import failed. Please choose a valid JSON export.");
       }
     };
     reader.readAsText(file);
@@ -65,9 +73,10 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("asuka-list-focus-search"));
       }, 120);
-      return;
+    } else {
+      window.dispatchEvent(new CustomEvent("asuka-list-focus-search"));
     }
-    window.dispatchEvent(new CustomEvent("asuka-list-focus-search"));
+    if (isMobileNav) setCollapsed(true);
   };
 
   const triggerSaveText = () => {
@@ -77,153 +86,135 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
   };
 
   const navLinkClass = (active) =>
-    `flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors ${
+    `flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${
       active
-        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold"
-        : "hover:bg-gray-100 dark:hover:bg-gray-600"
+        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-semibold"
+        : "text-[var(--app-text)] hover:bg-[var(--app-panel)]"
     }`;
+
+  const closeOnMobile = () => {
+    if (isMobileNav) setCollapsed(true);
+  };
 
   return (
     <aside
-      className={`relative min-h-screen bg-gray-50 dark:bg-gray-700 border-r border-gray-200 dark:border-gray-500 shadow-sm text-gray-700 dark:text-gray-100 text-sm font-medium transition-all duration-300 flex flex-col ${collapsed ? "w-0 overflow-hidden" : "w-64"}`}
+      className={`app-surface border-r border-[var(--app-border)] shadow-sm text-sm font-medium transition-all duration-300 flex flex-col ${
+        isMobileNav ? "fixed inset-y-0 left-0 z-40 w-[85vw] max-w-[18.5rem] shadow-2xl" : "sticky top-0 min-h-screen w-72"
+      } ${collapsed ? (isMobileNav ? "-translate-x-full" : "w-0 overflow-hidden") : "translate-x-0"}`}
     >
       {!collapsed && (
         <>
-          <div className="pt-4 px-3 space-y-1 flex-shrink-0">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs uppercase tracking-wide text-gray-500">Workspace</div>
-              <button
-                onClick={() => setCollapsed(true)}
-                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
-                title="サイドバーを閉じる"
-              >
-                閉じる
+          <div className="px-4 pb-3 pt-4 space-y-3 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="app-section-title">Workspace</div>
+              <button onClick={() => setCollapsed(true)} className="app-secondary-button px-3 py-1.5 text-xs">
+                Close
               </button>
             </div>
 
-            <div className="flex items-center justify-between rounded bg-white/80 dark:bg-gray-800 px-3 py-2 text-xs mb-3">
+            <div className="app-panel flex items-center justify-between rounded-xl px-3 py-2 text-xs">
               {user ? (
                 <>
-                  <span className="truncate max-w-[8rem]" title={user.displayName || user.email}>
+                  <span className="truncate max-w-[9rem]" title={user.displayName || user.email}>
                     [{user.displayName || user.email || "User"}]
                   </span>
-                  <button
-                    onClick={onLogout}
-                    className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors"
-                  >
-                    ログアウト
+                  <button onClick={onLogout} className="rounded-lg bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600">
+                    Logout
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={onLogin}
-                  className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 w-full text-center transition-colors"
-                >
-                  ログイン
+                <button onClick={onLogin} className="w-full rounded-lg bg-green-600 px-3 py-2 text-center text-white hover:bg-green-700">
+                  Sign in
                 </button>
               )}
             </div>
 
-            <nav className="space-y-0.5">
-              <Link to="/" className={navLinkClass(isActive("/"))}>
-                <span className="text-base">📁</span>
-                <span>一覧</span>
+            <nav className="space-y-1">
+              <Link to="/" className={navLinkClass(isActive("/"))} onClick={closeOnMobile}>
+                <NavMark>N</NavMark>
+                <span>All Notes</span>
               </Link>
 
-              <Link to="/edit/new" className={navLinkClass(isActive("/edit/new"))}>
-                <span className="text-base">✏️</span>
-                <span>新規作成</span>
+              <Link to="/edit/new" className={navLinkClass(isActive("/edit/new"))} onClick={closeOnMobile}>
+                <NavMark>+</NavMark>
+                <span>New Note</span>
               </Link>
 
-              <Link to="/settings" className={navLinkClass(isActive("/settings"))}>
-                <span className="text-base">⚙️</span>
-                <span>使い方</span>
+              <Link to="/settings" className={navLinkClass(isActive("/settings"))} onClick={closeOnMobile}>
+                <NavMark>?</NavMark>
+                <span>Guide</span>
               </Link>
             </nav>
 
-            <section className="mt-3 rounded border border-gray-200 dark:border-gray-500 bg-white/60 dark:bg-gray-800/50 p-2">
-              <div className="text-xs text-gray-500 dark:text-gray-300 mb-2">クイック操作</div>
-              <div className="grid grid-cols-1 gap-1.5">
-                <button
-                  onClick={() => navigate("/edit/new")}
-                  className="text-left px-2 py-1.5 rounded text-xs app-chip app-panel-hover"
-                >
-                  新規ノート
+            <section className="app-panel rounded-2xl border border-[var(--app-border)] p-3">
+              <div className="app-section-title mb-2">Quick actions</div>
+              <div className="grid grid-cols-1 gap-2">
+                <button onClick={() => { navigate("/edit/new"); closeOnMobile(); }} className="app-chip rounded-xl px-3 py-2 text-left text-xs app-panel-hover">
+                  Create a note
                 </button>
-                <button
-                  onClick={jumpToSearch}
-                  className="text-left px-2 py-1.5 rounded text-xs app-chip app-panel-hover"
-                >
-                  一覧検索へ
+                <button onClick={jumpToSearch} className="app-chip rounded-xl px-3 py-2 text-left text-xs app-panel-hover">
+                  Focus search
                 </button>
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent("asuka-list-cycle-view"))}
-                  className="text-left px-2 py-1.5 rounded text-xs app-chip app-panel-hover"
-                >
-                  表示切替
+                <button onClick={() => window.dispatchEvent(new CustomEvent("asuka-list-cycle-view"))} className="app-chip rounded-xl px-3 py-2 text-left text-xs app-panel-hover">
+                  Change view
                 </button>
               </div>
             </section>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 onClick={() => setShowSecondary((v) => !v)}
-                className="flex items-center justify-between w-full px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-xs text-[var(--app-muted)] transition-colors hover:bg-[var(--app-panel)] hover:text-[var(--app-text)]"
               >
-                <span className="uppercase tracking-wide font-semibold">詳細機能</span>
-                <span className={`transition-transform duration-200 ${showSecondary ? "rotate-90" : ""}`}>›</span>
+                <span className="uppercase tracking-wide font-semibold">Tools</span>
+                <span className={`transition-transform duration-200 ${showSecondary ? "rotate-90" : ""}`}>{">"}</span>
               </button>
 
               {showSecondary && (
-                <nav className="space-y-0.5 mt-1">
-                  <Link to="/tiptap" className={navLinkClass(isActive("/tiptap")) + " text-xs"}>
-                    <span className="text-sm">🧪</span>
-                    <span>TipTap エディタ</span>
+                <nav className="space-y-1 mt-1">
+                  <Link to="/tiptap" className={navLinkClass(isActive("/tiptap")) + " text-xs"} onClick={closeOnMobile}>
+                    <NavMark>T</NavMark>
+                    <span>TipTap Editor</span>
                   </Link>
 
-                  <button
-                    onClick={triggerSaveText}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs w-full text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    <span className="text-sm">💾</span>
-                    <span>テキスト保存</span>
+                  <button onClick={triggerSaveText} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-[var(--app-panel)]">
+                    <NavMark>TXT</NavMark>
+                    <span>Export note as text</span>
                   </button>
 
-                  <button
-                    onClick={handleExportAllNotes}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs w-full text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    <span className="text-sm">📤</span>
-                    <span>エクスポート</span>
+                  <button onClick={handleExportAllNotes} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-[var(--app-panel)]">
+                    <NavMark>JS</NavMark>
+                    <span>Export all notes</span>
                   </button>
 
-                  <label className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                    <span className="text-sm">📥</span>
-                    <span>インポート</span>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs transition-colors hover:bg-[var(--app-panel)]">
+                    <NavMark>IN</NavMark>
+                    <span>Import notes</span>
                     <input type="file" accept=".json" onChange={handleImportNotes} className="hidden" />
                   </label>
 
-                  <Link to="/extension" className={navLinkClass(isActive("/extension")) + " text-xs"}>
-                    <span className="text-sm">🔌</span>
-                    <span>拡張機能</span>
+                  <Link to="/extension" className={navLinkClass(isActive("/extension")) + " text-xs"} onClick={closeOnMobile}>
+                    <NavMark>WEB</NavMark>
+                    <span>Web Clipper</span>
                   </Link>
                 </nav>
               )}
             </div>
           </div>
 
-          <div className="flex-1 mt-3 border-t border-gray-200 dark:border-gray-500 px-3 pt-2 pb-3 overflow-y-auto">
-            <div className="text-xs text-gray-500 dark:text-gray-300 mb-2">最近開いたノート</div>
+          <div className="flex-1 border-t border-[var(--app-border)] px-4 pb-4 pt-3 overflow-y-auto">
+            <div className="app-section-title mb-2">Recent notes</div>
             {recent.length === 0 ? (
-              <div className="text-xs app-muted-text">最近開いたノートはありません。</div>
+              <div className="text-xs app-muted-text">No recent notes yet.</div>
             ) : (
               <div className="space-y-1">
                 {recent.slice(0, 10).map((note) => (
                   <Link
                     key={note.id}
                     to={`/edit/${note.id}`}
-                    className="block px-2 py-1.5 rounded text-xs text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-600 truncate"
+                    className="block truncate rounded-xl px-3 py-2 text-xs text-blue-600 hover:bg-[var(--app-panel)]"
                     title={note.title}
+                    onClick={closeOnMobile}
                   >
                     {note.title}
                   </Link>

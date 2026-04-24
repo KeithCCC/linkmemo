@@ -1,7 +1,7 @@
 ﻿// App.jsx
 import { Routes, Route, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { loginWithGoogle, logout, subscribeToAuth } from './supabaseAuth';
+import { loginWithGoogle, logout, subscribeToAuth } from './services/authService';
 import NoteDetailScreen from './screens/NoteDetailScreen';
 import NoteEditScreen from './screens/NoteEditScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -12,20 +12,49 @@ import TipTapScreen from './screens/TipTapScreen';
 import ClipScreen from './screens/ClipScreen';
 import ExtensionScreen from './screens/ExtensionScreen';
 import CommandPalette from './components/CommandPalette';
+import { isUxTestMode } from './appMode';
 
 
 function App() {
   // const [collapsed, setCollapsed] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem("navCollapsed") === "true";
+    const stored = localStorage.getItem("navCollapsed");
+    if (stored !== null) return stored === "true";
+    if (typeof window !== "undefined") return window.innerWidth < 768;
+    return false;
   });
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isMobileNav, setIsMobileNav] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   const navigate = useNavigate();
   useEffect(() => {
     localStorage.setItem("navCollapsed", collapsed);
   }, [collapsed]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobileNav(window.innerWidth < 768);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobileNav) {
+      setCollapsed(true);
+    }
+  }, [isMobileNav]);
+
+  useEffect(() => {
+    if (!isMobileNav) {
+      document.body.style.overflow = "";
+      return;
+    }
+    document.body.style.overflow = collapsed ? "" : "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [collapsed, isMobileNav]);
 
   // Global shortcuts
   useEffect(() => {
@@ -75,43 +104,43 @@ function App() {
   const commandPaletteActions = [
     {
       id: 'new-note',
-      label: '新規作成',
-      hint: '/edit/new へ移動',
+      label: 'Create note',
+      hint: 'Open /edit/new',
       keywords: 'new create note',
       onSelect: () => navigate('/edit/new'),
     },
     {
       id: 'go-list',
-      label: 'ノート一覧へ移動',
-      hint: '先頭ノートへフォーカス',
+      label: 'Go to notes',
+      hint: 'Focus the first note',
       keywords: 'list home notes',
       onSelect: () => navigate('/', { state: { focusFirst: true } }),
     },
     {
       id: 'focus-search',
-      label: '検索フォーカス',
-      hint: '一覧の検索ボックスにフォーカス',
+      label: 'Focus search',
+      hint: 'Move to the list search box',
       keywords: 'search filter',
       onSelect: () => window.dispatchEvent(new CustomEvent('asuka-list-focus-search')),
     },
     {
       id: 'toggle-view',
-      label: '表示切替',
-      hint: 'カード / リスト / 自動',
+      label: 'Change view',
+      hint: 'Cards / list / dense / auto',
       keywords: 'view mode card list',
       onSelect: () => window.dispatchEvent(new CustomEvent('asuka-list-cycle-view')),
     },
     {
       id: 'toggle-focus',
-      label: 'フォーカス切替',
-      hint: '一覧の先頭ノートの Focus を切替',
+      label: 'Toggle focus',
+      hint: 'Toggle focus on the first note',
       keywords: 'focus toggle',
       onSelect: () => window.dispatchEvent(new CustomEvent('asuka-list-toggle-focus-first')),
     },
     {
       id: 'open-settings',
-      label: '使い方を開く',
-      hint: '/settings へ移動',
+      label: 'Open guide',
+      hint: 'Open /settings',
       keywords: 'settings help usage',
       onSelect: () => navigate('/settings'),
     },
@@ -127,7 +156,7 @@ function App() {
   }, []);
 
   if (!authChecked) {
-    return <div className="p-4">ログイン確認中...</div>;
+    return <div className="p-4">Checking sign-in status...</div>;
   }
 
   const NoteEditScreenWrapper = () => {
@@ -161,24 +190,33 @@ function App() {
   };
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="flex flex-1">
-        <Navigation
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          user={user}
-          onLogin={loginWithGoogle}
-          onLogout={logout}
-        />
+      <div className="flex flex-1 min-w-0 overflow-x-hidden">
+        {(isMobileNav || !collapsed) && (
+          <Navigation
+            collapsed={collapsed}
+            setCollapsed={setCollapsed}
+            user={user}
+            onLogin={loginWithGoogle}
+            onLogout={logout}
+            isMobileNav={isMobileNav}
+          />
+        )}
 
-        <div className="flex-1 relative">
+        <div className="relative flex-1 min-w-0">
+          {isMobileNav && !collapsed && <button className="app-mobile-backdrop" aria-label="Close navigation" onClick={() => setCollapsed(true)} />}
+          {isUxTestMode && (
+            <div className="fixed right-3 top-3 z-50 rounded-full border border-amber-400 bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-950 shadow">
+              UX Test Mode
+            </div>
+          )}
           <button
-            className={`fixed top-2 left-2 z-50 bg-white shadow px-2 py-1 rounded text-sm ${collapsed ? "block" : "hidden"}`}
+            className={`fixed left-2 top-2 z-50 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-semibold shadow sm:left-3 sm:top-3 ${collapsed ? "block" : isMobileNav ? "block" : "hidden"}`}
             onClick={() => setCollapsed(!collapsed)}
             aria-label="Toggle menu"
           >
-            Menu
+            {collapsed ? "Menu" : "Hide menu"}
           </button>
-          <div className="px-2 sm:px-3 pt-4 sm:pt-6">
+          <div className="px-2 pb-5 pt-14 sm:px-4 sm:pb-6 sm:pt-8 lg:px-6">
             <Routes>
               <Route path="/" element={<NoteListScreen />} />
               <Route path="/note/:id" element={<NoteDetailScreen />} />

@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { useNotesContext } from '../context/NotesContext';
-import { createNote } from '../supabaseNotesService';
+import { createNote } from '../services/notesService';
 
 export default function ClipScreen() {
   const navigate = useNavigate();
@@ -163,21 +163,33 @@ export default function ClipScreen() {
   }, [user?.uid, url, titleParam, contentParam, contentIdParam, sourceParam, tags, addNote, refreshNotes, navigate]);
 
   return (
-    <div className="p-2">
-      <div className="text-sm text-gray-600">URL: {url || '(none)'}</div>
-      <div className="mt-2 font-medium">{status}</div>
-      
-      {/* Debug Information */}
-      <div className="mt-4 p-3 bg-gray-100 border rounded">
-        <h3 className="font-bold text-sm mb-2">Debug Info:</h3>
-        <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-40">
-          {debugInfo}
-        </pre>
-      </div>
-      
-      {!user?.uid && (
-        <div className="mt-2">Please sign in from the header and retry.</div>
-      )}
+    <div className="app-page-tight">
+      <section className="app-reading-surface p-6 sm:p-8">
+        <div className="app-doc">
+          <div className="app-section-title mb-3">Web clipper</div>
+          <h1 className="text-2xl font-black tracking-tight">Clip content into ASUKA</h1>
+          <p className="mt-3 app-muted-text">
+            Source URL: <span className="font-medium text-[var(--app-text)]">{url || "(none)"}</span>
+          </p>
+          <div className="mt-4 rounded-2xl border app-panel p-4">
+            <div className="text-sm font-semibold">Status</div>
+            <div className="mt-2 text-base">{status}</div>
+          </div>
+
+          {!user?.uid && (
+            <div className="mt-5 rounded-2xl border bg-amber-50 p-4 text-sm text-amber-950">
+              Sign in from the sidebar header, then retry the clip action.
+            </div>
+          )}
+
+          {import.meta.env.DEV && (
+            <details className="mt-5 rounded-2xl border bg-gray-50 p-4 text-gray-900">
+              <summary className="cursor-pointer text-sm font-semibold">Debug details</summary>
+              <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap text-xs">{debugInfo}</pre>
+            </details>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

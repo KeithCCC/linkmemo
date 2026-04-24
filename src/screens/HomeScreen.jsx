@@ -1,7 +1,7 @@
 // HomeScreen.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getNotes } from "../supabaseNotesService";
+import { getNotes } from "../services/notesService";
 
 export default function HomeScreen({ user }) {
   const [notes, setNotes] = useState([]);

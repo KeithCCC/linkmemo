@@ -27,6 +27,7 @@
 body {
   background-color: var(--app-bg);
   color: var(--app-text);
+  min-height: 100vh;
 }
 
 .app-surface {
@@ -204,6 +205,131 @@ body {
   margin-bottom: .25rem;
 }
 
+.app-page {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+.app-page-tight {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.app-reading-surface {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--app-surface) 88%, transparent), var(--app-surface));
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.app-doc {
+  max-width: 74ch;
+  margin: 0 auto;
+}
+
+.app-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
+
+.app-primary-button {
+  background-color: #2563eb;
+  color: white;
+  border-radius: 12px;
+  padding: 0.65rem 0.95rem;
+  font-weight: 600;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.app-primary-button:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.app-secondary-button {
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  padding: 0.65rem 0.95rem;
+  font-weight: 600;
+}
+
+.app-secondary-button:hover {
+  background-color: var(--app-panel-hover);
+}
+
+.app-ghost-button {
+  color: var(--app-muted);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0.55rem 0.85rem;
+  font-weight: 600;
+}
+
+.app-ghost-button:hover {
+  background-color: var(--app-panel);
+  color: var(--app-text);
+}
+
+.app-pill-button {
+  border: 1px solid var(--app-border);
+  border-radius: 9999px;
+  padding: 0.55rem 0.9rem;
+  background-color: var(--app-surface);
+  color: var(--app-muted);
+  font-weight: 600;
+}
+
+.app-pill-button.is-active {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.app-empty-state {
+  padding: 1.5rem;
+  border: 1px dashed var(--app-border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--app-panel) 80%, transparent);
+}
+
+.app-toolbar-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+  padding: 0.2rem;
+}
+
+.app-toolbar-segment button {
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-muted);
+}
+
+.app-toolbar-segment button.is-active {
+  background-color: #2563eb;
+  color: white;
+}
+
+.app-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(2px);
+  z-index: 30;
+}
+
 /* Custom scrollbar styles for better visibility */
 ::-webkit-scrollbar {
   width: 8px;
@@ -234,4 +360,30 @@ body {
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+@media (max-width: 767px) {
+  .app-page,
+  .app-page-tight,
+  .app-doc {
+    max-width: none;
+  }
+
+  .app-reading-surface {
+    border-radius: 16px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+  }
+
+  .note-title {
+    font-size: 24px !important;
+  }
+
+  .prose {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .prose h1 {
+    font-size: 1.45em;
+  }
 }

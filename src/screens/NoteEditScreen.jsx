@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useNotesContext } from "../context/NotesContext";
-import { getNoteById, createNote, updateNote as updateNoteRemote } from "../supabaseNotesService";
+import { getNoteById, createNote, updateNote as updateNoteRemote } from "../services/notesService";
 import MarkdownIt from "markdown-it";
 import taskLists from "markdown-it-task-lists";
 import { addRecentNote } from "../recentNotes";
@@ -75,7 +75,7 @@ function EditorWithSuggestions({
         onFocus={onFocus}
         onBlur={onBlur}
         className={`w-full flex-1 border-none outline-none px-2 py-1 ${fontSizeCls} leading-tight bg-transparent resize-none`}
-        placeholder="内容を入力..."
+        placeholder="Write your note..."
       />
       {linkSuggestions.length > 0 && (
         <div
@@ -970,8 +970,8 @@ export default function NoteEditScreen({
         e.preventDefault();
         const start = ta.selectionStart ?? 0;
         const end = ta.selectionEnd ?? start;
-        const sel = content.slice(start, end) || 'リンク';
-        const url = window.prompt('リンク先URLを入力してください', 'https://');
+        const sel = content.slice(start, end) || 'link';
+        const url = window.prompt('Enter the destination URL', 'https://');
         if (url) {
           const before = content.slice(0, start);
           const after = content.slice(end);
@@ -1230,64 +1230,64 @@ export default function NoteEditScreen({
 
   // UI ----------------------------------------------------------------------
   return (
-    <div className="flex flex-col h-screen overflow-hidden p-1 sm:p-1.5">
+    <div className="flex min-h-[calc(100vh-4.5rem)] flex-col overflow-hidden p-1 sm:min-h-[calc(100vh-5.5rem)] sm:p-1.5">
       {/* タイトル行 */}
       <div className="note-title flex-shrink-0">
-        <div className="font-bold text-lg">{deriveTitle(content)}</div>
-        <div className="text-sm text-gray-500 flex items-center gap-2">
-          <span>（ID: {noteIdRef.current ?? "未保存"}）</span>
-          <span>{saveState === "saved" ? "saved" : "*"}</span>
+        <div className="break-words font-bold text-lg">{deriveTitle(content)}</div>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+          <span>ID: {noteIdRef.current ?? "Not saved yet"}</span>
+          <span>{saveState === "saved" ? "Saved" : "Unsaved changes"}</span>
         </div>
       </div>
 
       {/* ツールバー */}
-      <div className="flex flex-col sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start gap-1.5 sm:gap-2 text-sm flex-shrink-0 mt-2">
+      <div className="mt-2 flex flex-col gap-1.5 text-sm flex-shrink-0 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-2">
         <div className="flex items-center flex-wrap gap-2 min-w-0">
-          <div className="flex items-center gap-1">
+          <div className="app-toolbar-segment">
             <button
-              className={`px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 ${mode === "edit" ? "font-bold underline" : ""}`}
+              className={mode === "edit" ? "is-active" : ""}
               onClick={() => {
                 setMode("edit");
                 localStorage.setItem("noteViewMode", "edit");
               }}
             >
-              ✏️
+              Edit
             </button>
             <button
-              className={`px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 ${mode === "preview" ? "font-bold underline" : ""}`}
+              className={mode === "preview" ? "is-active" : ""}
               onClick={() => {
                 setMode("preview");
                 localStorage.setItem("noteViewMode", "preview");
               }}
             >
-              👁️
+              Preview
             </button>
             <button
-              className={`px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 ${mode === "split-right" ? "font-bold underline" : ""}`}
+              className={mode === "split-right" ? "is-active" : ""}
               onClick={() => {
                 setMode("split-right");
                 localStorage.setItem("noteViewMode", "split-right");
               }}
             >
-              ↔️
+              Split
             </button>
           </div>
 
           <button
             onClick={() => setShowMoreTools((prev) => !prev)}
-            className="px-3 py-1 rounded border border-gray-400 bg-white/80 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
-            title="フォントサイズやリスト整形を表示"
+            className="app-secondary-button text-sm"
+            title="Show typography and formatting tools"
           >
-            その他
+            More tools
           </button>
         </div>
 
         <div className="flex items-center flex-wrap gap-2 justify-end max-w-full">
           <button
             onClick={() => navigate("/edit/new")}
-            className="bg-green-600 text-white px-3 py-1 text-sm rounded hover:bg-green-700"
+            className="app-primary-button text-sm"
           >
-            ＋
+            New note
           </button>
           <button
             onClick={toggleFocusStatus}
@@ -1304,22 +1304,22 @@ export default function NoteEditScreen({
           {noteIdRef.current && (
             <button
               onClick={async () => {
-                if (confirm("このノートを削除してもよろしいですか？")) {
+                if (confirm("Delete this note?")) {
                   await deleteNote(noteIdRef.current);
                   navigate("/", { replace: true });
                 }
               }}
-              className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+              className="bg-red-600 text-white px-3 py-2 text-sm rounded-xl hover:bg-red-700"
             >
-              ×
+              Delete
             </button>
 
           )}
           <button
             onClick={saveNow}
-            className="bg-indigo-600 text-white px-3 py-1 text-sm rounded hover:bg-indigo-700"
+            className="bg-indigo-600 text-white px-3 py-2 text-sm rounded-xl hover:bg-indigo-700"
           >
-            ✓
+            Save
           </button>
           <button
             onClick={() => {
@@ -1328,20 +1328,20 @@ export default function NoteEditScreen({
               }
               navigate("/");
             }}
-            className="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700"
+            className="app-secondary-button text-sm"
           >
-            L
+            Back to list
           </button>
           <button
             onClick={async () => {
               await saveNow();
               toggleListVisibility && toggleListVisibility();
             }}
-            className="app-chip text-gray-800 px-3 py-1 text-sm rounded app-panel-hover"
-            title="ナビゲーションバーを表示/非表示"
-            aria-label="ナビゲーションバートグル"
+            className="app-secondary-button text-sm"
+            title="Show or hide the sidebar"
+            aria-label="Toggle sidebar"
           >
-            ☰
+            Toggle sidebar
           </button>
         </div>
       </div>
@@ -1349,7 +1349,7 @@ export default function NoteEditScreen({
       {showMoreTools && (
         <div className="mt-2 mb-1 flex flex-wrap items-center gap-2 rounded border app-surface p-2 text-sm">
           <div className="flex items-center gap-1">
-            <span className="opacity-70">文字サイズ</span>
+            <span className="opacity-70">Text size</span>
             <button
               onClick={() => changeFontSize("sm")}
               className={`px-2 py-1 rounded border border-gray-300 ${fontSize === "sm" ? "font-bold underline app-chip" : "app-surface"}`}
@@ -1383,9 +1383,9 @@ export default function NoteEditScreen({
                 if (ta) makeBulletList(ta);
               }}
               className="app-chip text-gray-800 px-2 py-1 text-xs rounded app-panel-hover"
-              title="選択範囲を箇条書きに"
+              title="Turn the selection into a bullet list"
             >
-              箇条書き
+              Bullets
             </button>
             <button
               onClick={() => {
@@ -1393,9 +1393,9 @@ export default function NoteEditScreen({
                 if (ta) makeCheckboxList(ta);
               }}
               className="app-chip text-gray-800 px-2 py-1 text-xs rounded app-panel-hover"
-              title="選択範囲をチェックボックスに"
+              title="Turn the selection into a checklist"
             >
-              チェック
+              Checklist
             </button>
           </div>
         </div>
@@ -1440,12 +1440,12 @@ export default function NoteEditScreen({
         <div
           ref={previewRef}
           dangerouslySetInnerHTML={previewHTML}
-          className={`preview-pane flex-1 prose prose-invert max-w-none ${fontSizeCls} app-panel rounded-lg p-2 sm:p-3 border overflow-auto min-h-0`}
+          className={`preview-pane flex-1 prose prose-invert max-w-none ${fontSizeCls} app-panel rounded-lg border p-3 sm:p-4 overflow-auto min-h-0`}
         />
       )}
 
       {mode === "split-right" && (
-        <div className="grid grid-cols-2 flex-1 gap-2 sm:gap-3 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 flex-1 gap-2 sm:gap-3 min-h-0">
           <EditorWithSuggestions
             content={content}
             onChange={handleContentChange}
@@ -1481,7 +1481,7 @@ export default function NoteEditScreen({
           <div
             ref={previewRef}
             dangerouslySetInnerHTML={previewHTML}
-            className={`preview-pane flex-1 min-w-0 prose prose-invert max-w-none ${fontSizeCls} app-panel rounded-lg p-2 sm:p-3 border overflow-auto min-h-0`}
+            className={`preview-pane flex-1 min-w-0 prose prose-invert max-w-none ${fontSizeCls} app-panel rounded-lg border p-3 sm:p-4 overflow-auto min-h-0`}
             onScroll={() => syncScroll(previewRef, textareaRef)}
           />
         </div>

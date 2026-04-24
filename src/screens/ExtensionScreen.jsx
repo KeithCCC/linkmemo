@@ -1,95 +1,93 @@
-// src/screens/ExtensionScreen.jsx
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 
 export default function ExtensionScreen() {
   const isEdge = useMemo(() => /Edg\//.test(navigator.userAgent), []);
-  const isChrome = useMemo(() => !isEdge && /Chrome\//.test(navigator.userAgent), [isEdge]);
 
   const storeHint = isEdge
-    ? 'edge://extensions/ で「開発者モード」をオン → 「展開して読み込み」'
-    : 'chrome://extensions/ で「デベロッパーモード」をオン → 「パッケージ化されていない拡張機能を読み込む」';
+    ? "Open edge://extensions/, enable Developer Mode, then load the unpacked extension folder."
+    : "Open chrome://extensions/, enable Developer Mode, then load the unpacked extension folder.";
 
   const baseUrl = window.location.origin;
-  const optionsPath = isEdge ? 'Edge の拡張機能の詳細→オプション' : 'Chrome の拡張機能の詳細→オプション';
+  const optionsPath = isEdge ? "Open the Edge extension options page" : "Open the Chrome extension options page";
 
   return (
-    <div className="max-w-3xl mr-auto text-left p-4">
-      <h1 className="text-xl font-bold mb-4">拡張機能（Web Clipper）</h1>
+    <div className="app-page-tight">
+      <section className="app-reading-surface p-6 sm:p-8">
+        <div className="app-doc text-left">
+          <div className="app-section-title mb-3">Extension</div>
+          <h1 className="text-3xl font-black tracking-tight mb-4">Web Clipper Setup</h1>
 
-      {/* README Section */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded text-gray-900">
-        <h2 className="text-lg font-semibold mb-3 text-blue-900">📖 Asuka Clipper について</h2>
-        <p className="mb-3 text-sm text-gray-800">
-          Asuka Clipper は、ブラウジング中のページを素早くメモに保存できる Chrome/Edge 拡張機能です。
-        </p>
-        <h3 className="font-semibold mt-4 mb-2 text-sm text-gray-900">✨ 主な機能:</h3>
-        <ul className="list-disc ml-6 space-y-1 text-sm text-gray-800">
-          <li><strong>ワンクリックでページをクリップ</strong> - ツールバーアイコンまたは右クリックメニューから即座に保存</li>
-          <li><strong>ChatGPT 会話の自動抽出</strong> - ChatGPT のページで使用すると、最新の応答を自動的に抽出して保存</li>
-          <li><strong>自動タグ付け</strong> - クリップしたページには <code className="bg-gray-200 text-gray-800 px-1 rounded">#clipping</code> タグ、ChatGPT からは <code className="bg-gray-200 text-gray-800 px-1 rounded">#chatgpt</code> タグが自動付与</li>
-          <li><strong>シームレスな統合</strong> - クリップ後、自動的にエディタ画面が開き、すぐに編集可能</li>
-        </ul>
-      </div>
+          <div className="mb-6 rounded-2xl border bg-blue-50 p-5 text-gray-900">
+            <h2 className="text-lg font-semibold mb-3 text-blue-900">What the web clipper does</h2>
+            <p className="mb-3 text-sm text-gray-800">
+              The ASUKA web clipper saves web pages and excerpts into your note workspace so you can keep research and writing in one place.
+            </p>
+            <h3 className="font-semibold mt-4 mb-2 text-sm text-gray-900">Main features</h3>
+            <ul className="list-disc ml-6 space-y-1 text-sm text-gray-800">
+              <li><strong>Clip a page quickly</strong> from the browser toolbar or context menu</li>
+              <li><strong>Capture ChatGPT output</strong> into notes for later review</li>
+              <li><strong>Add tags automatically</strong> such as <code className="rounded bg-gray-200 px-1 text-gray-800">#clipping</code> or <code className="rounded bg-gray-200 px-1 text-gray-800">#chatgpt</code></li>
+              <li><strong>Jump straight into editing</strong> after clipping</li>
+            </ul>
+          </div>
 
-      <h2 className="text-lg font-semibold mb-3">🚀 セットアップ手順</h2>
+          <h2 className="text-lg font-semibold mb-3">Setup steps</h2>
 
-      <ol className="list-decimal ml-6 space-y-3">
-        <li>
-          <a className="text-blue-600 underline" href="/asuka-clipper.zip" download>
-            asuka-clipper.zip をダウンロード
-          </a>
-          <div className="text-sm text-gray-600 mt-1">もし 404 の場合は、管理者が zip を用意していません。開発環境では <code>npm run pack:extension</code> で生成できます。</div>
-        </li>
-        <li>
-          {storeHint}
-          <div className="text-sm text-gray-600 mt-1">ダイアログで、解凍せず zip を選ぶのではなく <b>展開したフォルダ</b> または zip をドラッグ&ドロップしてください。両方とも可のブラウザがあります。</div>
-        </li>
-        <li>
-          {optionsPath} で <b>App base URL</b> に <code>{baseUrl}</code> を設定して保存
-        </li>
-        <li>
-          任意のページでツールバーのアイコンをクリック、または右クリックメニューから「Clip ... to Asuka」を選択
-        </li>
-      </ol>
+          <ol className="list-decimal ml-6 space-y-3">
+            <li>
+              <a className="text-blue-600 underline" href="/asuka-clipper.zip" download>
+                Download asuka-clipper.zip
+              </a>
+              <div className="text-sm text-gray-600 mt-1">If the zip is missing, generate it locally with <code>npm run pack:extension</code>.</div>
+            </li>
+            <li>
+              {storeHint}
+              <div className="text-sm text-gray-600 mt-1">If unpacked loading fails, unzip the archive first and point the browser at the extracted folder.</div>
+            </li>
+            <li>
+              {optionsPath} and set <b>App base URL</b> to <code>{baseUrl}</code>.
+            </li>
+            <li>Visit any page and trigger the clipper from the toolbar icon or context menu.</li>
+          </ol>
 
-      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded text-gray-900">
-        <h2 className="text-lg font-semibold mb-3 text-green-900">📝 使い方</h2>
-        
-        <h3 className="font-semibold mt-3 mb-2 text-sm text-gray-900">方法1: ツールバーアイコンから</h3>
-        <ol className="list-decimal ml-6 space-y-1 text-sm mb-4 text-gray-800">
-          <li>クリップしたいページを開く</li>
-          <li>ブラウザのツールバーにある Asuka Clipper アイコンをクリック</li>
-          <li>自動的にメモが作成され、編集画面に移動します</li>
-        </ol>
+          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-gray-900">
+            <h2 className="text-lg font-semibold mb-3 text-green-900">How to use it</h2>
 
-        <h3 className="font-semibold mt-3 mb-2 text-sm text-gray-900">方法2: 右クリックメニューから</h3>
-        <ol className="list-decimal ml-6 space-y-1 text-sm mb-4 text-gray-800">
-          <li>ページ上で右クリック</li>
-          <li>「Clip to Asuka」を選択</li>
-          <li>メモが作成され、編集画面に移動します</li>
-        </ol>
+            <h3 className="font-semibold mt-3 mb-2 text-sm text-gray-900">Option 1: clip from the toolbar</h3>
+            <ol className="list-decimal ml-6 space-y-1 text-sm mb-4 text-gray-800">
+              <li>Open the page you want to save</li>
+              <li>Click the ASUKA clipper icon in the browser toolbar</li>
+              <li>The note is created and you are sent into the editor</li>
+            </ol>
 
-        <h3 className="font-semibold mt-3 mb-2 text-sm text-gray-900">ChatGPT での使用:</h3>
-        <div className="ml-6 text-sm space-y-2 text-gray-800">
-          <p>🤖 <strong>ChatGPT のページで拡張機能を使用すると、最新の AI 応答が自動的に抽出されます。</strong></p>
-          <ul className="list-disc ml-6 space-y-1 text-gray-800">
-            <li>会話のタイトルがメモのタイトルになります</li>
-            <li>最新の ChatGPT 応答が本文として保存されます</li>
-            <li><code className="bg-gray-200 text-gray-800 px-1 rounded">#chatgpt</code> タグが自動的に追加されます</li>
-            <li>元の会話へのリンクも保存されます</li>
-          </ul>
+            <h3 className="font-semibold mt-3 mb-2 text-sm text-gray-900">Option 2: clip from the context menu</h3>
+            <ol className="list-decimal ml-6 space-y-1 text-sm mb-4 text-gray-800">
+              <li>Right-click on the page</li>
+              <li>Select <strong>Clip to Asuka</strong></li>
+              <li>The note is created and opened in the editor</li>
+            </ol>
+
+            <h3 className="font-semibold mt-3 mb-2 text-sm text-gray-900">Using it with ChatGPT</h3>
+            <div className="ml-6 text-sm space-y-2 text-gray-800">
+              <p><strong>You can also use the clipper on ChatGPT pages to save the latest answer into your notes.</strong></p>
+              <ul className="list-disc ml-6 space-y-1 text-gray-800">
+                <li>The conversation title can become the note title</li>
+                <li>The latest AI response can be stored in the note body</li>
+                <li>A <code className="rounded bg-gray-200 px-1 text-gray-800">#chatgpt</code> tag can be added automatically</li>
+                <li>The source link can be preserved for later reference</li>
+              </ul>
+            </div>
+
+            <div className="mt-4 rounded border border-yellow-300 bg-yellow-100 p-3 text-sm text-gray-900">
+              <strong>Tip</strong> Keep the note title and tags clean after clipping so retrieval stays fast later.
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border bg-yellow-50 p-3 text-sm text-gray-800">
+            This page describes local setup. If browser store publishing is added later, these instructions can be shortened further.
+          </div>
         </div>
-
-        <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded text-sm text-gray-900">
-          <strong>💡 ヒント:</strong> クリップ後、編集画面ですぐに内容を追加・修正できます。タグやタイトルも自由に変更可能です。
-        </div>
-      </div>
-
-      <div className="mt-6 p-3 bg-yellow-50 border rounded text-sm text-gray-800">
-        本番運用では Chrome ウェブストア / Edge Add-ons からの配布が推奨です。<br />
-        管理者向け: リポジトリの <code>extension/</code> を zip 化してストアへ申請、あるいは <code>npm run pack:extension</code> で生成される zip を <code>public/</code> に置いて配布できます。
-      </div>
+      </section>
     </div>
   );
 }
-
