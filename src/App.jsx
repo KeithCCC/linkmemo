@@ -1,8 +1,7 @@
 ﻿// App.jsx
-import { Routes, Route, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Routes, Route, useParams, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { loginWithGoogle, logout, subscribeToAuth } from './services/authService';
-import NoteDetailScreen from './screens/NoteDetailScreen';
 import NoteEditScreen from './screens/NoteEditScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -171,9 +170,9 @@ function App() {
     return <div className="p-4">Checking sign-in status...</div>;
   }
 
-  const NoteEditScreenWrapper = () => {
+  const LegacyNoteRedirect = () => {
     const { id } = useParams();
-    return <NoteEditScreen key={id || "new"} user={user} />;
+    return <Navigate to={`/edit/${id}`} replace />;
   };
 
   // Split layout: resizable list (persisted), editor on the right
@@ -236,7 +235,7 @@ function App() {
           <div className="px-2 pb-5 pt-14 sm:px-4 sm:pb-6 sm:pt-8 lg:px-6">
             <Routes>
               <Route path="/" element={<NoteListScreen />} />
-              <Route path="/note/:id" element={<NoteDetailScreen />} />
+              <Route path="/note/:id" element={<LegacyNoteRedirect />} />
               <Route path="/edit/:id" element={<SplitListAndEditor />} />
               <Route path="/new" element={<SplitListAndEditor />} />
               <Route path="/clip" element={<ClipScreen />} />
