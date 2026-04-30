@@ -3,6 +3,7 @@ import { useNotesContext } from "../context/NotesContext";
 import React, { useEffect } from "react";
 import MarkdownIt from "markdown-it";
 import { addRecentNote } from "../recentNotes";
+import { buildEditHref } from "../noteRoutes";
 
 export default function NoteDetailScreen() {
   const { id } = useParams();
@@ -39,7 +40,7 @@ export default function NoteDetailScreen() {
     return text.replace(/\[\[([^\]]+)\]\]/g, (match, title) => {
       const target = notes.find((n) => n.title === title);
       if (target) {
-        return `<a href="/note/${target.id}" class="text-blue-600 underline">${title}</a>`;
+        return `<a href="${buildEditHref(target.id)}" class="text-blue-600 underline">${title}</a>`;
       }
       return `<span class="text-gray-500">[[${title}]]</span>`;
     });

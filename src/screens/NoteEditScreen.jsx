@@ -7,6 +7,7 @@ import { getNoteById, createNote, updateNote as updateNoteRemote } from "../serv
 import MarkdownIt from "markdown-it";
 import taskLists from "markdown-it-task-lists";
 import { addRecentNote } from "../recentNotes";
+import { buildEditHref } from "../noteRoutes";
 const md = new MarkdownIt({ breaks: true });
 md.use(taskLists, { label: true, labelAfter: true });
 const CARET_DEBUG = false && import.meta.env.DEV;
@@ -507,7 +508,7 @@ export default function NoteEditScreen({
       html = html.replace(/\[\[([^\]]+)\]\]/g, (_, p1) => {
         const noteId = titleToId(p1);
         return noteId
-          ? `<a href="/edit/${noteId}" class="text-blue-600 underline">${p1}</a>`
+          ? `<a href="${buildEditHref(noteId)}" class="text-blue-600 underline">${p1}</a>`
           : `<a href="#" data-create-note="${p1.replace(/"/g, '&quot;')}" class="text-gray-400 underline cursor-pointer hover:text-gray-600">[[${p1}]]</a>`;
       });
 
