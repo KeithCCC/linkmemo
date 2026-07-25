@@ -5,6 +5,7 @@ const FOLDER = "application/vnd.google-apps.folder";
 const GOOGLE_DOC = "application/vnd.google-apps.document";
 const EDITABLE_TYPES = new Set(["text/markdown"]);
 const SUPPORTED_TYPES = new Set([...EDITABLE_TYPES, "text/plain", GOOGLE_DOC]);
+const OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 function isFolder(file) {
   return file?.mimeType === FOLDER;
@@ -12,6 +13,11 @@ function isFolder(file) {
 
 function isSupported(file) {
   return isFolder(file) || SUPPORTED_TYPES.has(file?.mimeType);
+}
+
+function requireOperationId(operationId) {
+  if (typeof operationId !== "string" || !OPERATION_ID.test(operationId)) throw new ApiError("VALIDATION", "A valid create operation ID is required", 400);
+  return operationId;
 }
 
 export class DriveService {
@@ -59,13 +65,13 @@ export class DriveService {
     return { ...file, markdown, editable: file.mimeType === "text/markdown" };
   }
 
-  async createFile({ name, markdown, parentId = this.rootId, operationId }) {
-    await this.assertFolder(parentId);
-    if (operationId) {
-      const existing = await this.drive.findFileByOperation?.(parentId, operationId);
-      if (existing?.parents?.includes(parentId)) return existing;
-    }
-    return this.drive.createFile({ name, markdown, parentId, mimeType: "text/markdown", ...(operationId ? { operationId } : {}) });
+  async createFile({ name, markdown, parentId, operationId }) {
+    const destination = parentId ?? this.rootId;
+    const marker = requireOperationId(operationId);
+    await this.assertFolder(destination);
+    const existing = await this.drive.findFileByOperation?.(destination, marker);
+    if (existing?.parents?.includes(destination)) return existing;
+    return this.drive.createFile({ name, markdown, parentId: destination, mimeType: "text/markdown", operationId: marker });
   }
 
   async updateFile(id, { markdown, name }) {
@@ -77,8 +83,9 @@ export class DriveService {
   async moveFile(id, parentId) {
     const file = await this.assertItem(id, { allowRoot: false });
     if (!EDITABLE_TYPES.has(file.mimeType)) throw new ApiError("READ_ONLY", "Google Docs are read-only", 409);
-    await this.assertFolder(parentId);
-    return this.drive.moveFile(id, parentId);
+    const destination = parentId ?? this.rootId;
+    await this.assertFolder(destination);
+    return this.drive.moveFile(id, destination);
   }
 
   async trashFile(id) {
@@ -115,13 +122,13 @@ export class DriveService {
     return { changes, pageToken: finalToken };
   }
 
-  async createFolder({ name, parentId = this.rootId, operationId }) {
-    await this.assertFolder(parentId);
-    if (operationId) {
-      const existing = await this.drive.findFileByOperation?.(parentId, operationId);
-      if (existing?.parents?.includes(parentId)) return existing;
-    }
-    return this.drive.createFolder({ name, parentId, ...(operationId ? { operationId } : {}) });
+  async createFolder({ name, parentId, operationId }) {
+    const destination = parentId ?? this.rootId;
+    const marker = requireOperationId(operationId);
+    await this.assertFolder(destination);
+    const existing = await this.drive.findFileByOperation?.(destination, marker);
+    if (existing?.parents?.includes(destination)) return existing;
+    return this.drive.createFolder({ name, parentId: destination, operationId: marker });
   }
 
   async renameFolder(id, name) {
@@ -133,16 +140,17 @@ export class DriveService {
   async moveFolder(id, parentId) {
     const folder = await this.assertFolder(id);
     if (folder.id === this.rootId) throw new ApiError("BOUNDARY", "The Notehub root folder cannot be moved", 403);
-    await this.assertFolder(parentId);
-    if (id === parentId) throw new ApiError("BOUNDARY", "A folder cannot be moved into itself", 403);
+    const destination = parentId ?? this.rootId;
+    await this.assertFolder(destination);
+    if (id === destination) throw new ApiError("BOUNDARY", "A folder cannot be moved into itself", 403);
     try {
-      await assertDescendantOfRoot(this.drive, parentId, id, { allowRoot: false });
+      await assertDescendantOfRoot(this.drive, destination, id, { allowRoot: false });
       throw new ApiError("BOUNDARY", "A folder cannot be moved into its descendant", 403);
     } catch (error) {
       if (error.code !== "BOUNDARY") throw error;
       if (error.message === "A folder cannot be moved into its descendant") throw error;
     }
-    return this.drive.moveFile(id, parentId);
+    return this.drive.moveFile(id, destination);
   }
 }
 

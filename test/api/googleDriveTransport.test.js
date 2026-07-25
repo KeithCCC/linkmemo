@@ -41,11 +41,22 @@ describe("Google Drive REST transport", () => {
       },
     });
 
-    await transport.createFile({ name: "Note.md", markdown: "body", parentId: "folder", operationId: "create-123" });
-    await expect(transport.findFileByOperation("folder", "create-123")).resolves.toEqual({ id: "existing" });
+    const operationId = "f6656d52-4c35-4c11-9d0d-b0e1a8248393";
+    await transport.createFile({ name: "Note.md", markdown: "body", parentId: "folder", operationId });
+    await expect(transport.findFileByOperation("folder", operationId)).resolves.toEqual({ id: "existing" });
 
-    expect(requests[0].options.body).toContain('"appProperties":{"notehubOperationId":"create-123"}');
+    expect(requests[0].options.body).toContain(`"appProperties":{"notehubOperationId":"${operationId}"}`);
     expect(new URL(requests[1].url).searchParams.get("q")).toContain("notehubOperationId");
-    expect(new URL(requests[1].url).searchParams.get("q")).toContain("create-123");
+    expect(new URL(requests[1].url).searchParams.get("q")).toContain(operationId);
+  });
+
+  test("rejects missing and query-like operation IDs without constructing a Drive query", async () => {
+    let called = false;
+    const transport = new GoogleDriveTransport({ accessToken: "access-token", fetch: async () => { called = true; return new Response("{}", { status: 200 }); } });
+
+    await expect(transport.findFileByOperation("folder", "x' or trashed = false")).rejects.toMatchObject({ code: "VALIDATION", status: 400 });
+    await expect(transport.createFile({ name: "Note.md", markdown: "body", parentId: "folder" })).rejects.toMatchObject({ code: "VALIDATION", status: 400 });
+
+    expect(called).toBe(false);
   });
 });

@@ -3,8 +3,14 @@ import { ApiError } from "./errors.js";
 const BASE = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
 const FIELDS = "id,name,mimeType,parents,trashed,createdTime,modifiedTime";
+const OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 function encodePath(value) { return encodeURIComponent(value); }
+
+function requireOperationId(operationId) {
+  if (typeof operationId !== "string" || !OPERATION_ID.test(operationId)) throw new ApiError("VALIDATION", "A valid create operation ID is required", 400);
+  return operationId;
+}
 
 export class GoogleDriveTransport {
   constructor({ accessToken, fetch: fetchImpl = globalThis.fetch }) {
@@ -60,8 +66,9 @@ export class GoogleDriveTransport {
   }
 
   async createFile({ name, markdown, parentId, mimeType = "text/markdown", operationId }) {
+    const marker = requireOperationId(operationId);
     const params = new URLSearchParams({ uploadType: "multipart", supportsAllDrives: "true", fields: FIELDS });
-    return this.multipart("POST", `${UPLOAD}/files?${params}`, { name, parents: [parentId], mimeType, ...(operationId ? { appProperties: { notehubOperationId: operationId } } : {}) }, markdown);
+    return this.multipart("POST", `${UPLOAD}/files?${params}`, { name, parents: [parentId], mimeType, appProperties: { notehubOperationId: marker } }, markdown);
   }
 
   async updateFile(id, { name, markdown, mimeType }) {
@@ -87,13 +94,14 @@ export class GoogleDriveTransport {
   }
 
   async createFolder({ name, parentId, operationId }) {
+    const marker = requireOperationId(operationId);
     const params = new URLSearchParams({ supportsAllDrives: "true", fields: FIELDS });
-    return this.json(`${BASE}/files?${params}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, parents: [parentId], mimeType: "application/vnd.google-apps.folder", ...(operationId ? { appProperties: { notehubOperationId: operationId } } : {}) }) });
+    return this.json(`${BASE}/files?${params}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, parents: [parentId], mimeType: "application/vnd.google-apps.folder", appProperties: { notehubOperationId: marker } }) });
   }
 
   async findFileByOperation(parentId, operationId) {
+    const marker = requireOperationId(operationId);
     const parent = String(parentId).replaceAll("'", "\\'");
-    const marker = String(operationId).replaceAll("'", "\\'");
     const q = `'${parent}' in parents and trashed = false and appProperties has { key='notehubOperationId' and value='${marker}' }`;
     const params = new URLSearchParams({ q, fields: `files(${FIELDS})`, pageSize: "1", supportsAllDrives: "true", includeItemsFromAllDrives: "true" });
     return (await this.json(`${BASE}/files?${params}`))?.files?.[0] ?? null;

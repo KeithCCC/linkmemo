@@ -20,12 +20,15 @@ function fakeDrive() {
     async downloadFile(id) { calls.push(["download", id]); return `raw:${id}`; },
     async exportFile(id, mimeType) { calls.push(["export", id, mimeType]); return `export:${id}`; },
     async createFile(input) { calls.push(["create", input]); return { id: "new", ...input }; },
+    async createFolder(input) { calls.push(["createFolder", input]); return { id: "new-folder", ...input }; },
     async updateFile(id, input) { calls.push(["update", id, input]); return { id, ...files[id], ...input }; },
     async moveFile(id, parentId) { calls.push(["move", id, parentId]); return { id, parents: [parentId] }; },
     async trashFile(id) { calls.push(["trash", id]); return { id, trashed: true }; },
     async listChanges() { return { changes: [], newStartPageToken: "next" }; },
   };
 }
+
+const operationId = "f6656d52-4c35-4c11-9d0d-b0e1a8248393";
 
 describe("DriveService", () => {
   test("lists the Notehub tree breadth-first with folders and supported files only", async () => {
@@ -83,11 +86,11 @@ describe("DriveService", () => {
     const drive = fakeDrive();
     const service = new DriveService({ drive, rootId: "root" });
 
-    await service.createFile({ name: "new.md", markdown: "# New", parentId: "folder" });
+    await service.createFile({ name: "new.md", markdown: "# New", parentId: "folder", operationId });
     await service.updateFile("md", { markdown: "# Changed" });
     await expect(service.updateFile("doc", { markdown: "no" })).rejects.toMatchObject({ code: "READ_ONLY" });
     await expect(service.updateFile("txt", { markdown: "no" })).rejects.toMatchObject({ code: "READ_ONLY" });
-    expect(drive.calls).toContainEqual(["create", { name: "new.md", markdown: "# New", parentId: "folder", mimeType: "text/markdown" }]);
+    expect(drive.calls).toContainEqual(["create", { name: "new.md", markdown: "# New", parentId: "folder", mimeType: "text/markdown", operationId }]);
     expect(drive.calls).toContainEqual(["update", "md", { markdown: "# Changed", mimeType: "text/markdown" }]);
   });
 
@@ -96,7 +99,7 @@ describe("DriveService", () => {
     drive.findFileByOperation = async (parentId, operationId) => ({ id: "existing", name: "Already.md", mimeType: "text/markdown", parents: [parentId], appProperties: { notehubOperationId: operationId } });
     const service = new DriveService({ drive, rootId: "root" });
 
-    await expect(service.createFile({ name: "Again.md", markdown: "body", parentId: "folder", operationId: "create-123" })).resolves.toMatchObject({ id: "existing" });
+    await expect(service.createFile({ name: "Again.md", markdown: "body", parentId: "folder", operationId })).resolves.toMatchObject({ id: "existing" });
 
     expect(drive.calls).not.toContainEqual(expect.arrayContaining(["create"]));
   });
@@ -107,5 +110,33 @@ describe("DriveService", () => {
     const service = new DriveService({ drive, rootId: "root" });
 
     await expect(service.moveFolder("folder", "subfolder")).rejects.toMatchObject({ code: "BOUNDARY" });
+  });
+
+  test("uses the Notehub root for null file and folder destinations", async () => {
+    const drive = fakeDrive();
+    const service = new DriveService({ drive, rootId: "root" });
+
+    await service.createFile({ name: "root.md", markdown: "body", parentId: null, operationId });
+    await service.createFolder({ name: "Root folder", parentId: null, operationId });
+    await service.moveFile("md", null);
+    await service.moveFolder("folder", null);
+
+    expect(drive.calls).toContainEqual(["create", { name: "root.md", markdown: "body", parentId: "root", mimeType: "text/markdown", operationId }]);
+    expect(drive.calls).toContainEqual(["createFolder", { name: "Root folder", parentId: "root", operationId }]);
+    expect(drive.calls).toContainEqual(["move", "md", "root"]);
+    expect(drive.calls).toContainEqual(["move", "folder", "root"]);
+  });
+
+  test("rejects missing and injection-like create operation IDs before Drive queries", async () => {
+    const drive = fakeDrive();
+    let lookups = 0;
+    drive.findFileByOperation = async () => { lookups += 1; return null; };
+    const service = new DriveService({ drive, rootId: "root" });
+
+    await expect(service.createFile({ name: "bad.md", markdown: "body", parentId: "root" })).rejects.toMatchObject({ code: "VALIDATION", status: 400 });
+    await expect(service.createFolder({ name: "bad", parentId: "root", operationId: "x' or trashed = false" })).rejects.toMatchObject({ code: "VALIDATION", status: 400 });
+
+    expect(lookups).toBe(0);
+    expect(drive.calls).toEqual([]);
   });
 });
