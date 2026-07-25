@@ -93,6 +93,21 @@ describe("parseMarkdown", () => {
       warning: "Unable to parse YAML front matter",
     });
   });
+
+  test("accepts an empty front matter mapping", () => {
+    expect(parseMarkdown("---\n---\n# Body", { now: "2026-02-03T04:05:06.000Z" })).toEqual({
+      metadata: {
+        title: "Untitled",
+        tags: [],
+        focus: false,
+        createdAt: "2026-02-03T04:05:06.000Z",
+        updatedAt: "2026-02-03T04:05:06.000Z",
+        schemaVersion: 1,
+      },
+      body: "# Body",
+      warning: null,
+    });
+  });
 });
 
 describe("serializeMarkdown", () => {

@@ -11,4 +11,8 @@ describe("generateMarkdownFileName", () => {
       generateMarkdownFileName("東京 / Tokyo: plans?*", new Set(["東京-Tokyo-plans.md", "東京-Tokyo-plans-2.md"]))
     ).toBe("東京-Tokyo-plans-3.md");
   });
+
+  test("avoids Windows reserved device filenames", () => {
+    expect(generateMarkdownFileName("CON")).toBe("Untitled.md");
+  });
 });

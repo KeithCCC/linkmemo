@@ -2,7 +2,7 @@ import YAML from "yaml";
 
 export const FRONT_MATTER_SCHEMA_VERSION = 1;
 
-const FRONT_MATTER_PATTERN = /^---[\t ]*\r?\n([\s\S]*?)\r?\n---[\t ]*(?:\r?\n|$)/;
+const FRONT_MATTER_PATTERN = /^---[\t ]*\r?\n(?:([\s\S]*?)\r?\n)?---[\t ]*(?:\r?\n|$)/;
 
 function toIsoString(value) {
   if (typeof value !== "string" || Number.isNaN(Date.parse(value))) return null;
@@ -35,7 +35,7 @@ export function parseMarkdown(markdown, options) {
   }
 
   try {
-    const parsed = YAML.parse(match[1]);
+    const parsed = YAML.parse(match[1] ?? "");
     if (parsed !== null && (typeof parsed !== "object" || Array.isArray(parsed))) {
       throw new Error("Front matter must be a mapping");
     }
