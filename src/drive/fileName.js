@@ -1,5 +1,5 @@
 const UNSAFE_FILE_NAME_CHARACTERS = /[<>:"/\\|?*\u0000-\u001F]+/g;
-const WINDOWS_RESERVED_FILE_NAMES = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+const WINDOWS_RESERVED_FILE_NAMES = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$/i;
 
 export function generateMarkdownFileName(title, siblingNames = []) {
   const readableTitle = String(title ?? "")

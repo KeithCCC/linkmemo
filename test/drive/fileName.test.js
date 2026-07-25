@@ -15,4 +15,8 @@ describe("generateMarkdownFileName", () => {
   test("avoids Windows reserved device filenames", () => {
     expect(generateMarkdownFileName("CON")).toBe("Untitled.md");
   });
+
+  test("avoids Windows reserved device names followed by an extension", () => {
+    expect(generateMarkdownFileName("CON.txt")).toBe("Untitled.md");
+  });
 });
