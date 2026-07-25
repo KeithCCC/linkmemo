@@ -1,0 +1,15 @@
+# Local dependency, build, and agent-work directories are not deployment sources.
+node_modules
+dist
+.worktrees
+.superpowers
+output
+.git
+.vercel
+
+# Local configuration and generated test artifacts must not be uploaded.
+.env
+.env.local
+playwright-report
+test-results
+blob-report
