@@ -45,7 +45,7 @@ export class NotehubSyncEngine {
   async refreshCache() {
     const [notes, folders] = await Promise.all([this.repository.listNotes(), this.repository.listFolders()]);
     this.notes = notes.filter((note) => !note.trashed);
-    this.folders = folders;
+    this.folders = folders.filter((folder) => !folder.trashed);
     this.publish();
   }
 
@@ -171,6 +171,17 @@ export class NotehubSyncEngine {
     await this.refreshCache(); this.markPending();
   }
 
+  trashFolder(id) { return this.runExclusive(() => this.trashFolderImpl(id)); }
+  async trashFolderImpl(id) {
+    const folder = await this.repository.getFolder(id);
+    if (!folder || folder.trashed) return;
+    await this.repository.mutateAndEnqueue({
+      folder: { ...folder, trashed: true, pendingTrash: true },
+      operation: { type: "folder.trash", id, payload: {} },
+    });
+    await this.refreshCache(); this.markPending();
+  }
+
   flushOutbox() { return this.runExclusive(() => this.flushImpl()); }
   async flushImpl({ preserveState = false } = {}) {
     try {
@@ -205,6 +216,7 @@ export class NotehubSyncEngine {
       case "folder.create": return this.client.createFolder(entry.payload);
       case "folder.rename": return this.client.renameFolder(entry.id, entry.payload.name);
       case "folder.move": return this.client.moveFolder(entry.id, entry.payload.parentId);
+      case "folder.trash": return this.client.trashFolder(entry.id);
       default: throw new Error(`Unknown outbox operation: ${entry.type}`);
     }
   }

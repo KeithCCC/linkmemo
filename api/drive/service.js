@@ -152,6 +152,12 @@ export class DriveService {
     }
     return this.drive.moveFile(id, destination);
   }
+
+  async trashFolder(id) {
+    const folder = await this.assertFolder(id);
+    if (folder.id === this.rootId) throw new ApiError("BOUNDARY", "The Notehub root folder cannot be trashed", 403);
+    return this.drive.trashFile(id);
+  }
 }
 
 export { EDITABLE_TYPES, FOLDER, GOOGLE_DOC, SUPPORTED_TYPES };

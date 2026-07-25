@@ -1,12 +1,14 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useNotesContext } from "../context/NotesContext";
 import React, { useEffect } from "react";
 import MarkdownIt from "markdown-it";
 import { addRecentNote } from "../recentNotes";
+import { WikiLinks } from "./NoteEditScreen";
 
 export default function NoteDetailScreen() {
   const { id } = useParams();
-  const { getNoteById, notes } = useNotesContext();
+  const navigate = useNavigate();
+  const { getNoteById, notes, folders = [] } = useNotesContext();
   const note = getNoteById(id);
 
   useEffect(() => {
@@ -35,16 +37,6 @@ export default function NoteDetailScreen() {
     );
   }
 
-  const convertWikiLinksToHTML = (text) => {
-    return text.replace(/\[\[([^\]]+)\]\]/g, (match, title) => {
-      const target = notes.find((n) => n.title === title);
-      if (target) {
-        return `<a href="/note/${target.id}" class="text-blue-600 underline">${title}</a>`;
-      }
-      return `<span class="text-gray-500">[[${title}]]</span>`;
-    });
-  };
-
   const md = new MarkdownIt({
     breaks: true,
     linkify: true,
@@ -67,7 +59,7 @@ export default function NoteDetailScreen() {
     return defaultRender(tokens, idx, options, env, self);
   };
 
-  const contentHTML = md.render(convertWikiLinksToHTML(note.content));
+  const contentHTML = md.render(note.content);
   const backlinks = notes.filter((n) => n.backlinks?.includes(note.id));
 
   return (
@@ -95,6 +87,7 @@ export default function NoteDetailScreen() {
             style={{ maxHeight: "calc(100vh - 260px)" }}
             dangerouslySetInnerHTML={{ __html: contentHTML }}
           />
+          <WikiLinks content={note.content} note={note} notes={notes} folders={folders} navigate={navigate} />
 
           {backlinks.length > 0 && (
             <div className="rounded-2xl border app-panel p-5">

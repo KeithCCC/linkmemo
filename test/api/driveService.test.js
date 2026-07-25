@@ -73,6 +73,18 @@ describe("DriveService", () => {
     expect(drive.calls).toEqual([]);
   });
 
+  test("trashes only descendant folders and never the Notehub root or non-folder items", async () => {
+    const drive = fakeDrive();
+    const service = new DriveService({ drive, rootId: "root" });
+
+    await expect(service.trashFolder("folder")).resolves.toEqual({ id: "folder", trashed: true });
+    await expect(service.trashFolder("root")).rejects.toMatchObject({ code: "BOUNDARY" });
+    await expect(service.trashFolder("md")).rejects.toMatchObject({ code: "BOUNDARY" });
+    await expect(service.trashFolder("outsider")).rejects.toMatchObject({ code: "BOUNDARY" });
+
+    expect(drive.calls).toEqual([["trash", "folder"]]);
+  });
+
   test("does not move plain text because only raw Markdown is writable", async () => {
     const drive = fakeDrive();
     const service = new DriveService({ drive, rootId: "root" });

@@ -28,6 +28,7 @@ export class DriveBffClient {
   }
 
   connection() { return this.request("/connection"); }
+  oauthStart() { return this.request("/oauth/start"); }
   updateConnection(folderId) { return this.request("/connection", { method: "PATCH", body: { folderId } }); }
   tree() { return this.request("/tree"); }
   changes(knownIds) { return this.request("/changes", { method: "POST", body: { knownIds } }); }
@@ -39,4 +40,5 @@ export class DriveBffClient {
   createFolder(body) { return this.request("/folder/create", { method: "POST", body }); }
   renameFolder(id, name) { return this.request(`/folder/rename?id=${encodeURIComponent(id)}`, { method: "PATCH", body: { name } }); }
   moveFolder(id, parentId) { return this.request(`/folder/move?id=${encodeURIComponent(id)}`, { method: "PATCH", body: { parentId } }); }
+  trashFolder(id) { return this.request(`/folder/trash?id=${encodeURIComponent(id)}`, { method: "DELETE" }); }
 }

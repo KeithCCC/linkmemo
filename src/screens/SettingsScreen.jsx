@@ -1,79 +1,143 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNotesContext } from "../context/NotesContext";
 
-export default function SettingsScreen() {
+export function extractDriveFolderId(value) {
+  const input = String(value ?? "").trim();
+  if (!input) return "";
+  try {
+    const url = new URL(input);
+    const match = url.pathname.match(/\/folders\/([^/?#]+)/);
+    return decodeURIComponent(match?.[1] ?? url.searchParams.get("id") ?? "");
+  } catch {
+    return input;
+  }
+}
+
+export default function SettingsScreen({ onOAuthRedirect = (url) => window.location.assign(url) }) {
+  const {
+    connection,
+    syncState,
+    syncErrorInfo,
+    startDriveOAuth,
+    saveDriveConnection,
+    syncNow,
+  } = useNotesContext();
+  const [folderInput, setFolderInput] = useState(connection?.folderId ?? "");
+  const [status, setStatus] = useState("");
+  const [localError, setLocalError] = useState(null);
+
+  const connect = async () => {
+    setLocalError(null);
+    setStatus("Opening Google authorization…");
+    try {
+      const result = await startDriveOAuth();
+      if (!result?.authorizationUrl) throw new Error("Google authorization URL was not returned");
+      setStatus("Continue in Google to finish connecting.");
+      onOAuthRedirect(result.authorizationUrl);
+    } catch (error) {
+      setLocalError(error);
+      setStatus("");
+    }
+  };
+
+  const saveFolder = async () => {
+    setLocalError(null);
+    const folderId = extractDriveFolderId(folderInput);
+    if (!folderId) {
+      setLocalError(Object.assign(new Error("Enter a Google Drive folder URL or ID"), { code: "CONFIGURATION" }));
+      return;
+    }
+    setStatus("Saving Notehub folder…");
+    try {
+      await saveDriveConnection(folderId);
+      setFolderInput(folderId);
+      setStatus("Notehub folder connected.");
+    } catch (error) {
+      setLocalError(error);
+      setStatus("");
+    }
+  };
+
+  const error = localError ?? connection?.error;
+
   return (
-    <div className="app-page-tight">
+    <div className="app-page-tight space-y-5">
       <section className="app-reading-surface p-6 sm:p-8">
-        <div className="app-doc prose text-base leading-relaxed">
-          <div className="app-section-title mb-3">Guide</div>
-          <h1 className="text-blue-700 text-2xl font-bold mb-4">ASUKA Guide</h1>
+        <div className="app-section-title mb-2">Settings</div>
+        <h1 className="text-3xl font-black tracking-tight">Drive and workspace</h1>
+        <p className="mt-2 app-muted-text">Supabase remains your sign-in provider. Notehub files are stored in your selected Google Drive folder.</p>
 
-          <h2>What ASUKA is for</h2>
-          <p>
-            ASUKA is a Markdown note workspace designed for fast capture, quick retrieval, and lightweight knowledge linking.
-            The main goal is to help you create notes quickly, find them again without friction, and keep editing without losing your place.
-          </p>
+        <section aria-labelledby="drive-heading" className="mt-6 rounded-2xl border app-panel p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="drive-heading" className="text-xl font-bold">Google Drive</h2>
+              <div className="mt-1 text-sm app-muted-text">
+                {connection?.connected
+                  ? <>Connected folder: <span className="font-semibold text-[var(--app-text)]">{connection.folderId || "Choose a folder"}</span></>
+                  : "Google Drive is not connected yet."}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={connect} className="app-primary-button">
+                {connection?.connected ? "Reconnect Google Drive" : "Connect Google Drive"}
+              </button>
+              <button type="button" onClick={() => syncNow()} className="app-secondary-button">Sync now</button>
+            </div>
+          </div>
 
-          <h2>Main areas</h2>
-          <ul className="list-disc pl-5">
-            <li><strong>All Notes</strong>: browse, search, filter, and sort notes</li>
-            <li><strong>New Note</strong>: create a fresh note immediately</li>
-            <li><strong>Guide</strong>: open this help screen</li>
-            <li><strong>Recent Notes</strong>: jump back into work quickly</li>
-          </ul>
+          <div className="mt-5">
+            <label htmlFor="drive-folder" className="text-sm font-semibold">Notehub folder URL or ID</label>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <input
+                id="drive-folder"
+                aria-label="Notehub folder URL or ID"
+                value={folderInput}
+                onChange={(event) => setFolderInput(event.target.value)}
+                placeholder="https://drive.google.com/drive/folders/…"
+                className="min-w-0 flex-1 rounded-xl border app-input px-4 py-3"
+              />
+              <button type="button" onClick={saveFolder} className="app-primary-button">Save Notehub folder</button>
+            </div>
+            <p className="mt-2 text-xs app-muted-text">Only the folder ID is saved through the connection endpoint. Google access and refresh tokens are never shown here.</p>
+          </div>
 
-          <h2>How the notes screen works</h2>
-          <h3>Workspace tabs</h3>
-          <ul className="list-disc pl-5">
-            <li><strong>All</strong>: show every note</li>
-            <li><strong>Recent</strong>: show recently opened notes</li>
-            <li><strong>Tags</strong>: show notes with tags</li>
-            <li><strong>Groups</strong>: show notes with grouped tags</li>
-            <li><strong>Focus</strong>: show focus-marked notes</li>
-          </ul>
+          <div className="mt-4 flex flex-wrap gap-2 text-sm">
+            <span className="app-chip rounded-full px-3 py-1">Sync: {syncState}</span>
+            {status && <span aria-live="polite" className="text-blue-700">{status}</span>}
+          </div>
 
-          <h3>View modes</h3>
-          <p>The view button cycles between cards, list, dense, and auto mode.</p>
-          <ul className="list-disc pl-5">
-            <li><strong>Cards</strong>: broad overview of each note</li>
-            <li><strong>List</strong>: balanced default browsing view</li>
-            <li><strong>Dense</strong>: compact view for scanning many notes</li>
-            <li><strong>Auto</strong>: adapt layout based on screen width</li>
-          </ul>
+          {syncErrorInfo && (
+            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+              <div className="font-semibold">{syncErrorInfo.title}</div>
+              <div className="mt-1">{syncErrorInfo.action}</div>
+            </div>
+          )}
+          {error && (
+            <div role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+              {error.message || "Drive settings could not be updated."}
+            </div>
+          )}
+        </section>
+      </section>
 
-          <h3>Search, sort, and filtering</h3>
-          <ul className="list-disc pl-5">
-            <li>Search matches note titles, body text, and tags</li>
-            <li>Sort by updated time or first tag</li>
-            <li>Advanced tag filters support include, exclude, and neutral states</li>
-          </ul>
+      <section className="app-reading-surface p-6 sm:p-8">
+        <div className="app-section-title mb-3">Guide</div>
+        <h2 className="text-2xl font-bold">Workspace basics</h2>
+        <ul className="mt-4 list-disc space-y-2 pl-5">
+          <li><strong>All Notes, Tags, and Focus</strong> browse your cached Notehub Drive notes.</li>
+          <li><strong>Folders</strong> scope the list recursively, including nested folders.</li>
+          <li><strong>Legacy</strong> keeps existing Supabase notes read-only; copy one to Notehub when you want to edit it.</li>
+          <li><strong>Pending</strong> changes are safe in the local IndexedDB cache and sync when connectivity returns.</li>
+          <li><strong>Google Docs</strong> can be read here and edited with the Open in Google Docs action.</li>
+        </ul>
 
-          <h2>Editor basics</h2>
-          <ul className="list-disc pl-5">
-            <li><strong>Edit</strong>: write in the text editor</li>
-            <li><strong>Preview</strong>: see the rendered Markdown</li>
-            <li><strong>Split</strong>: edit and preview side by side</li>
-            <li><strong>Focus</strong>: mark a note as important</li>
-          </ul>
-
-          <h2>Keyboard shortcuts</h2>
-          <ul className="list-disc pl-5">
-            <li><kbd>Ctrl/Cmd</kbd> + <kbd>K</kbd>: open command palette</li>
-            <li><kbd>Ctrl/Cmd</kbd> + <kbd>9</kbd>: create a new note</li>
-            <li><kbd>Ctrl/Cmd</kbd> + <kbd>0</kbd>: return to the note list</li>
-            <li><kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>: toggle sidebar</li>
-            <li><kbd>Ctrl/Cmd</kbd> + <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>: switch editor view modes</li>
-          </ul>
-
-          <h2>Data</h2>
-          <ul className="list-disc pl-5">
-            <li>Live mode stores notes in Supabase</li>
-            <li>UX test mode can use seeded local notes for UI work</li>
-            <li>You can also export and import notes as JSON</li>
-          </ul>
-
-          <p className="mt-10 text-sm app-muted-text">ASUKA - powered by Nono</p>
-        </div>
+        <h3 className="mt-6 text-lg font-semibold">Keyboard shortcuts</h3>
+        <ul className="mt-3 list-disc space-y-1 pl-5">
+          <li><kbd>Ctrl/Cmd</kbd> + <kbd>K</kbd>: open command palette</li>
+          <li><kbd>Ctrl/Cmd</kbd> + <kbd>9</kbd>: create a new note</li>
+          <li><kbd>Ctrl/Cmd</kbd> + <kbd>0</kbd>: return to the note list</li>
+          <li><kbd>Ctrl/Cmd</kbd> + <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>: switch editor view modes</li>
+        </ul>
       </section>
     </div>
   );

@@ -3,12 +3,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../context/AuthContext';
 import { useNotesContext } from '../context/NotesContext';
-import { createNote } from '../services/notesService';
 
 export default function ClipScreen() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const { addNote, refreshNotes } = useNotesContext();
+  const { createDriveNote } = useNotesContext();
 
   const [status, setStatus] = useState('Preparing clip...');
   const [debugInfo, setDebugInfo] = useState('');
@@ -35,8 +34,6 @@ export default function ClipScreen() {
     ].join('\n');
     
     setDebugInfo(debug);
-    console.log('=== ClipScreen Debug ===');
-    console.log(debug);
   }, [url, titleParam, sourceParam, contentParam, contentIdParam]);
 
   // Parse tags from query or default based on source
@@ -117,9 +114,6 @@ export default function ClipScreen() {
           }
         }
         
-        console.log('Final content length:', finalContent?.length);
-        console.log('Creating note with content length:', finalContent?.length);
-        
         let body;
         if (finalContent) {
           // Content-based clipping (e.g., ChatGPT response)
@@ -133,9 +127,6 @@ export default function ClipScreen() {
           body = `# ${title}\n\n${linkLine}\n\n${tagLine}`;
         }
         
-        console.log('Final body length:', body.length);
-        console.log('Body preview:', body.substring(0, 200));
-        console.log('Body end:', body.substring(body.length - 200));
         const note = {
           title,
           content: body,
@@ -143,13 +134,10 @@ export default function ClipScreen() {
           createdAt: now,
           updatedAt: now,
         };
-        const created = await createNote(user.uid, note);
+        const created = await createDriveNote(note);
         const newId = typeof created === 'string' ? created : created?.id;
         if (newId) {
-          addNote({ id: newId, ...note });
           setStatus('Clipped. Redirecting...');
-          // Best-effort refresh in background
-          refreshNotes?.().catch(() => {});
           navigate(`/edit/${newId}`, { replace: true });
         } else {
           setStatus('Clipped, but could not get new id.');
@@ -160,7 +148,7 @@ export default function ClipScreen() {
       }
     };
     run();
-  }, [user?.uid, url, titleParam, contentParam, contentIdParam, sourceParam, tags, addNote, refreshNotes, navigate]);
+  }, [user?.uid, url, titleParam, contentParam, contentIdParam, sourceParam, tags, createDriveNote, navigate]);
 
   return (
     <div className="app-page-tight">

@@ -5,7 +5,6 @@ import { loginWithGoogle, logout, subscribeToAuth } from './services/authService
 import NoteDetailScreen from './screens/NoteDetailScreen';
 import NoteEditScreen from './screens/NoteEditScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import HomeScreen from './screens/HomeScreen';
 import Navigation from './components/Navigation';
 import NoteListScreen from './screens/NoteListScreen';
 import TipTapScreen from './screens/TipTapScreen';

@@ -14,6 +14,7 @@ const entrypoints = [
   "../../api/drive/folder/create.js",
   "../../api/drive/folder/rename.js",
   "../../api/drive/folder/move.js",
+  "../../api/drive/folder/trash.js",
 ];
 
 describe("Vercel Drive entrypoints", () => {

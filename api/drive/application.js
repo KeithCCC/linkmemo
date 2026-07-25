@@ -68,5 +68,6 @@ export function createDriveApplication({ env, auth, connections, tokens, driveFa
     createFolder: (request) => authenticated(request, async (user) => { const { service } = await serviceFor(user.id); return data(201, await service.createFolder(request.body ?? {})); }),
     renameFolder: (request) => authenticated(request, async (user) => { const { service } = await serviceFor(user.id); return data(200, await service.renameFolder(request.query?.id, request.body?.name)); }),
     moveFolder: (request) => authenticated(request, async (user) => { const { service } = await serviceFor(user.id); return data(200, await service.moveFolder(request.query?.id, request.body?.parentId)); }),
+    trashFolder: (request) => authenticated(request, async (user) => { const { service } = await serviceFor(user.id); return data(200, await service.trashFolder(request.query?.id)); }),
   };
 }

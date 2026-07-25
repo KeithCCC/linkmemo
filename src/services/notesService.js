@@ -1,12 +1,9 @@
 import { isUxTestMode } from "../appMode";
-import * as liveNotesService from "../supabaseNotesService";
-import * as dummyNotesService from "./dummyNotesService";
+import { legacyNotesService } from "./legacyNotesService";
+import { uxLegacyNotesService } from "./dummyNotesService";
 
-const notesService = isUxTestMode ? dummyNotesService : liveNotesService;
+const service = isUxTestMode ? uxLegacyNotesService : legacyNotesService;
 
-export const getNotes = notesService.getNotes;
-export const createNote = notesService.createNote;
-export const updateNote = notesService.updateNote;
-export const deleteNote = notesService.deleteNote;
-export const getNoteById = notesService.getNoteById;
-
+// Compatibility reads only. All note mutations go through NotehubDriveService.
+export const getNotes = (uid) => service.list(uid);
+export const getNoteById = (uid, noteId) => service.get(uid, noteId);

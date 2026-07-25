@@ -77,6 +77,40 @@ describe("NotehubSyncEngine", () => {
     expect(await repository.listOutbox()).toHaveLength(1);
   });
 
+  test("keeps a folder subtree recoverable until queued remote trash succeeds", async () => {
+    const repository = repo();
+    await repository.upsertFolder({ id: "folder", name: "Projects", parentId: "root" });
+    await repository.upsertFolder({ id: "child-folder", name: "Nested", parentId: "folder" });
+    await repository.upsertNote({ id: "child-note", title: "Draft", parentId: "child-folder", source: "drive-markdown", editable: true });
+    const engine = new NotehubSyncEngine({ repository, client: { trashFolder: async () => { throw new Error("offline"); } } });
+
+    await engine.trashFolder("folder");
+    await expect(engine.flushOutbox()).rejects.toThrow("offline");
+
+    expect(engine.folders).toEqual([expect.objectContaining({ id: "child-folder" })]);
+    expect(await repository.getFolder("folder")).toMatchObject({ trashed: true, pendingTrash: true });
+    expect(await repository.getFolder("child-folder")).toMatchObject({ parentId: "folder" });
+    expect(await repository.getNote("child-note")).toMatchObject({ parentId: "child-folder" });
+    expect(await repository.listOutbox()).toHaveLength(1);
+  });
+
+  test("removes a folder subtree after queued remote trash succeeds", async () => {
+    const repository = repo();
+    await repository.upsertFolder({ id: "folder", name: "Projects", parentId: "root" });
+    await repository.upsertFolder({ id: "child-folder", name: "Nested", parentId: "folder" });
+    await repository.upsertNote({ id: "child-note", title: "Draft", parentId: "child-folder", source: "drive-markdown", editable: true });
+    const trashed = [];
+    const engine = new NotehubSyncEngine({ repository, client: { trashFolder: async (id) => { trashed.push(id); return { id, trashed: true }; } } });
+
+    await engine.trashFolder("folder");
+    await engine.flushOutbox();
+
+    expect(trashed).toEqual(["folder"]);
+    expect(await repository.listFolders()).toEqual([]);
+    expect(await repository.listNotes()).toEqual([]);
+    expect(await repository.listOutbox()).toEqual([]);
+  });
+
   test("serializes normalized local note fields into Markdown for the Drive outbox", async () => {
     const repository = repo();
     await repository.upsertNote({ id: "note", title: "Before", content: "old", tags: ["work"], focus: true, createdAt: "2026-01-01T00:00:00.000Z", source: "drive-markdown", editable: true });

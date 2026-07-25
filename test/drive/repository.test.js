@@ -56,4 +56,37 @@ describe("NotehubRepository", () => {
     expect(await repo.getNote("child")).toEqual({ id: "child", parentId: "local:folder" });
     expect((await repo.listOutbox()).map((entry) => entry.id)).toEqual(["local:folder", "child"]);
   });
+
+  test("preserves a pending trashed folder subtree through remote cache replacement", async () => {
+    const repo = repository();
+    await repo.mutateAndEnqueue({
+      folder: { id: "folder", name: "Pending trash", parentId: "root", trashed: true, pendingTrash: true },
+      operation: { type: "folder.trash", id: "folder", payload: {} },
+    });
+    await repo.upsertFolder({ id: "child-folder", name: "Child", parentId: "folder" });
+    await repo.upsertNote({ id: "child-note", title: "Child", parentId: "child-folder" });
+
+    await repo.replaceRemoteCache({ notes: [], folders: [] });
+
+    expect(await repo.getFolder("folder")).toMatchObject({ trashed: true, pendingTrash: true });
+    expect(await repo.getFolder("child-folder")).toMatchObject({ parentId: "folder" });
+    expect(await repo.getNote("child-note")).toMatchObject({ parentId: "child-folder" });
+  });
+
+  test("removes a trashed folder subtree only after remote completion", async () => {
+    const repo = repository();
+    const entry = await repo.mutateAndEnqueue({
+      folder: { id: "folder", name: "Trash", parentId: "root", trashed: true },
+      operation: { type: "folder.trash", id: "folder", payload: {} },
+    });
+    await repo.upsertFolder({ id: "child-folder", name: "Child", parentId: "folder" });
+    await repo.upsertNote({ id: "child-note", title: "Child", parentId: "child-folder" });
+    await repo.upsertNote({ id: "keep", title: "Keep", parentId: "root" });
+
+    await repo.completeOutboxEntry(entry);
+
+    expect(await repo.listFolders()).toEqual([]);
+    expect(await repo.listNotes()).toEqual([{ id: "keep", title: "Keep", parentId: "root" }]);
+    expect(await repo.listOutbox()).toEqual([]);
+  });
 });

@@ -1,4 +1,4 @@
-const now = Date.now();
+const now = Date.parse("2026-04-24T12:00:00.000Z");
 
 const minutesAgo = (minutes) => new Date(now - minutes * 60 * 1000).toISOString();
 

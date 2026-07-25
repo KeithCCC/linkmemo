@@ -12,17 +12,67 @@ function NavMark({ children }) {
   );
 }
 
+const SYNC_LABELS = {
+  offline: "Offline",
+  pending: "Pending changes",
+  syncing: "Syncing…",
+  synced: "Synced",
+  error: "Sync error",
+};
+
+function FolderTree({ folders, parentId, depth = 0, onSelect, currentFolderId }) {
+  return folders
+    .filter((folder) => folder.parentId === parentId)
+    .map((folder) => (
+      <React.Fragment key={folder.id}>
+        <button
+          type="button"
+          aria-label={`${folder.name} folder`}
+          aria-current={currentFolderId === folder.id ? "page" : undefined}
+          onClick={() => onSelect(folder.id)}
+          className={`flex w-full items-center gap-2 rounded-lg py-1.5 pr-2 text-left text-xs ${
+            currentFolderId === folder.id ? "bg-blue-50 font-semibold text-blue-700" : "hover:bg-[var(--app-panel)]"
+          }`}
+          style={{ paddingLeft: `${8 + depth * 14}px` }}
+        >
+          <span aria-hidden="true">▸</span>
+          <span className="truncate">{folder.name}</span>
+        </button>
+        <FolderTree folders={folders} parentId={folder.id} depth={depth + 1} onSelect={onSelect} currentFolderId={currentFolderId} />
+      </React.Fragment>
+    ));
+}
+
 export default function Navigation({ collapsed, setCollapsed, user: userProp, onLogin, onLogout, isMobileNav = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;
 
-  const { notes, addNote } = useNotesContext();
+  const {
+    notes,
+    addNote,
+    folders = [],
+    currentWorkspace = { type: "all", folderId: null },
+    syncState = "offline",
+    syncErrorInfo,
+    selectWorkspace,
+    createDriveFolder,
+    renameDriveFolder,
+    moveDriveFolder,
+    trashDriveFolder,
+    syncNow,
+  } = useNotesContext();
   const { user: ctxUser } = useAuthContext() || {};
   const user = userProp || ctxUser;
 
   const [recent, setRecent] = useState([]);
   const [showSecondary, setShowSecondary] = useState(false);
+  const [moveDestination, setMoveDestination] = useState("");
+  const folderIds = new Set(folders.map((folder) => folder.id));
+  const rootFolders = folders.filter((folder) => !folderIds.has(folder.parentId));
+  const selectedFolder = currentWorkspace.type === "folder"
+    ? folders.find((folder) => folder.id === currentWorkspace.folderId)
+    : null;
 
   useEffect(() => {
     const refresh = () => setRecent(getRecentNotes());
@@ -96,10 +146,36 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
     if (isMobileNav) setCollapsed(true);
   };
 
+  const chooseWorkspace = (type, folderId = null) => {
+    selectWorkspace?.({ type, ...(type === "folder" ? { folderId } : {}) });
+    navigate("/");
+    closeOnMobile();
+  };
+
+  const createFolder = async () => {
+    const name = window.prompt("Folder name");
+    if (!name?.trim()) return;
+    await createDriveFolder?.({ name: name.trim(), parentId: selectedFolder?.id ?? null });
+  };
+
+  const renameFolder = async () => {
+    if (!selectedFolder) return;
+    const name = window.prompt("Rename folder", selectedFolder.name);
+    if (!name?.trim() || name.trim() === selectedFolder.name) return;
+    await renameDriveFolder?.(selectedFolder.id, name.trim());
+  };
+
+  const trashFolder = async () => {
+    if (!selectedFolder || !window.confirm(`Trash "${selectedFolder.name}" and its contents?`)) return;
+    await trashDriveFolder?.(selectedFolder.id);
+    chooseWorkspace("all");
+  };
+
   return (
     <aside
+      aria-label="Workspace navigation"
       className={`app-surface border-r border-[var(--app-border)] shadow-sm text-sm font-medium transition-all duration-300 flex flex-col ${
-        isMobileNav ? "fixed inset-y-0 left-0 z-40 w-[85vw] max-w-[18.5rem] shadow-2xl" : "sticky top-0 min-h-screen w-72"
+        isMobileNav ? "fixed inset-y-0 left-0 z-40 w-full max-w-none shadow-2xl" : "sticky top-0 min-h-screen w-72"
       } ${collapsed ? (isMobileNav ? "-translate-x-full" : "w-0 overflow-hidden") : "translate-x-0"}`}
     >
       {!collapsed && (
@@ -129,11 +205,31 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
               )}
             </div>
 
-            <nav className="space-y-1">
-              <Link to="/" className={navLinkClass(isActive("/"))} onClick={closeOnMobile}>
+            <div className="app-panel rounded-xl border border-[var(--app-border)] px-3 py-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span aria-live="polite">{SYNC_LABELS[syncState] ?? "Sync status"}</span>
+                <button type="button" onClick={() => syncNow?.()} className="text-blue-700 hover:underline">Sync</button>
+              </div>
+              {syncErrorInfo && <div className="mt-1 text-[11px] text-red-700">{syncErrorInfo.title} — {syncErrorInfo.action}</div>}
+            </div>
+
+            <nav aria-label="Workspaces" className="space-y-1">
+              <button type="button" aria-label="All Notes" className={`${navLinkClass(currentWorkspace.type === "all")} w-full text-left`} onClick={() => chooseWorkspace("all")}>
                 <NavMark>N</NavMark>
                 <span>All Notes</span>
-              </Link>
+              </button>
+              <button type="button" aria-label="Tags" className={`${navLinkClass(currentWorkspace.type === "tags")} w-full text-left`} onClick={() => chooseWorkspace("tags")}>
+                <NavMark>#</NavMark>
+                <span>Tags</span>
+              </button>
+              <button type="button" aria-label="Focus" className={`${navLinkClass(currentWorkspace.type === "focus")} w-full text-left`} onClick={() => chooseWorkspace("focus")}>
+                <NavMark>F</NavMark>
+                <span>Focus</span>
+              </button>
+              <button type="button" aria-label="Legacy" className={`${navLinkClass(currentWorkspace.type === "legacy")} w-full text-left`} onClick={() => chooseWorkspace("legacy")}>
+                <NavMark>L</NavMark>
+                <span>Legacy</span>
+              </button>
 
               <Link to="/edit/new" className={navLinkClass(isActive("/edit/new"))} onClick={closeOnMobile}>
                 <NavMark>+</NavMark>
@@ -145,6 +241,38 @@ export default function Navigation({ collapsed, setCollapsed, user: userProp, on
                 <span>Guide</span>
               </Link>
             </nav>
+
+            <section className="rounded-xl border border-[var(--app-border)] p-2">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <div className="app-section-title">Notehub folders</div>
+                <button type="button" onClick={createFolder} className="text-xs text-blue-700 hover:underline">
+                  {selectedFolder ? "New child" : "New folder"}
+                </button>
+              </div>
+              <div className="max-h-40 overflow-y-auto">
+                {rootFolders.length > 0 ? rootFolders.map((folder) => (
+                  <React.Fragment key={folder.id}>
+                    <FolderTree folders={folders} parentId={folder.parentId} onSelect={(id) => chooseWorkspace("folder", id)} currentFolderId={currentWorkspace.folderId} />
+                  </React.Fragment>
+                )).slice(0, 1) : <div className="px-2 py-1 text-xs app-muted-text">No folders yet.</div>}
+              </div>
+              {selectedFolder && (
+                <div className="mt-2 space-y-2 border-t border-[var(--app-border)] pt-2">
+                  <div className="truncate text-xs font-semibold">{selectedFolder.name}</div>
+                  <div className="flex flex-wrap gap-1">
+                    <button type="button" onClick={renameFolder} className="app-ghost-button px-2 py-1 text-[11px]">Rename</button>
+                    <button type="button" aria-label={`Trash ${selectedFolder.name}`} onClick={trashFolder} className="px-2 py-1 text-[11px] text-red-700 hover:underline">Trash</button>
+                  </div>
+                  <div className="flex gap-1">
+                    <select aria-label={`Move ${selectedFolder.name} to`} value={moveDestination} onChange={(event) => setMoveDestination(event.target.value)} className="min-w-0 flex-1 rounded border app-input px-1 py-1 text-[11px]">
+                      <option value="">Notehub root</option>
+                      {folders.filter((folder) => folder.id !== selectedFolder.id).map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+                    </select>
+                    <button type="button" onClick={() => moveDriveFolder?.(selectedFolder.id, moveDestination || null)} className="app-ghost-button px-2 py-1 text-[11px]">Move</button>
+                  </div>
+                </div>
+              )}
+            </section>
 
             <section className="app-panel rounded-2xl border border-[var(--app-border)] p-3">
               <div className="app-section-title mb-2">Quick actions</div>

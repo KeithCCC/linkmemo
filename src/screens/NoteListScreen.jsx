@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useNotesContext } from "../context/NotesContext";
+import { folderPath, useNotesContext } from "../context/NotesContext";
 import { addRecentNote, getRecentNotes } from "../recentNotes";
-import { updateNote as updateNoteRemote } from "../services/notesService";
 
 const GROUP_PREFIX = "group:";
 const WORKSPACE_TABS = [
@@ -42,9 +41,16 @@ const formatDate = (value) => {
 export default function NoteListScreen({ embedded = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { notes, updateNote, deleteNote } = useNotesContext();
-  const allNotes = Array.isArray(notes) ? notes : [];
-  const user = null;
+  const {
+    visibleNotes,
+    notes,
+    folders = [],
+    syncState,
+    currentWorkspace,
+    updateDriveNote,
+    trashDriveNote,
+  } = useNotesContext();
+  const allNotes = Array.isArray(visibleNotes) ? visibleNotes : (Array.isArray(notes) ? notes : []);
 
   const [searchTerm, setSearchTerm] = useState(() => {
     try { return localStorage.getItem("list.searchTerm") || ""; } catch { return ""; }
@@ -197,18 +203,10 @@ export default function NoteListScreen({ embedded = false }) {
   }, [workspaceFilteredNotes]);
 
   const handleToggleFocus = async (note) => {
+    if (note.source !== "drive-markdown" || note.editable === false) return;
     const prevFocus = Boolean(note.focus);
     const nextFocus = !prevFocus;
-
-    try { updateNote(note.id, { focus: nextFocus }); } catch {}
-
-    if (user?.uid) {
-      try {
-        await updateNoteRemote(user.uid, note.id, { focus: nextFocus });
-      } catch {
-        try { updateNote(note.id, { focus: prevFocus }); } catch {}
-      }
-    }
+    await updateDriveNote?.(note.id, { focus: nextFocus });
   };
 
   const tagClass = (state) =>
@@ -220,6 +218,8 @@ export default function NoteListScreen({ embedded = false }) {
 
   const renderNoteActions = (note) => (
     <div className="flex items-center gap-2 flex-wrap">
+      {note.source === "drive-markdown" && note.editable !== false && (
+        <>
       <button
         onClick={() => handleToggleFocus(note)}
         className={`rounded-full border px-3 py-1 text-xs ${note.focus ? "border-orange-700 bg-orange-600 text-white" : "border-orange-500 text-orange-600 hover:bg-orange-100"}`}
@@ -228,16 +228,37 @@ export default function NoteListScreen({ embedded = false }) {
       </button>
       <button
         onClick={async () => {
-          if (confirm("Delete this note?")) {
-            try { await deleteNote(note.id); } catch {}
+          if (confirm("Trash this note?")) {
+            try { await trashDriveNote?.(note.id); } catch {}
           }
         }}
         className="rounded-full bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700"
       >
-        Delete
+        Trash
       </button>
+        </>
+      )}
     </div>
   );
+
+  const renderNoteMeta = (note) => {
+    const source = note.source === "legacy"
+      ? "Legacy"
+      : note.source === "drive-doc"
+        ? "Google Docs"
+        : note.source === "drive-text"
+          ? "Drive text"
+          : "Markdown";
+    const path = note.source === "legacy" ? "Legacy archive" : folderPath(folders, note.parentId);
+    const status = note.editable === false ? "Read-only" : (String(note.id).startsWith("local:") || syncState === "pending" ? "Pending" : syncState === "syncing" ? "Syncing" : syncState === "error" ? "Sync error" : "Synced");
+    return (
+      <div className="mt-2 flex flex-wrap gap-2 text-[11px] app-muted-text">
+        <span>{path}</span>
+        <span>{source}</span>
+        <span>{status}</span>
+      </div>
+    );
+  };
 
   const renderNotes = (notesForView) => {
     if (notesForView.length === 0) {
@@ -279,13 +300,14 @@ export default function NoteListScreen({ embedded = false }) {
                     {note.title || "Untitled"}
                   </Link>
                   <span className="whitespace-nowrap text-xs app-muted-text">{formatDate(note.updatedAt)}</span>
-                  <button
+                  {note.source === "drive-markdown" && note.editable !== false && <button
                     onClick={() => handleToggleFocus(note)}
                     className={`rounded-full border px-3 py-1 text-[10px] ${note.focus ? "border-orange-700 bg-orange-600 text-white" : "border-orange-500 text-orange-600 hover:bg-orange-100"}`}
                   >
                     Focus
-                  </button>
+                  </button>}
                 </div>
+                {renderNoteMeta(note)}
                 {tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {tags.map((t) => (
@@ -308,7 +330,7 @@ export default function NoteListScreen({ embedded = false }) {
           {notesForView.map((note) => {
             const tags = getNoteTags(note).slice(0, 5);
             return (
-              <article key={note.id} className="rounded-2xl border app-panel p-4 shadow-md app-panel-hover">
+              <article key={note.id} aria-label={note.title || "Untitled"} className="rounded-2xl border app-panel p-4 shadow-md app-panel-hover">
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <Link
                     className="flex-1 truncate text-lg font-bold text-blue-700"
@@ -321,6 +343,7 @@ export default function NoteListScreen({ embedded = false }) {
                   {note.focus && <span className="rounded-full bg-orange-200 px-3 py-1 text-xs font-semibold text-orange-900">Focus</span>}
                 </div>
                 <div className="mb-3 text-xs app-muted-text">Updated: {formatDate(note.updatedAt)}</div>
+                {renderNoteMeta(note)}
                 {tags.length > 0 && (
                   <div className="mb-4 flex flex-wrap gap-2">
                     {tags.map((t) => (
@@ -355,6 +378,7 @@ export default function NoteListScreen({ embedded = false }) {
                     {note.title || "Untitled"}
                   </Link>
                   <div className="mt-2 text-xs app-muted-text">Updated: {formatDate(note.updatedAt)}</div>
+                  {renderNoteMeta(note)}
                 </div>
                 {renderNoteActions(note)}
               </div>

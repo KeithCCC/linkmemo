@@ -101,9 +101,30 @@ export class NotehubRepository {
       const [currentNotes, currentFolders, outbox] = await Promise.all([requestResult(stores.notes.getAll()), requestResult(stores.folders.getAll()), requestResult(stores.outbox.getAll())]);
       const pendingIds = new Set(outbox.map((entry) => entry.id));
       const pendingParents = new Set(outbox.map((entry) => entry.payload?.parentId).filter(isTemporary));
-      const preserve = (item) => isTemporary(item.id) || item.trashed || pendingIds.has(item.id) || pendingParents.has(item.parentId);
-      const mergedNotes = [...notes.filter((note) => !preserve(note)), ...currentNotes.filter(preserve)];
-      const mergedFolders = [...folders.filter((folder) => !preserve(folder)), ...currentFolders.filter(preserve)];
+      const protectedFolderIds = new Set(outbox.filter((entry) => entry.type === "folder.trash").map((entry) => entry.id));
+      let added = true;
+      while (added) {
+        added = false;
+        currentFolders.forEach((folder) => {
+          if (protectedFolderIds.has(folder.parentId) && !protectedFolderIds.has(folder.id)) {
+            protectedFolderIds.add(folder.id);
+            added = true;
+          }
+        });
+      }
+      const protectedNoteIds = new Set(currentNotes.filter((note) => protectedFolderIds.has(note.parentId)).map((note) => note.id));
+      const preserve = (item, kind) =>
+        isTemporary(item.id) ||
+        item.trashed ||
+        pendingIds.has(item.id) ||
+        pendingParents.has(item.parentId) ||
+        (kind === "folder" ? protectedFolderIds.has(item.id) : protectedNoteIds.has(item.id));
+      const preservedNotes = currentNotes.filter((note) => preserve(note, "note"));
+      const preservedFolders = currentFolders.filter((folder) => preserve(folder, "folder"));
+      const preservedNoteIds = new Set(preservedNotes.map((note) => note.id));
+      const preservedFolderIds = new Set(preservedFolders.map((folder) => folder.id));
+      const mergedNotes = [...notes.filter((note) => !preservedNoteIds.has(note.id)), ...preservedNotes];
+      const mergedFolders = [...folders.filter((folder) => !preservedFolderIds.has(folder.id)), ...preservedFolders];
       stores.notes.clear(); stores.folders.clear();
       mergedNotes.forEach((note) => stores.notes.put(note));
       mergedFolders.forEach((folder) => stores.folders.put(folder));
@@ -129,8 +150,24 @@ export class NotehubRepository {
   replaceOutbox(entry) { return this.put(STORE.outbox, entry); }
 
   async completeOutboxEntry(entry) {
-    return this.transaction([STORE.notes, STORE.outbox], async (stores) => {
+    return this.transaction([STORE.notes, STORE.folders, STORE.outbox], async (stores) => {
       if (entry.type === "file.trash") stores.notes.delete(entry.id);
+      if (entry.type === "folder.trash") {
+        const [notes, folders] = await Promise.all([requestResult(stores.notes.getAll()), requestResult(stores.folders.getAll())]);
+        const removedFolderIds = new Set([entry.id]);
+        let added = true;
+        while (added) {
+          added = false;
+          folders.forEach((folder) => {
+            if (removedFolderIds.has(folder.parentId) && !removedFolderIds.has(folder.id)) {
+              removedFolderIds.add(folder.id);
+              added = true;
+            }
+          });
+        }
+        removedFolderIds.forEach((id) => stores.folders.delete(id));
+        notes.filter((note) => removedFolderIds.has(note.parentId)).forEach((note) => stores.notes.delete(note.id));
+      }
       stores.outbox.delete(entry.sequence);
     });
   }

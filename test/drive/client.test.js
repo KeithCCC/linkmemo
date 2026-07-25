@@ -17,15 +17,19 @@ describe("DriveBffClient", () => {
     });
 
     await client.connection();
+    await client.oauthStart();
     await client.changes(["known-note"]);
     await client.updateFile("note-1", { markdown: "# New" });
     await client.createFolder({ name: "Ideas", parentId: "root" });
+    await client.trashFolder("folder-1");
 
     expect(requests).toEqual([
       expect.objectContaining({ url: "/api/drive/connection", options: expect.objectContaining({ method: "GET", headers: { authorization: "Bearer supabase-access-token" } }) }),
+      expect.objectContaining({ url: "/api/drive/oauth/start", options: expect.objectContaining({ method: "GET", headers: { authorization: "Bearer supabase-access-token" } }) }),
       expect.objectContaining({ url: "/api/drive/changes", options: expect.objectContaining({ method: "POST", body: JSON.stringify({ knownIds: ["known-note"] }) }) }),
       expect.objectContaining({ url: "/api/drive/file/update?id=note-1", options: expect.objectContaining({ method: "PATCH", body: JSON.stringify({ markdown: "# New" }) }) }),
       expect.objectContaining({ url: "/api/drive/folder/create", options: expect.objectContaining({ method: "POST", body: JSON.stringify({ name: "Ideas", parentId: "root" }) }) }),
+      expect.objectContaining({ url: "/api/drive/folder/trash?id=folder-1", options: expect.objectContaining({ method: "DELETE" }) }),
     ]);
   });
 

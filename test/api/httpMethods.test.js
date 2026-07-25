@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import connection from "../../api/drive/connection.js";
 import trashFile from "../../api/drive/file/trash.js";
 import createFile from "../../api/drive/file/create.js";
+import trashFolder from "../../api/drive/folder/trash.js";
 
 function responseRecorder() {
   return {
@@ -32,5 +33,11 @@ describe("Drive HTTP method allow-lists", () => {
     const res = responseRecorder();
     await createFile({ method: "GET" }, res);
     expect(res.statusCode).toBe(405);
+  });
+
+  test("requires DELETE for folder trash", async () => {
+    const res = responseRecorder();
+    await trashFolder({ method: "POST" }, res);
+    expect(res).toMatchObject({ statusCode: 405, body: { error: { code: "METHOD_NOT_ALLOWED" } }, headers: { allow: "DELETE" } });
   });
 });
