@@ -11,13 +11,18 @@ function markdownFile(id, name = "Note.md") {
   return { id, name, mimeType: "text/markdown", markdown: `---\ntitle: ${name}\ntags: []\nfocus: false\n---\nBody`, parents: ["root"] };
 }
 
+function metadataFile(id, name = "Note.md") {
+  return { id, name, mimeType: "text/markdown", parents: ["root"], createdTime: "2026-01-01T00:00:00.000Z", modifiedTime: "2026-01-01T00:00:00.000Z" };
+}
+
 describe("NotehubSyncEngine", () => {
   test("hydrates IndexedDB before doing an initial recursive cache replacement", async () => {
     const repository = repo();
     await repository.upsertNote({ id: "cached", title: "Offline", source: "drive-markdown", editable: true });
     const client = {
-      tree: async () => ({ items: [markdownFile("remote"), { id: "folder", name: "Projects", mimeType: "application/vnd.google-apps.folder", parents: ["root"] }] }),
+      tree: async () => ({ items: [metadataFile("remote"), { id: "folder", name: "Projects", mimeType: "application/vnd.google-apps.folder", parents: ["root"] }] }),
       changes: async () => ({ changes: [], pageToken: "initial-token" }),
+      readFile: async () => markdownFile("remote"),
     };
     const engine = new NotehubSyncEngine({ repository, client });
 
@@ -36,29 +41,13 @@ describe("NotehubSyncEngine", () => {
     const repository = repo();
     await repository.replaceAll({ notes: [{ id: "gone" }, { id: "kept" }], folders: [] });
     await repository.setMetadata("changePageToken", "old-token");
-    const client = { changes: async (knownIds) => ({ changes: [{ fileId: "gone", removed: true }, { fileId: "new", file: markdownFile("new", "New.md") }], pageToken: "new-token" }) };
+    const client = { changes: async () => ({ changes: [{ fileId: "gone", removed: true }, { fileId: "new", file: metadataFile("new", "New.md") }], pageToken: "new-token" }), readFile: async () => markdownFile("new", "New.md") };
     const engine = new NotehubSyncEngine({ repository, client });
 
     await engine.sync();
 
     expect(await repository.listNotes()).toEqual([{ id: "kept" }, expect.objectContaining({ id: "new", title: "New.md" })]);
     expect(await repository.getMetadata("changePageToken")).toBe("new-token");
-  });
-
-  test("does not advance the change token when applying a delta fails", async () => {
-    const repository = repo();
-    await repository.setMetadata("changePageToken", "old-token");
-    const upsertNote = repository.upsertNote.bind(repository);
-    repository.upsertNote = async (note) => {
-      if (note.id === "broken") throw new Error("disk full");
-      return upsertNote(note);
-    };
-    const engine = new NotehubSyncEngine({ repository, client: { changes: async () => ({ changes: [{ fileId: "broken", file: markdownFile("broken") }], pageToken: "new-token" }) } });
-
-    await expect(engine.sync()).rejects.toThrow("disk full");
-
-    expect(await repository.getMetadata("changePageToken")).toBe("old-token");
-    expect(engine.state).toBe("error");
   });
 
   test("keeps a local edit through reload when its FIFO operation fails", async () => {
@@ -74,6 +63,18 @@ describe("NotehubSyncEngine", () => {
     expect(reloaded.notes).toEqual([expect.objectContaining({ id: "note", content: "local change" })]);
     expect(await repository.listOutbox()).toHaveLength(1);
     expect(engine.state).toBe("error");
+  });
+
+  test("keeps a recoverable tombstone until a queued remote trash succeeds", async () => {
+    const repository = repo();
+    await repository.upsertNote({ id: "note", title: "Keep", content: "content", source: "drive-markdown", editable: true });
+    const engine = new NotehubSyncEngine({ repository, client: { trashFile: async () => { throw new Error("offline"); } } });
+
+    await engine.trashNote("note");
+    await expect(engine.flushOutbox()).rejects.toThrow("offline");
+
+    expect(await repository.getNote("note")).toEqual(expect.objectContaining({ trashed: true, content: "content" }));
+    expect(await repository.listOutbox()).toHaveLength(1);
   });
 
   test("serializes normalized local note fields into Markdown for the Drive outbox", async () => {
@@ -119,7 +120,7 @@ describe("NotehubSyncEngine", () => {
 
   test("replaces temporary create IDs and rewrites later queued references", async () => {
     const repository = repo();
-    const engine = new NotehubSyncEngine({ repository, client: { createFile: async () => markdownFile("drive-note", "Created.md"), moveFile: async () => ({}) } });
+    const engine = new NotehubSyncEngine({ repository, client: { createFile: async () => metadataFile("drive-note", "Created.md"), readFile: async () => markdownFile("drive-note", "Created.md"), moveFile: async () => ({}) } });
     const temporaryId = await engine.createNote({ title: "Created", content: "body", parentId: "root" });
     await engine.moveNote(temporaryId, "folder");
 
@@ -137,16 +138,21 @@ describe("NotehubSyncEngine", () => {
       repository,
       client: {
         createFolder: async () => ({ id: "drive-folder", name: "Ideas", mimeType: "application/vnd.google-apps.folder", parents: ["root"] }),
-        createFile: async (payload) => { parents.push(payload.parentId); return markdownFile("drive-note"); },
+        createFile: async (payload) => { parents.push(payload.parentId); return metadataFile("drive-note"); },
+        readFile: async () => markdownFile("drive-note"),
       },
     });
     const folderId = await engine.createFolder({ name: "Ideas", parentId: "root" });
-    await engine.createNote({ title: "Child", content: "body", parentId: folderId });
+    const childId = await engine.createNote({ title: "Child", content: "body", parentId: folderId });
+    await repository.upsertFolder({ id: "cached-child-folder", name: "Child folder", parentId: folderId });
 
     await engine.flushOutbox();
 
     expect(await repository.getFolder(folderId)).toBeUndefined();
     expect(await repository.getFolder("drive-folder")).toEqual({ id: "drive-folder", name: "Ideas", parentId: "root" });
+    expect(await repository.getFolder("cached-child-folder")).toEqual({ id: "cached-child-folder", name: "Child folder", parentId: "drive-folder" });
+    expect(await repository.getNote("drive-note")).toEqual(expect.objectContaining({ parentId: "drive-folder" }));
+    expect(childId).toMatch(/^local:/);
     expect(parents).toEqual(["drive-folder"]);
   });
 
@@ -161,5 +167,114 @@ describe("NotehubSyncEngine", () => {
 
     expect(await repository.listOutbox()).toEqual([]);
     expect(engine.state).toBe("error");
+  });
+
+  test("hydrates real BFF tree metadata through file reads before normalizing notes", async () => {
+    const repository = repo();
+    const engine = new NotehubSyncEngine({
+      repository,
+      client: {
+        tree: async () => ({ items: [metadataFile("remote")] }),
+        changes: async () => ({ changes: [], pageToken: "server-cursor" }),
+        readFile: async () => ({ ...metadataFile("remote"), markdown: "---\ntitle: Hydrated\ntags: []\nfocus: false\n---\nTree body", editable: true }),
+      },
+    });
+
+    await engine.sync();
+
+    expect(await repository.getNote("remote")).toEqual(expect.objectContaining({ title: "Hydrated", content: "Tree body" }));
+  });
+
+  test("recovers with a full tree when a server-advanced delta cannot be hydrated", async () => {
+    const repository = repo();
+    await repository.setMetadata("changePageToken", "diagnostic-token");
+    let changesCalls = 0;
+    const engine = new NotehubSyncEngine({
+      repository,
+      client: {
+        changes: async () => {
+          changesCalls += 1;
+          return changesCalls === 1
+            ? { changes: [{ fileId: "missed", file: metadataFile("missed") }], pageToken: "advanced-server-cursor" }
+            : { changes: [], pageToken: "recovered-server-cursor" };
+        },
+        readFile: async (id) => {
+          if (id === "missed") throw new Error("read interrupted");
+          return { ...metadataFile("recovered"), markdown: "---\ntitle: Recovered\ntags: []\nfocus: false\n---\nRecovered body", editable: true };
+        },
+        tree: async () => ({ items: [metadataFile("recovered")] }),
+      },
+    });
+
+    await engine.sync();
+
+    expect(engine.state).toBe("synced");
+    expect(await repository.getNote("recovered")).toEqual(expect.objectContaining({ content: "Recovered body" }));
+    expect(await repository.getMetadata("changePageToken")).toBe("recovered-server-cursor");
+  });
+
+  test("serializes a concurrent sync and local create so the tree cannot erase local work", async () => {
+    const repository = repo();
+    let releaseTree;
+    const treeStarted = new Promise((resolve) => { releaseTree = resolve; });
+    let resumeTree;
+    const treeGate = new Promise((resolve) => { resumeTree = resolve; });
+    const engine = new NotehubSyncEngine({
+      repository,
+      client: {
+        tree: async () => { releaseTree(); await treeGate; return { items: [] }; },
+        changes: async () => ({ changes: [], pageToken: "cursor" }),
+      },
+    });
+
+    const syncing = engine.sync();
+    await treeStarted;
+    const creating = engine.createNote({ title: "Concurrent", content: "safe" });
+    resumeTree();
+    const [, localId] = await Promise.all([syncing, creating]);
+
+    expect(await repository.getNote(localId)).toEqual(expect.objectContaining({ content: "safe" }));
+    expect(await repository.listOutbox()).toHaveLength(1);
+  });
+
+  test("uses note and folder cache IDs for BFF delta filtering and hydrates pending state", async () => {
+    const repository = repo();
+    await repository.upsertNote({ id: "note" });
+    await repository.upsertFolder({ id: "folder" });
+    await repository.enqueue({ type: "file.update", id: "note", payload: {} });
+    await repository.setMetadata("changePageToken", "diagnostic-token");
+    let knownIds;
+    const engine = new NotehubSyncEngine({ repository, client: { updateFile: async () => ({}), changes: async (ids) => { knownIds = ids; return { changes: [{ fileId: "folder", removed: true }], pageToken: "cursor" }; } } });
+
+    await engine.hydrate();
+    expect(engine.state).toBe("pending");
+    await engine.sync();
+
+    expect(engine.state).toBe("synced");
+    expect(knownIds).toEqual(expect.arrayContaining(["note", "folder"]));
+    expect(await repository.getFolder("folder")).toBeUndefined();
+  });
+
+  test("preserves pending local tombstones and temporary records through a full-tree replacement", async () => {
+    const repository = repo();
+    await repository.mutateAndEnqueue({ note: { id: "local:temp", title: "Pending", content: "keep", source: "drive-markdown", editable: true }, operation: { type: "file.create", id: "local:temp", payload: {} } });
+    await repository.mutateAndEnqueue({ note: { id: "trash", title: "Trash", content: "recover", source: "drive-markdown", editable: true, trashed: true }, operation: { type: "file.trash", id: "trash", payload: {} } });
+    await repository.replaceRemoteCache({ notes: [{ id: "remote", title: "Remote" }], folders: [] });
+
+    expect(await repository.getNote("local:temp")).toEqual(expect.objectContaining({ content: "keep" }));
+    expect(await repository.getNote("trash")).toEqual(expect.objectContaining({ trashed: true, content: "recover" }));
+  });
+
+  test("executes a queued create once when concurrent flushes are requested", async () => {
+    const repository = repo();
+    let creates = 0;
+    const engine = new NotehubSyncEngine({ repository, client: { createFile: async () => { creates += 1; return metadataFile("drive"); }, readFile: async () => markdownFile("drive") } });
+    await engine.createNote({ title: "One", content: "body" });
+
+    await Promise.all([engine.flushOutbox(), engine.flushOutbox()]);
+
+    expect(await repository.listOutbox()).toEqual([]);
+    expect(await repository.listNotes()).toEqual([expect.objectContaining({ id: "drive" })]);
+    expect(creates).toBe(1);
   });
 });

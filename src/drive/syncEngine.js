@@ -4,13 +4,9 @@ import { serializeMarkdown } from "./markdown.js";
 const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 const CHANGE_TOKEN = "changePageToken";
 
-function itemId(item) {
-  return item?.fileId ?? item?.id;
-}
-
-function folderFromDrive(item) {
-  return { id: itemId(item), name: item.name, parentId: item.parents?.[0] ?? null };
-}
+function itemId(item) { return item?.fileId ?? item?.id; }
+function temporaryId() { return `local:${crypto.randomUUID()}`; }
+function folderFromDrive(item) { return { id: itemId(item), name: item.name, parentId: item.parents?.[0] ?? null }; }
 
 function noteFromDrive(item, previous) {
   const normalized = normalizeDriveFile({ ...item, fileId: itemId(item) });
@@ -22,14 +18,9 @@ function noteFromDrive(item, previous) {
   };
 }
 
-function localId() {
-  return `local:${crypto.randomUUID()}`;
-}
-
 export class NotehubSyncEngine {
   constructor({ repository, client } = {}) {
-    if (!repository) throw new Error("repository is required");
-    if (!client) throw new Error("client is required");
+    if (!repository || !client) throw new Error("repository and client are required");
     this.repository = repository;
     this.client = client;
     this.notes = [];
@@ -37,53 +28,46 @@ export class NotehubSyncEngine {
     this.state = "offline";
     this.error = null;
     this.listeners = new Set();
+    this.exclusive = Promise.resolve();
   }
 
-  subscribe(listener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+  runExclusive(task) {
+    const run = this.exclusive.then(task, task);
+    this.exclusive = run.catch(() => undefined);
+    return run;
   }
 
-  snapshot() {
-    return { state: this.state, error: this.error, notes: this.notes, folders: this.folders };
-  }
-
-  publish() {
-    const snapshot = this.snapshot();
-    for (const listener of this.listeners) listener(snapshot);
-  }
-
-  setState(state, error = null) {
-    this.state = state;
-    this.error = error;
-    this.publish();
-  }
+  subscribe(listener) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
+  snapshot() { return { state: this.state, error: this.error, notes: this.notes, folders: this.folders }; }
+  publish() { const snapshot = this.snapshot(); this.listeners.forEach((listener) => listener(snapshot)); }
+  setState(state, error = null) { this.state = state; this.error = error; this.publish(); }
 
   async refreshCache() {
-    [this.notes, this.folders] = await Promise.all([this.repository.listNotes(), this.repository.listFolders()]);
+    const [notes, folders] = await Promise.all([this.repository.listNotes(), this.repository.listFolders()]);
+    this.notes = notes.filter((note) => !note.trashed);
+    this.folders = folders;
     this.publish();
   }
 
-  async hydrate() {
+  hydrate() { return this.runExclusive(() => this.hydrateImpl()); }
+  async hydrateImpl() {
     await this.refreshCache();
-    const connectionState = await this.repository.getMetadata("connectionState");
-    this.setState(connectionState ?? "offline");
+    const pending = (await this.repository.listOutbox()).length > 0;
+    const offline = globalThis.navigator?.onLine === false;
+    this.setState(offline ? "offline" : (pending ? "pending" : (await this.repository.getMetadata("connectionState")) ?? "offline"));
     return this.snapshot();
   }
 
-  async sync() {
+  sync() { return this.runExclusive(() => this.syncImpl()); }
+  async syncImpl() {
     this.setState("syncing");
     try {
-      await this.flushOutbox({ preserveState: true });
-      const pageToken = await this.repository.getMetadata(CHANGE_TOKEN);
-      if (!pageToken) {
-        const { items = [] } = await this.client.tree();
-        const notes = items.filter((item) => item.mimeType !== FOLDER_MIME_TYPE).map((item) => noteFromDrive(item));
-        const folders = items.filter((item) => item.mimeType === FOLDER_MIME_TYPE).map(folderFromDrive);
-        await this.repository.replaceAll({ notes, folders });
-        await this.pullChanges();
+      await this.flushImpl({ preserveState: true });
+      if (await this.repository.getMetadata(CHANGE_TOKEN)) {
+        try { await this.pullChanges(); }
+        catch { await this.fullTreeAndEstablishCursor(); }
       } else {
-        await this.pullChanges();
+        await this.fullTreeAndEstablishCursor();
       }
       await this.refreshCache();
       await this.repository.setMetadata("connectionState", "synced");
@@ -94,94 +78,113 @@ export class NotehubSyncEngine {
     }
   }
 
+  async hydrateRemote(item) {
+    if (item.mimeType === FOLDER_MIME_TYPE) return item;
+    const hydrated = await this.client.readFile(itemId(item));
+    return { ...item, ...hydrated, id: itemId(hydrated) ?? itemId(item), parents: hydrated.parents ?? item.parents };
+  }
+
+  async fullTreeAndEstablishCursor() {
+    const { items = [] } = await this.client.tree();
+    const hydrated = await Promise.all(items.map((item) => this.hydrateRemote(item)));
+    const notes = hydrated.filter((item) => item.mimeType !== FOLDER_MIME_TYPE).map((item) => noteFromDrive(item));
+    const folders = hydrated.filter((item) => item.mimeType === FOLDER_MIME_TYPE).map(folderFromDrive);
+    await this.repository.replaceRemoteCache({ notes, folders });
+    await this.pullChanges();
+  }
+
+  async pullChanges() {
+    const [notes, folders] = await Promise.all([this.repository.listNotes(), this.repository.listFolders()]);
+    const { changes = [], pageToken } = await this.client.changes([...notes, ...folders].map((item) => item.id));
+    for (const change of changes) await this.applyChange(change);
+    if (pageToken) await this.repository.setMetadata(CHANGE_TOKEN, pageToken);
+  }
+
   async applyChange(change) {
     const id = itemId(change);
     if (change.removed) {
       await Promise.all([this.repository.removeNote(id), this.repository.removeFolder(id)]);
       return;
     }
-    const item = change.file ?? change;
+    const item = await this.hydrateRemote(change.file ?? change);
     if (item.mimeType === FOLDER_MIME_TYPE) await this.repository.upsertFolder(folderFromDrive(item));
     else await this.repository.upsertNote(noteFromDrive(item, await this.repository.getNote(itemId(item))));
   }
 
-  async pullChanges() {
-    const { changes = [], pageToken } = await this.client.changes((await this.repository.listNotes()).map((note) => note.id));
-    for (const change of changes) await this.applyChange(change);
-    if (pageToken) await this.repository.setMetadata(CHANGE_TOKEN, pageToken);
-  }
+  markPending() { this.setState("pending"); }
 
-  async enqueue(operation) {
-    await this.repository.enqueue(operation);
-    await this.refreshCache();
-    this.setState("pending");
-  }
-
-  async createNote({ title = "Untitled", content = "", parentId = null, name, markdown } = {}) {
-    const id = localId();
+  createNote(input = {}) { return this.runExclusive(() => this.createNoteImpl(input)); }
+  async createNoteImpl({ title = "Untitled", content = "", parentId = null, name, markdown } = {}) {
+    const id = temporaryId();
     const now = new Date().toISOString();
     const note = { id, title, content, tags: [], focus: false, source: "drive-markdown", editable: true, parentId, createdAt: now, updatedAt: now, warning: null };
-    await this.repository.upsertNote(note);
-    await this.enqueue({ type: "file.create", id, payload: { name: name ?? `${title}.md`, markdown: markdown ?? serializeMarkdown({ metadata: note, body: content }), parentId } });
+    await this.repository.mutateAndEnqueue({ note, operation: { type: "file.create", id, payload: { name: name ?? `${title}.md`, markdown: markdown ?? serializeMarkdown({ metadata: note, body: content }), parentId } } });
+    await this.refreshCache(); this.markPending();
     return id;
   }
 
-  async updateNote(id, patch) {
+  updateNote(id, patch) { return this.runExclusive(() => this.updateNoteImpl(id, patch)); }
+  async updateNoteImpl(id, patch) {
     const note = await this.repository.getNote(id);
-    if (!note || note.source === "drive-doc" || note.editable === false) return;
+    if (!note || note.source === "drive-doc" || note.editable === false || note.trashed) return;
     const updated = { ...note, ...patch, updatedAt: new Date().toISOString() };
-    await this.repository.upsertNote(updated);
-    const payload = {
-      markdown: serializeMarkdown({ metadata: updated, body: updated.content }),
-      ...(patch.title === undefined ? {} : { name: patch.title }),
-    };
-    await this.enqueue({ type: "file.update", id, payload });
+    await this.repository.mutateAndEnqueue({ note: updated, operation: { type: "file.update", id, payload: { markdown: serializeMarkdown({ metadata: updated, body: updated.content }), ...(patch.title === undefined ? {} : { name: patch.title }) } } });
+    await this.refreshCache(); this.markPending();
   }
 
-  async moveNote(id, parentId) {
+  moveNote(id, parentId) { return this.runExclusive(() => this.moveNoteImpl(id, parentId)); }
+  async moveNoteImpl(id, parentId) {
+    const note = await this.repository.getNote(id);
+    if (!note || note.source === "drive-doc" || note.editable === false || note.trashed) return;
+    await this.repository.mutateAndEnqueue({ note: { ...note, parentId }, operation: { type: "file.move", id, payload: { parentId } } });
+    await this.refreshCache(); this.markPending();
+  }
+
+  trashNote(id) { return this.runExclusive(() => this.trashNoteImpl(id)); }
+  async trashNoteImpl(id) {
     const note = await this.repository.getNote(id);
     if (!note || note.source === "drive-doc" || note.editable === false) return;
-    await this.repository.upsertNote({ ...note, parentId });
-    await this.enqueue({ type: "file.move", id, payload: { parentId } });
+    await this.repository.mutateAndEnqueue({ note: { ...note, trashed: true, pendingTrash: true }, operation: { type: "file.trash", id, payload: {} } });
+    await this.refreshCache(); this.markPending();
   }
 
-  async trashNote(id) {
-    const note = await this.repository.getNote(id);
-    if (!note || note.source === "drive-doc" || note.editable === false) return;
-    await this.repository.removeNote(id);
-    await this.enqueue({ type: "file.trash", id, payload: {} });
+  createFolder(input) { return this.runExclusive(() => this.createFolderImpl(input)); }
+  async createFolderImpl({ name, parentId = null } = {}) {
+    const id = temporaryId();
+    await this.repository.mutateAndEnqueue({ folder: { id, name, parentId }, operation: { type: "folder.create", id, payload: { name, parentId } } });
+    await this.refreshCache(); this.markPending(); return id;
   }
 
-  async createFolder({ name, parentId = null } = {}) {
-    const id = localId();
-    await this.repository.upsertFolder({ id, name, parentId });
-    await this.enqueue({ type: "folder.create", id, payload: { name, parentId } });
-    return id;
+  renameFolder(id, name) { return this.runExclusive(() => this.renameFolderImpl(id, name)); }
+  async renameFolderImpl(id, name) {
+    const folder = await this.repository.getFolder(id); if (!folder) return;
+    await this.repository.mutateAndEnqueue({ folder: { ...folder, name }, operation: { type: "folder.rename", id, payload: { name } } });
+    await this.refreshCache(); this.markPending();
   }
 
-  async renameFolder(id, name) {
-    const folder = await this.repository.getFolder(id);
-    if (!folder) return;
-    await this.repository.upsertFolder({ ...folder, name });
-    await this.enqueue({ type: "folder.rename", id, payload: { name } });
+  moveFolder(id, parentId) { return this.runExclusive(() => this.moveFolderImpl(id, parentId)); }
+  async moveFolderImpl(id, parentId) {
+    const folder = await this.repository.getFolder(id); if (!folder) return;
+    await this.repository.mutateAndEnqueue({ folder: { ...folder, parentId }, operation: { type: "folder.move", id, payload: { parentId } } });
+    await this.refreshCache(); this.markPending();
   }
 
-  async moveFolder(id, parentId) {
-    const folder = await this.repository.getFolder(id);
-    if (!folder) return;
-    await this.repository.upsertFolder({ ...folder, parentId });
-    await this.enqueue({ type: "folder.move", id, payload: { parentId } });
-  }
-
-  async flushOutbox({ preserveState = false } = {}) {
+  flushOutbox() { return this.runExclusive(() => this.flushImpl()); }
+  async flushImpl({ preserveState = false } = {}) {
     try {
       for (const queued of await this.repository.listOutbox()) {
         const entry = await this.repository.getOutbox(queued.sequence);
         if (!entry) continue;
         const result = await this.execute(entry);
-        if (entry.type === "file.create") await this.replaceTemporaryNote(entry.id, itemId(result), result);
-        if (entry.type === "folder.create") await this.replaceTemporaryFolder(entry.id, itemId(result), result);
-        await this.repository.removeOutbox(entry.sequence);
+        if (entry.type === "file.create") {
+          const local = await this.repository.getNote(entry.id);
+          const item = local ? noteFromDrive(await this.hydrateRemote(result), local) : {};
+          await this.repository.completeTemporaryCreate({ kind: "note", temporaryId: entry.id, driveId: itemId(result), item, sequence: entry.sequence });
+        } else if (entry.type === "folder.create") {
+          await this.repository.completeTemporaryCreate({ kind: "folder", temporaryId: entry.id, driveId: itemId(result), item: folderFromDrive(result), sequence: entry.sequence });
+        } else {
+          await this.repository.completeOutboxEntry(entry);
+        }
       }
       await this.refreshCache();
       if (!preserveState) this.setState("synced");
@@ -202,33 +205,5 @@ export class NotehubSyncEngine {
       case "folder.move": return this.client.moveFolder(entry.id, entry.payload.parentId);
       default: throw new Error(`Unknown outbox operation: ${entry.type}`);
     }
-  }
-
-  async rewriteOutboxReferences(temporaryId, driveId) {
-    for (const entry of await this.repository.listOutbox()) {
-      const id = entry.id === temporaryId ? driveId : entry.id;
-      const parentId = entry.payload?.parentId === temporaryId ? driveId : entry.payload?.parentId;
-      if (id !== entry.id || parentId !== entry.payload?.parentId) await this.repository.replaceOutbox({ ...entry, id, payload: { ...entry.payload, ...(entry.payload?.parentId === undefined ? {} : { parentId }) } });
-    }
-  }
-
-  async replaceTemporaryNote(temporaryId, driveId, response) {
-    if (!driveId) throw new Error("Drive did not return a fileId for the created note");
-    const local = await this.repository.getNote(temporaryId);
-    if (local) {
-      await this.repository.removeNote(temporaryId);
-      await this.repository.upsertNote({ ...noteFromDrive(response, local), ...local, id: driveId });
-    }
-    await this.rewriteOutboxReferences(temporaryId, driveId);
-  }
-
-  async replaceTemporaryFolder(temporaryId, driveId, response) {
-    if (!driveId) throw new Error("Drive did not return a fileId for the created folder");
-    const local = await this.repository.getFolder(temporaryId);
-    if (local) {
-      await this.repository.removeFolder(temporaryId);
-      await this.repository.upsertFolder({ ...folderFromDrive(response), ...local, id: driveId });
-    }
-    await this.rewriteOutboxReferences(temporaryId, driveId);
   }
 }

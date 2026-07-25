@@ -2,9 +2,9 @@ import "fake-indexeddb/auto";
 import { describe, expect, test } from "vitest";
 import { NotehubRepository } from "../../src/drive/repository.js";
 
-function repository() {
+function repository(options = {}) {
   const name = `notehub-repository-${crypto.randomUUID()}`;
-  return new NotehubRepository({ name });
+  return new NotehubRepository({ name, ...options });
 }
 
 describe("NotehubRepository", () => {
@@ -33,5 +33,27 @@ describe("NotehubRepository", () => {
 
     expect(await repo.listNotes()).toEqual([{ id: "new" }]);
     expect(await repo.listFolders()).toEqual([{ id: "new-folder" }]);
+  });
+
+  test("rolls back a local cache mutation when its outbox enqueue cannot commit", async () => {
+    const repo = repository({ beforeTransactionCommit: () => { throw new Error("quota"); } });
+
+    await expect(repo.mutateAndEnqueue({ note: { id: "local", title: "Unsaved" }, operation: { type: "file.create", id: "local", payload: {} } })).rejects.toThrow("quota");
+
+    expect(await repo.listNotes()).toEqual([]);
+    expect(await repo.listOutbox()).toEqual([]);
+  });
+
+  test("rolls back temporary-ID completion, child-parent rewrites, and outbox deletion together", async () => {
+    const repo = repository();
+    const created = await repo.mutateAndEnqueue({ folder: { id: "local:folder", name: "Local", parentId: "root" }, operation: { type: "folder.create", id: "local:folder", payload: {} } });
+    await repo.mutateAndEnqueue({ note: { id: "child", parentId: "local:folder" }, operation: { type: "file.move", id: "child", payload: { parentId: "local:folder" } } });
+    repo.beforeTransactionCommit = () => { throw new Error("interrupted"); };
+
+    await expect(repo.completeTemporaryCreate({ kind: "folder", temporaryId: "local:folder", driveId: "drive-folder", item: { id: "drive-folder", name: "Remote", parentId: "root" }, sequence: created.sequence })).rejects.toThrow("interrupted");
+
+    expect(await repo.getFolder("local:folder")).toEqual({ id: "local:folder", name: "Local", parentId: "root" });
+    expect(await repo.getNote("child")).toEqual({ id: "child", parentId: "local:folder" });
+    expect((await repo.listOutbox()).map((entry) => entry.id)).toEqual(["local:folder", "child"]);
   });
 });

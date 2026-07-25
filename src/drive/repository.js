@@ -1,10 +1,5 @@
 const DATABASE_VERSION = 1;
-const STORE = {
-  notes: "notes",
-  folders: "folders",
-  outbox: "outbox",
-  metadata: "metadata",
-};
+const STORE = { notes: "notes", folders: "folders", outbox: "outbox", metadata: "metadata" };
 
 function requestResult(request) {
   return new Promise((resolve, reject) => {
@@ -37,10 +32,28 @@ function openDatabase(name, indexedDb) {
   });
 }
 
+function isTemporary(id) { return typeof id === "string" && id.startsWith("local:"); }
+
 export class NotehubRepository {
-  constructor({ name = "notehub-drive", indexedDb = globalThis.indexedDB } = {}) {
+  constructor({ name = "notehub-drive", indexedDb = globalThis.indexedDB, beforeTransactionCommit } = {}) {
     if (!indexedDb) throw new Error("IndexedDB is unavailable");
     this.database = openDatabase(name, indexedDb);
+    this.beforeTransactionCommit = beforeTransactionCommit;
+  }
+
+  async transaction(names, work) {
+    const database = await this.database;
+    const transaction = database.transaction(names, "readwrite");
+    const stores = Object.fromEntries(names.map((name) => [name, transaction.objectStore(name)]));
+    try {
+      const result = await work(stores);
+      this.beforeTransactionCommit?.();
+      await transactionDone(transaction);
+      return result;
+    } catch (error) {
+      try { transaction.abort(); } catch { /* transaction may already be finished */ }
+      throw error;
+    }
   }
 
   async read(store, key) {
@@ -60,19 +73,11 @@ export class NotehubRepository {
   }
 
   async put(store, value) {
-    const database = await this.database;
-    const transaction = database.transaction(store, "readwrite");
-    await requestResult(transaction.objectStore(store).put(value));
-    await transactionDone(transaction);
+    await this.transaction([store], async (stores) => { stores[store].put(value); });
     return value;
   }
 
-  async remove(store, key) {
-    const database = await this.database;
-    const transaction = database.transaction(store, "readwrite");
-    await requestResult(transaction.objectStore(store).delete(key));
-    await transactionDone(transaction);
-  }
+  async remove(store, key) { await this.transaction([store], async (stores) => { stores[store].delete(key); }); }
 
   listNotes() { return this.list(STORE.notes); }
   getNote(id) { return this.read(STORE.notes, id); }
@@ -84,38 +89,75 @@ export class NotehubRepository {
   removeFolder(id) { return this.remove(STORE.folders, id); }
 
   async replaceAll({ notes, folders }) {
-    const database = await this.database;
-    const transaction = database.transaction([STORE.notes, STORE.folders], "readwrite");
-    const noteStore = transaction.objectStore(STORE.notes);
-    const folderStore = transaction.objectStore(STORE.folders);
-    noteStore.clear();
-    folderStore.clear();
-    for (const note of notes) noteStore.put(note);
-    for (const folder of folders) folderStore.put(folder);
-    await transactionDone(transaction);
+    return this.transaction([STORE.notes, STORE.folders], async (stores) => {
+      stores.notes.clear(); stores.folders.clear();
+      notes.forEach((note) => stores.notes.put(note));
+      folders.forEach((folder) => stores.folders.put(folder));
+    });
   }
 
-  async enqueue(operation) {
-    const database = await this.database;
-    const transaction = database.transaction(STORE.outbox, "readwrite");
+  async replaceRemoteCache({ notes, folders }) {
+    return this.transaction([STORE.notes, STORE.folders, STORE.outbox], async (stores) => {
+      const [currentNotes, currentFolders, outbox] = await Promise.all([requestResult(stores.notes.getAll()), requestResult(stores.folders.getAll()), requestResult(stores.outbox.getAll())]);
+      const pendingIds = new Set(outbox.map((entry) => entry.id));
+      const pendingParents = new Set(outbox.map((entry) => entry.payload?.parentId).filter(isTemporary));
+      const preserve = (item) => isTemporary(item.id) || item.trashed || pendingIds.has(item.id) || pendingParents.has(item.parentId);
+      const mergedNotes = [...notes.filter((note) => !preserve(note)), ...currentNotes.filter(preserve)];
+      const mergedFolders = [...folders.filter((folder) => !preserve(folder)), ...currentFolders.filter(preserve)];
+      stores.notes.clear(); stores.folders.clear();
+      mergedNotes.forEach((note) => stores.notes.put(note));
+      mergedFolders.forEach((folder) => stores.folders.put(folder));
+    });
+  }
+
+  async mutateAndEnqueue({ note, folder, removeNote, removeFolder, operation }) {
     const entry = { ...operation, id: operation.id ?? crypto.randomUUID() };
-    const sequence = await requestResult(transaction.objectStore(STORE.outbox).add(entry));
-    await transactionDone(transaction);
-    return { ...entry, sequence };
+    return this.transaction([STORE.notes, STORE.folders, STORE.outbox], async (stores) => {
+      if (note) stores.notes.put(note);
+      if (folder) stores.folders.put(folder);
+      if (removeNote) stores.notes.delete(removeNote);
+      if (removeFolder) stores.folders.delete(removeFolder);
+      const sequence = await requestResult(stores.outbox.add(entry));
+      return { ...entry, sequence };
+    });
   }
 
+  async enqueue(operation) { return this.mutateAndEnqueue({ operation }); }
   listOutbox() { return this.list(STORE.outbox); }
   getOutbox(sequence) { return this.read(STORE.outbox, sequence); }
   removeOutbox(sequence) { return this.remove(STORE.outbox, sequence); }
+  replaceOutbox(entry) { return this.put(STORE.outbox, entry); }
 
-  async replaceOutbox(entry) {
-    return this.put(STORE.outbox, entry);
+  async completeOutboxEntry(entry) {
+    return this.transaction([STORE.notes, STORE.outbox], async (stores) => {
+      if (entry.type === "file.trash") stores.notes.delete(entry.id);
+      stores.outbox.delete(entry.sequence);
+    });
   }
 
-  async getMetadata(key) {
-    return (await this.read(STORE.metadata, key))?.value;
+  async completeTemporaryCreate({ kind, temporaryId, driveId, item, sequence }) {
+    return this.transaction([STORE.notes, STORE.folders, STORE.outbox], async (stores) => {
+      const [local, notes, folders, entries] = await Promise.all([
+        requestResult((kind === "note" ? stores.notes : stores.folders).get(temporaryId)),
+        requestResult(stores.notes.getAll()), requestResult(stores.folders.getAll()), requestResult(stores.outbox.getAll()),
+      ]);
+      const target = kind === "note" ? stores.notes : stores.folders;
+      if (local) { target.delete(temporaryId); target.put({ ...item, ...local, id: driveId }); }
+      if (kind === "folder") {
+        notes.filter((note) => note.parentId === temporaryId).forEach((note) => stores.notes.put({ ...note, parentId: driveId }));
+        folders.filter((folder) => folder.parentId === temporaryId).forEach((folder) => stores.folders.put({ ...folder, parentId: driveId }));
+      }
+      entries.forEach((entry) => {
+        if (entry.sequence === sequence) return;
+        const id = entry.id === temporaryId ? driveId : entry.id;
+        const parentId = entry.payload?.parentId === temporaryId ? driveId : entry.payload?.parentId;
+        if (id !== entry.id || parentId !== entry.payload?.parentId) stores.outbox.put({ ...entry, id, payload: { ...entry.payload, ...(entry.payload?.parentId === undefined ? {} : { parentId }) } });
+      });
+      stores.outbox.delete(sequence);
+    });
   }
 
+  async getMetadata(key) { return (await this.read(STORE.metadata, key))?.value; }
   setMetadata(key, value) { return this.put(STORE.metadata, { key, value }); }
 }
 
