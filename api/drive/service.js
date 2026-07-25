@@ -3,8 +3,8 @@ import { ApiError } from "./errors.js";
 
 const FOLDER = "application/vnd.google-apps.folder";
 const GOOGLE_DOC = "application/vnd.google-apps.document";
-const EDITABLE_TYPES = new Set(["text/markdown", "text/plain"]);
-const SUPPORTED_TYPES = new Set([...EDITABLE_TYPES, GOOGLE_DOC]);
+const EDITABLE_TYPES = new Set(["text/markdown"]);
+const SUPPORTED_TYPES = new Set([...EDITABLE_TYPES, "text/plain", GOOGLE_DOC]);
 
 function isFolder(file) {
   return file?.mimeType === FOLDER;
@@ -59,9 +59,13 @@ export class DriveService {
     return { ...file, markdown, editable: file.mimeType === "text/markdown" };
   }
 
-  async createFile({ name, markdown, parentId = this.rootId }) {
+  async createFile({ name, markdown, parentId = this.rootId, operationId }) {
     await this.assertFolder(parentId);
-    return this.drive.createFile({ name, markdown, parentId, mimeType: "text/markdown" });
+    if (operationId) {
+      const existing = await this.drive.findFileByOperation?.(parentId, operationId);
+      if (existing?.parents?.includes(parentId)) return existing;
+    }
+    return this.drive.createFile({ name, markdown, parentId, mimeType: "text/markdown", ...(operationId ? { operationId } : {}) });
   }
 
   async updateFile(id, { markdown, name }) {
@@ -111,9 +115,13 @@ export class DriveService {
     return { changes, pageToken: finalToken };
   }
 
-  async createFolder({ name, parentId = this.rootId }) {
+  async createFolder({ name, parentId = this.rootId, operationId }) {
     await this.assertFolder(parentId);
-    return this.drive.createFolder({ name, parentId });
+    if (operationId) {
+      const existing = await this.drive.findFileByOperation?.(parentId, operationId);
+      if (existing?.parents?.includes(parentId)) return existing;
+    }
+    return this.drive.createFolder({ name, parentId, ...(operationId ? { operationId } : {}) });
   }
 
   async renameFolder(id, name) {

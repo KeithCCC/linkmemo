@@ -48,6 +48,14 @@ describe("normalizeDriveFile", () => {
     });
   });
 
+  test("preserves exported Google Doc Markdown while keeping it read-only", () => {
+    expect(normalizeDriveFile({ fileId: "doc", name: "Doc", mimeType: "application/vnd.google-apps.document", markdown: "# Exported\nSearch me", createdTime: "2026-01-01T00:00:00.000Z", modifiedTime: "2026-01-02T00:00:00.000Z" })).toEqual(expect.objectContaining({ content: "# Exported\nSearch me", source: "drive-doc", editable: false }));
+  });
+
+  test("preserves plain text as a non-editable Drive text note", () => {
+    expect(normalizeDriveFile({ fileId: "text", name: "Readme.txt", mimeType: "text/plain", markdown: "plain text", createdTime: "2026-01-01T00:00:00.000Z" })).toEqual(expect.objectContaining({ title: "Readme.txt", content: "plain text", source: "drive-text", editable: false }));
+  });
+
   test("marks legacy records as non-editable while retaining their client fields", () => {
     expect(
       normalizeDriveFile({

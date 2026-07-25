@@ -20,12 +20,27 @@ export function normalizeDriveFile(file) {
     return {
       id: file.fileId,
       title: file.name,
-      content: "",
+      content: file.markdown ?? "",
       tags: [],
       focus: false,
       createdAt: file.createdTime,
       updatedAt: file.modifiedTime,
       source: "drive-doc",
+      editable: false,
+      warning: null,
+    };
+  }
+
+  if (file?.mimeType === "text/plain") {
+    return {
+      id: file.fileId,
+      title: file.name,
+      content: file.markdown ?? "",
+      tags: [],
+      focus: false,
+      createdAt: file.createdTime,
+      updatedAt: file.modifiedTime,
+      source: "drive-text",
       editable: false,
       warning: null,
     };

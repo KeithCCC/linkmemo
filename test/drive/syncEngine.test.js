@@ -277,4 +277,54 @@ describe("NotehubSyncEngine", () => {
     expect(await repository.listNotes()).toEqual([expect.objectContaining({ id: "drive" })]);
     expect(creates).toBe(1);
   });
+
+  test("completes a successful create without read hydration so retry cannot create it twice", async () => {
+    const repository = repo();
+    let creates = 0;
+    const engine = new NotehubSyncEngine({ repository, client: {
+      createFile: async () => { creates += 1; return metadataFile("drive-created", "Created.md"); },
+      readFile: async () => { throw new Error("read unavailable"); },
+    } });
+    await engine.createNote({ title: "Created", content: "local body" });
+
+    await engine.flushOutbox();
+    await engine.flushOutbox();
+
+    expect(creates).toBe(1);
+    expect(await repository.listOutbox()).toEqual([]);
+    expect(await repository.getNote("drive-created")).toEqual(expect.objectContaining({ content: "local body" }));
+  });
+
+  test("persists a stable operation ID with a queued create", async () => {
+    const repository = repo();
+    const engine = new NotehubSyncEngine({ repository, client: {} });
+
+    await engine.createNote({ title: "Operation", content: "body" });
+
+    expect(await repository.listOutbox()).toEqual([expect.objectContaining({ type: "file.create", operationId: expect.any(String) })]);
+  });
+
+  test("retries local completion with the same create operation ID after a transaction interruption", async () => {
+    const repository = repo();
+    const markers = [];
+    const createdByMarker = new Map();
+    const engine = new NotehubSyncEngine({ repository, client: {
+      createFile: async ({ operationId }) => {
+        markers.push(operationId);
+        if (!createdByMarker.has(operationId)) createdByMarker.set(operationId, metadataFile("drive-retry"));
+        return createdByMarker.get(operationId);
+      },
+    } });
+    await engine.createNote({ title: "Retry", content: "body" });
+    repository.beforeTransactionCommit = () => { throw new Error("local interruption"); };
+
+    await expect(engine.flushOutbox()).rejects.toThrow("local interruption");
+    repository.beforeTransactionCommit = undefined;
+    await engine.flushOutbox();
+
+    expect(markers).toHaveLength(2);
+    expect(markers[0]).toBe(markers[1]);
+    expect(createdByMarker).toHaveLength(1);
+    expect(await repository.listOutbox()).toEqual([]);
+  });
 });

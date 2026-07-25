@@ -118,7 +118,8 @@ export class NotehubSyncEngine {
     const id = temporaryId();
     const now = new Date().toISOString();
     const note = { id, title, content, tags: [], focus: false, source: "drive-markdown", editable: true, parentId, createdAt: now, updatedAt: now, warning: null };
-    await this.repository.mutateAndEnqueue({ note, operation: { type: "file.create", id, payload: { name: name ?? `${title}.md`, markdown: markdown ?? serializeMarkdown({ metadata: note, body: content }), parentId } } });
+    const operationId = crypto.randomUUID();
+    await this.repository.mutateAndEnqueue({ note, operation: { type: "file.create", id, operationId, payload: { name: name ?? `${title}.md`, markdown: markdown ?? serializeMarkdown({ metadata: note, body: content }), parentId, operationId } } });
     await this.refreshCache(); this.markPending();
     return id;
   }
@@ -151,7 +152,8 @@ export class NotehubSyncEngine {
   createFolder(input) { return this.runExclusive(() => this.createFolderImpl(input)); }
   async createFolderImpl({ name, parentId = null } = {}) {
     const id = temporaryId();
-    await this.repository.mutateAndEnqueue({ folder: { id, name, parentId }, operation: { type: "folder.create", id, payload: { name, parentId } } });
+    const operationId = crypto.randomUUID();
+    await this.repository.mutateAndEnqueue({ folder: { id, name, parentId }, operation: { type: "folder.create", id, operationId, payload: { name, parentId, operationId } } });
     await this.refreshCache(); this.markPending(); return id;
   }
 
@@ -178,7 +180,7 @@ export class NotehubSyncEngine {
         const result = await this.execute(entry);
         if (entry.type === "file.create") {
           const local = await this.repository.getNote(entry.id);
-          const item = local ? noteFromDrive(await this.hydrateRemote(result), local) : {};
+          const item = local ? { ...local, id: itemId(result), parentId: result.parents?.[0] ?? local.parentId, createdAt: result.createdTime ?? local.createdAt, updatedAt: result.modifiedTime ?? local.updatedAt } : { id: itemId(result) };
           await this.repository.completeTemporaryCreate({ kind: "note", temporaryId: entry.id, driveId: itemId(result), item, sequence: entry.sequence });
         } else if (entry.type === "folder.create") {
           await this.repository.completeTemporaryCreate({ kind: "folder", temporaryId: entry.id, driveId: itemId(result), item: folderFromDrive(result), sequence: entry.sequence });

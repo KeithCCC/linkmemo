@@ -70,6 +70,15 @@ describe("DriveService", () => {
     expect(drive.calls).toEqual([]);
   });
 
+  test("does not move plain text because only raw Markdown is writable", async () => {
+    const drive = fakeDrive();
+    const service = new DriveService({ drive, rootId: "root" });
+
+    await expect(service.moveFile("txt", "folder")).rejects.toMatchObject({ code: "READ_ONLY" });
+
+    expect(drive.calls).toEqual([]);
+  });
+
   test("creates and updates only raw Markdown files", async () => {
     const drive = fakeDrive();
     const service = new DriveService({ drive, rootId: "root" });
@@ -80,6 +89,16 @@ describe("DriveService", () => {
     await expect(service.updateFile("txt", { markdown: "no" })).rejects.toMatchObject({ code: "READ_ONLY" });
     expect(drive.calls).toContainEqual(["create", { name: "new.md", markdown: "# New", parentId: "folder", mimeType: "text/markdown" }]);
     expect(drive.calls).toContainEqual(["update", "md", { markdown: "# Changed", mimeType: "text/markdown" }]);
+  });
+
+  test("reuses a validated parent child with the same private create operation marker", async () => {
+    const drive = fakeDrive();
+    drive.findFileByOperation = async (parentId, operationId) => ({ id: "existing", name: "Already.md", mimeType: "text/markdown", parents: [parentId], appProperties: { notehubOperationId: operationId } });
+    const service = new DriveService({ drive, rootId: "root" });
+
+    await expect(service.createFile({ name: "Again.md", markdown: "body", parentId: "folder", operationId: "create-123" })).resolves.toMatchObject({ id: "existing" });
+
+    expect(drive.calls).not.toContainEqual(expect.arrayContaining(["create"]));
   });
 
   test("rejects moving a folder into its own descendant", async () => {

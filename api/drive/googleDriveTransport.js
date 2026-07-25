@@ -59,8 +59,9 @@ export class GoogleDriveTransport {
     return response.text();
   }
 
-  async createFile({ name, markdown, parentId, mimeType = "text/markdown" }) {
-    return this.multipart("POST", `${UPLOAD}/files?uploadType=multipart&supportsAllDrives=true`, { name, parents: [parentId], mimeType }, markdown);
+  async createFile({ name, markdown, parentId, mimeType = "text/markdown", operationId }) {
+    const params = new URLSearchParams({ uploadType: "multipart", supportsAllDrives: "true", fields: FIELDS });
+    return this.multipart("POST", `${UPLOAD}/files?${params}`, { name, parents: [parentId], mimeType, ...(operationId ? { appProperties: { notehubOperationId: operationId } } : {}) }, markdown);
   }
 
   async updateFile(id, { name, markdown, mimeType }) {
@@ -85,8 +86,17 @@ export class GoogleDriveTransport {
     return this.json(`${BASE}/files/${encodePath(id)}?supportsAllDrives=true`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ trashed: true }) });
   }
 
-  async createFolder({ name, parentId }) {
-    return this.json(`${BASE}/files?supportsAllDrives=true`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, parents: [parentId], mimeType: "application/vnd.google-apps.folder" }) });
+  async createFolder({ name, parentId, operationId }) {
+    const params = new URLSearchParams({ supportsAllDrives: "true", fields: FIELDS });
+    return this.json(`${BASE}/files?${params}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, parents: [parentId], mimeType: "application/vnd.google-apps.folder", ...(operationId ? { appProperties: { notehubOperationId: operationId } } : {}) }) });
+  }
+
+  async findFileByOperation(parentId, operationId) {
+    const parent = String(parentId).replaceAll("'", "\\'");
+    const marker = String(operationId).replaceAll("'", "\\'");
+    const q = `'${parent}' in parents and trashed = false and appProperties has { key='notehubOperationId' and value='${marker}' }`;
+    const params = new URLSearchParams({ q, fields: `files(${FIELDS})`, pageSize: "1", supportsAllDrives: "true", includeItemsFromAllDrives: "true" });
+    return (await this.json(`${BASE}/files?${params}`))?.files?.[0] ?? null;
   }
 
   async listChanges(pageToken) {

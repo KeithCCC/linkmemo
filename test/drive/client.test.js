@@ -48,4 +48,13 @@ describe("DriveBffClient", () => {
 
     expect(called).toBe(false);
   });
+
+  test("forwards a stable create operation ID to the BFF", async () => {
+    const requests = [];
+    const client = new DriveBffClient({ getAccessToken: async () => "access", fetch: async (url, options) => { requests.push({ url, options }); return response(201, { id: "file" }); } });
+
+    await client.createFile({ name: "Note.md", markdown: "body", parentId: "root", operationId: "create-123" });
+
+    expect(requests[0]).toEqual(expect.objectContaining({ url: "/api/drive/file/create", options: expect.objectContaining({ body: JSON.stringify({ name: "Note.md", markdown: "body", parentId: "root", operationId: "create-123" }) }) }));
+  });
 });
