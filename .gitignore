@@ -1,6 +1,25 @@
 node_modules/
 dist/
-.env
 .worktrees/
+.superpowers/
+
+# Local environment and credentials
+.env*
+!.env.example
+*service-account*.json
+*-firebase-adminsdk-*.json
+
+# Generated test and development output
+playwright-report/
+test-results/
+blob-report/
+*.log
+
+# Local exports and backups
+asuka-notes*.json
+docs/asuka-notes*.json
+exports/
+firestore-backup/
+.firebase/
 # Ignore Tauri build artifacts
 /apps/asuka_editor/src-tauri/target/
