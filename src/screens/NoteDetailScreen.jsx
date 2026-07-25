@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import MarkdownIt from "markdown-it";
 import { addRecentNote } from "../recentNotes";
 import { WikiLinks } from "./NoteEditScreen";
+import { buildEditHref } from "../noteRoutes";
 
 export default function NoteDetailScreen() {
   const { id } = useParams();
@@ -29,7 +30,7 @@ export default function NoteDetailScreen() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/" className="app-primary-button">Back to notes</Link>
-              <Link to="/edit/new" className="app-secondary-button">Create a new note</Link>
+              <Link to={buildEditHref("new")} className="app-secondary-button">Create a new note</Link>
             </div>
           </div>
         </section>
@@ -73,7 +74,7 @@ export default function NoteDetailScreen() {
               <div className="mt-2 text-sm app-muted-text">ID: {note.id}</div>
             </div>
             <div className="flex gap-2 mt-1 flex-wrap">
-              <Link to={`/edit/${note.id}`} className="app-primary-button text-sm">
+              <Link to={buildEditHref(note.id)} className="app-primary-button text-sm">
                 Edit note
               </Link>
               <a href="/asuka-clipper.zip" download="asuka-clipper.zip" className="app-secondary-button text-sm">

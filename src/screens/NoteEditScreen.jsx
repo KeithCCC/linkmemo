@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import MarkdownIt from "markdown-it";
 import { folderPath, useNotesContext } from "../context/NotesContext";
 import { addRecentNote } from "../recentNotes";
+import { buildEditHref } from "../noteRoutes";
 
 const markdown = new MarkdownIt({ breaks: true, linkify: true });
 
@@ -31,7 +32,7 @@ export function WikiLinks({ content, note, notes, folders, navigate }) {
           const sameFolder = matches.filter((candidate) => candidate.source !== "legacy" && candidate.parentId === note.parentId);
           const candidates = sameFolder.length > 0 ? sameFolder : matches;
           if (candidates.length === 1) {
-            return <a key={title} href={`/edit/${candidates[0].id}`} className="app-chip rounded-full px-3 py-1 text-sm text-blue-700"> {title} </a>;
+            return <a key={title} href={buildEditHref(candidates[0].id)} className="app-chip rounded-full px-3 py-1 text-sm text-blue-700"> {title} </a>;
           }
           if (candidates.length > 1) {
             return (
@@ -39,7 +40,7 @@ export function WikiLinks({ content, note, notes, folders, navigate }) {
                 key={title}
                 aria-label={`Choose note for [[${title}]]`}
                 defaultValue=""
-                onChange={(event) => event.target.value && navigate(`/edit/${event.target.value}`)}
+                onChange={(event) => event.target.value && navigate(buildEditHref(event.target.value))}
                 className="rounded-xl border app-input px-3 py-2 text-sm"
               >
                 <option value="" disabled>{title} — choose note</option>
@@ -63,7 +64,7 @@ function ReadOnlyNote({ note, folders, copyLegacyToNotehub, navigate }) {
   const isGoogleDoc = note.source === "drive-doc";
   const copy = async () => {
     const id = await copyLegacyToNotehub(note.id);
-    if (id) navigate(`/edit/${id}`);
+    if (id) navigate(buildEditHref(id));
   };
   return (
     <div className="app-page-tight">
@@ -169,7 +170,7 @@ export default function NoteEditScreen({ toggleListVisibility, setNavCollapsed }
       if (isNew) {
         const createdId = await createDriveNote({ ...patch, parentId });
         setSaveState("saved");
-        if (createdId) navigate(`/edit/${createdId}`, { replace: true });
+        if (createdId) navigate(buildEditHref(createdId), { replace: true });
         return createdId;
       }
       await updateDriveNote(note.id, patch);
@@ -278,7 +279,7 @@ export default function NoteEditScreen({ toggleListVisibility, setNavCollapsed }
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => navigate("/edit/new")} className="app-primary-button text-sm">New note</button>
+            <button type="button" onClick={() => navigate(buildEditHref("new"))} className="app-primary-button text-sm">New note</button>
             <button type="button" onClick={changeFocus} aria-pressed={focus} className="app-secondary-button text-sm">{focus ? "Focus ON" : "Focus OFF"}</button>
             {!isNew && <button type="button" aria-label="Trash note" onClick={trash} className="rounded-xl bg-red-600 px-3 py-2 text-sm text-white">Trash</button>}
             <button type="button" onClick={save} className="rounded-xl bg-indigo-600 px-3 py-2 text-sm text-white">Save</button>
