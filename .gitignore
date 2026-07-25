@@ -23,3 +23,5 @@ firestore-backup/
 .firebase/
 # Ignore Tauri build artifacts
 /apps/asuka_editor/src-tauri/target/
+.vercel
+.env*.local

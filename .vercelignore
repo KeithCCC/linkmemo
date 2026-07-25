@@ -6,6 +6,7 @@ dist
 output
 .git
 .vercel
+apps/asuka_editor/src-tauri/target
 
 # Local configuration and generated test artifacts must not be uploaded.
 .env
