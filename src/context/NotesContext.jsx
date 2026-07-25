@@ -1,12 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthContext } from "./AuthContext";
-import { notehubDriveService } from "../drive/service";
-import { legacyNotesService } from "../services/legacyNotesService";
-import { isUxTestMode } from "../appMode";
 import { createUxDriveService, uxLegacyNotesService } from "../services/dummyNotesService";
 
-const defaultDriveService = isUxTestMode ? createUxDriveService() : notehubDriveService;
-const defaultLegacyService = isUxTestMode ? uxLegacyNotesService : legacyNotesService;
+// Default services deliberately stay in-browser while external connections are
+// paused.  Production Drive and Legacy adapters remain server-side work for a
+// later re-enable, but must not be imported into this client bundle.
+const defaultDriveService = createUxDriveService();
+const defaultLegacyService = uxLegacyNotesService;
 
 export const NotesContext = createContext(null);
 export const useNotesContext = () => useContext(NotesContext);

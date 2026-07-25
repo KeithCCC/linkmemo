@@ -1,10 +1,8 @@
-import { isUxTestMode } from "../appMode";
-import * as liveAuthService from "../supabaseAuth";
 import * as dummyAuthService from "./dummyAuthService";
 
-const authService = isUxTestMode ? dummyAuthService : liveAuthService;
-
-export const loginWithGoogle = authService.loginWithGoogle;
-export const logout = authService.logout;
-export const subscribeToAuth = authService.subscribeToAuth;
-
+// Authentication is local-only while the Drive connection is being configured.
+// Keeping this adapter free of live imports prevents the browser from resolving
+// or contacting Supabase.
+export const loginWithGoogle = dummyAuthService.loginWithGoogle;
+export const logout = dummyAuthService.logout;
+export const subscribeToAuth = dummyAuthService.subscribeToAuth;
