@@ -15,4 +15,19 @@ describe("Google Drive REST transport", () => {
     expect(requests[0][0]).toContain("/drive/v3/files/file?");
     expect(requests[0][1].headers.authorization).toBe("Bearer access-token");
   });
+
+  test("aggregates every page of folder children", async () => {
+    const urls = [];
+    const transport = new GoogleDriveTransport({
+      accessToken: "access-token",
+      fetch: async (url) => {
+        urls.push(url);
+        const hasSecondPageToken = new URL(url).searchParams.get("pageToken") === "second";
+        return new Response(JSON.stringify(hasSecondPageToken ? { files: [{ id: "two" }] } : { files: [{ id: "one" }], nextPageToken: "second" }), { status: 200, headers: { "content-type": "application/json" } });
+      },
+    });
+
+    await expect(transport.listChildren("root")).resolves.toEqual([{ id: "one" }, { id: "two" }]);
+    expect(urls).toHaveLength(2);
+  });
 });

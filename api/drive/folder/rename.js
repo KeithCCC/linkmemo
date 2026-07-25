@@ -1,2 +1,2 @@
-import { vercelHandler } from "../../runtime.js";
-export default vercelHandler("renameFolder");
+import { vercelHandler } from "../runtime.js";
+export default vercelHandler("renameFolder", ["PATCH"]);

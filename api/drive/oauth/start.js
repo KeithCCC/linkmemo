@@ -1,2 +1,2 @@
-import { vercelHandler } from "../../runtime.js";
-export default vercelHandler("oauthStart");
+import { vercelHandler } from "../runtime.js";
+export default vercelHandler("oauthStart", ["GET"]);

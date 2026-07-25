@@ -39,7 +39,7 @@ export class SupabaseTransport {
     await this.request("/rest/v1/google_drive_connections?on_conflict=user_id", {
       method: "POST",
       headers: { "content-type": "application/json", prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify({ user_id: userId, encrypted_refresh_token: encryptedRefreshToken, granted_scope: grantedScope, folder_id: folderId }),
+      body: JSON.stringify({ user_id: userId, encrypted_refresh_token: encryptedRefreshToken, granted_scope: grantedScope, ...(folderId === null ? {} : { folder_id: folderId }), change_page_token: null }),
     });
   }
 
@@ -49,5 +49,5 @@ export class SupabaseTransport {
 
   async updateRefreshToken(userId, encryptedRefreshToken) { return this.patch(userId, { encrypted_refresh_token: encryptedRefreshToken }); }
   async updatePageToken(userId, pageToken) { return this.patch(userId, { change_page_token: pageToken }); }
-  async updateFolder(userId, folderId) { return this.patch(userId, { folder_id: folderId }); }
+  async updateFolder(userId, folderId) { return this.patch(userId, { folder_id: folderId, change_page_token: null }); }
 }

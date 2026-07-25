@@ -56,7 +56,7 @@ export class DriveService {
     const markdown = file.mimeType === GOOGLE_DOC
       ? await this.drive.exportFile(id, "text/markdown")
       : await this.drive.downloadFile(id);
-    return { ...file, markdown, editable: EDITABLE_TYPES.has(file.mimeType) };
+    return { ...file, markdown, editable: file.mimeType === "text/markdown" };
   }
 
   async createFile({ name, markdown, parentId = this.rootId }) {
@@ -78,7 +78,8 @@ export class DriveService {
   }
 
   async trashFile(id) {
-    await this.assertItem(id, { allowRoot: false });
+    const file = await this.assertItem(id, { allowRoot: false });
+    if (file.mimeType !== "text/markdown") throw new ApiError("READ_ONLY", "Only raw Markdown notes can be trashed", 409);
     return this.drive.trashFile(id);
   }
 

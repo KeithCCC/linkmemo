@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { ApiError } from "./errors.js";
 
 const IV_BYTES = 12;
 const TAG_BYTES = 16;
@@ -8,11 +9,11 @@ function encryptionKey(encodedKey) {
   try {
     key = Buffer.from(encodedKey, "base64");
   } catch {
-    throw new Error("DRIVE_TOKEN_ENCRYPTION_KEY must decode to exactly 32 bytes");
+    throw new ApiError("CONFIGURATION", "DRIVE_TOKEN_ENCRYPTION_KEY must decode to exactly 32 bytes", 500);
   }
 
   if (typeof encodedKey !== "string" || key.length !== 32) {
-    throw new Error("DRIVE_TOKEN_ENCRYPTION_KEY must decode to exactly 32 bytes");
+    throw new ApiError("CONFIGURATION", "DRIVE_TOKEN_ENCRYPTION_KEY must decode to exactly 32 bytes", 500);
   }
   return key;
 }
@@ -30,10 +31,10 @@ export function decryptRefreshToken(ciphertext, encodedKey) {
   try {
     packed = Buffer.from(ciphertext, "base64url");
   } catch {
-    throw new Error("Malformed encrypted refresh token");
+    throw new ApiError("CONFIGURATION", "Malformed encrypted refresh token", 500);
   }
   if (typeof ciphertext !== "string" || !/^[A-Za-z0-9_-]+$/.test(ciphertext) || packed.length <= IV_BYTES + TAG_BYTES) {
-    throw new Error("Malformed encrypted refresh token");
+    throw new ApiError("CONFIGURATION", "Malformed encrypted refresh token", 500);
   }
 
   try {
@@ -41,7 +42,7 @@ export function decryptRefreshToken(ciphertext, encodedKey) {
     decipher.setAuthTag(packed.subarray(IV_BYTES, IV_BYTES + TAG_BYTES));
     return Buffer.concat([decipher.update(packed.subarray(IV_BYTES + TAG_BYTES)), decipher.final()]).toString("utf8");
   } catch (error) {
-    if (error.message === "DRIVE_TOKEN_ENCRYPTION_KEY must decode to exactly 32 bytes") throw error;
-    throw new Error("Malformed encrypted refresh token");
+    if (error instanceof ApiError) throw error;
+    throw new ApiError("CONFIGURATION", "Malformed encrypted refresh token", 500);
   }
 }

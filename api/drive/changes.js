@@ -1,2 +1,2 @@
 import { vercelHandler } from "./runtime.js";
-export default vercelHandler("changes");
+export default vercelHandler("changes", ["POST"]);

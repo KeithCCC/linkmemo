@@ -1,2 +1,2 @@
-import { vercelHandler } from "../../runtime.js";
-export default vercelHandler("moveFile");
+import { vercelHandler } from "../runtime.js";
+export default vercelHandler("moveFile", ["PATCH"]);

@@ -45,6 +45,7 @@ export function createDriveApplication({ env, auth, connections, tokens, driveFa
     oauthStart: oauth.start,
     oauthCallback: oauth.callback,
     connection: (request) => authenticated(request, async (user) => {
+      if (!['GET', 'PATCH'].includes(request.method)) throw new ApiError("METHOD_NOT_ALLOWED", "HTTP method is not allowed for this endpoint", 405);
       const connection = await connections.get(user.id);
       if (request.method === "GET") return data(200, connection ? { connected: true, folderId: connection.folder_id ?? connection.folderId ?? null, grantedScope: connection.granted_scope ?? connection.grantedScope ?? null } : { connected: false, folderId: null, grantedScope: null });
       const folderId = request.body?.folderId;

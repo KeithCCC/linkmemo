@@ -21,4 +21,9 @@ describe("Drive application boundary", () => {
     });
     await expect(app.tree({ headers: { authorization: "Bearer valid" } })).resolves.toEqual({ status: 200, body: { items: [] } });
   });
+
+  test("does not treat arbitrary verbs as a selected-root update", async () => {
+    const app = createDriveApplication({ env, auth: { verify: async () => ({ id: "u", email: "u@example.com" }) }, connections: { get: async () => null }, tokens: {}, driveFactory: () => ({}) });
+    await expect(app.connection({ method: "POST", headers: { authorization: "Bearer valid" } })).resolves.toMatchObject({ status: 405, body: { error: { code: "METHOD_NOT_ALLOWED" } } });
+  });
 });

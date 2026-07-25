@@ -37,9 +37,16 @@ export class GoogleDriveTransport {
   }
 
   async listChildren(parentId) {
-    const params = new URLSearchParams({ q: `'${String(parentId).replaceAll("'", "\\'")}' in parents and trashed = false`, fields: `files(${FIELDS})`, pageSize: "1000", supportsAllDrives: "true", includeItemsFromAllDrives: "true" });
-    const data = await this.json(`${BASE}/files?${params}`);
-    return data?.files ?? [];
+    const children = [];
+    let pageToken;
+    do {
+      const params = new URLSearchParams({ q: `'${String(parentId).replaceAll("'", "\\'")}' in parents and trashed = false`, fields: `files(${FIELDS}),nextPageToken`, pageSize: "1000", supportsAllDrives: "true", includeItemsFromAllDrives: "true" });
+      if (pageToken) params.set("pageToken", pageToken);
+      const data = await this.json(`${BASE}/files?${params}`);
+      children.push(...(data?.files ?? []));
+      pageToken = data?.nextPageToken;
+    } while (pageToken);
+    return children;
   }
 
   async downloadFile(id) {

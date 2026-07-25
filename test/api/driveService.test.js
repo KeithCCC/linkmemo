@@ -45,7 +45,8 @@ describe("DriveService", () => {
 
     await expect(service.read("md")).resolves.toEqual({ ...drive.files.md, markdown: "raw:md", editable: true });
     await expect(service.read("doc")).resolves.toEqual({ ...drive.files.doc, markdown: "export:doc", editable: false });
-    expect(drive.calls).toEqual([["download", "md"], ["export", "doc", "text/markdown"]]);
+    await expect(service.read("txt")).resolves.toEqual({ ...drive.files.txt, markdown: "raw:txt", editable: false });
+    expect(drive.calls).toEqual([["download", "md"], ["export", "doc", "text/markdown"], ["download", "txt"]]);
   });
 
   test("enforces the root boundary for read, destinations, and non-permanent trash", async () => {
@@ -56,6 +57,17 @@ describe("DriveService", () => {
     await expect(service.moveFile("md", "outsider")).rejects.toMatchObject({ code: "BOUNDARY" });
     await service.trashFile("md");
     expect(drive.calls).toContainEqual(["trash", "md"]);
+  });
+
+  test("trashes only raw Markdown notes, never folders or read-only file types", async () => {
+    const drive = fakeDrive();
+    const service = new DriveService({ drive, rootId: "root" });
+
+    await expect(service.trashFile("folder")).rejects.toMatchObject({ code: "READ_ONLY" });
+    await expect(service.trashFile("doc")).rejects.toMatchObject({ code: "READ_ONLY" });
+    await expect(service.trashFile("txt")).rejects.toMatchObject({ code: "READ_ONLY" });
+    await expect(service.trashFile("pdf")).rejects.toMatchObject({ code: "READ_ONLY" });
+    expect(drive.calls).toEqual([]);
   });
 
   test("creates and updates only raw Markdown files", async () => {

@@ -1,2 +1,2 @@
-import { vercelHandler } from "../../runtime.js";
-export default vercelHandler("readFile");
+import { vercelHandler } from "../runtime.js";
+export default vercelHandler("readFile", ["GET"]);
