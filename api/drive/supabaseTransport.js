@@ -39,7 +39,7 @@ export class SupabaseTransport {
     await this.request("/rest/v1/google_drive_connections?on_conflict=user_id", {
       method: "POST",
       headers: { "content-type": "application/json", prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify({ user_id: userId, encrypted_refresh_token: encryptedRefreshToken, granted_scope: grantedScope, ...(folderId === null ? {} : { folder_id: folderId }), change_page_token: null }),
+      body: JSON.stringify({ user_id: userId, encrypted_refresh_token: encryptedRefreshToken, granted_scope: grantedScope, folder_id: null, change_page_token: null }),
     });
   }
 
