@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { createDriveApplication } from "../../api/drive/application.js";
-import { encryptRefreshToken } from "../../api/drive/crypto.js";
+import { createDriveApplication } from "../../server/drive/application.js";
+import { encryptRefreshToken } from "../../server/drive/crypto.js";
 
 const key = Buffer.alloc(32, 9).toString("base64");
 const env = { DRIVE_TOKEN_ENCRYPTION_KEY: key, GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "secret" };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { assertDescendantOfRoot } from "../../api/drive/ancestry.js";
+import { assertDescendantOfRoot } from "../../server/drive/ancestry.js";
 
 const files = {
   root: { id: "root", parents: [] },

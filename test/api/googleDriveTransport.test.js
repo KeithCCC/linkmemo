@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { GoogleDriveTransport } from "../../api/drive/googleDriveTransport.js";
+import { GoogleDriveTransport } from "../../server/drive/googleDriveTransport.js";
 
 describe("Google Drive REST transport", () => {
   test("uses injected fetch and maps rate limits to safe upstream errors", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { decryptRefreshToken, encryptRefreshToken } from "../../api/drive/crypto.js";
+import { decryptRefreshToken, encryptRefreshToken } from "../../server/drive/crypto.js";
 
 const key = Buffer.alloc(32, 7).toString("base64");
 

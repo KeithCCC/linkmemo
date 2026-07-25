@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { authenticateRequest } from "../../api/drive/auth.js";
+import { authenticateRequest } from "../../server/drive/auth.js";
 
 describe("Drive endpoint authentication", () => {
   test("requires a server-validated Supabase bearer token", async () => {

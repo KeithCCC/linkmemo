@@ -7,5 +7,6 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: "jsdom",
     setupFiles: ["./test/setup.js"],
+    exclude: ["**/node_modules/**", "**/.worktrees/**"],
   },
 }))

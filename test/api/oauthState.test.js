@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { createOAuthState, verifyOAuthState } from "../../api/drive/oauthState.js";
+import { createOAuthState, verifyOAuthState } from "../../server/drive/oauthState.js";
 
 describe("OAuth state", () => {
   test("signs an expiring state bound to the authenticated Supabase user", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { refreshAccessToken } from "../../api/drive/tokens.js";
-import { encryptRefreshToken } from "../../api/drive/crypto.js";
+import { refreshAccessToken } from "../../server/drive/tokens.js";
+import { encryptRefreshToken } from "../../server/drive/crypto.js";
 
 describe("Google access-token refresh", () => {
   test("decrypts the stored token and persists Google refresh-token rotation", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { SupabaseTransport } from "../../api/drive/supabaseTransport.js";
+import { SupabaseTransport } from "../../server/drive/supabaseTransport.js";
 
 const env = { SUPABASE_URL: "https://project.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "service-key" };
 

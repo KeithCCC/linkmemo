@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { createOAuthHandlers } from "../../api/drive/handlers.js";
-import { createOAuthState } from "../../api/drive/oauthState.js";
-import { vercelHandler } from "../../api/drive/runtime.js";
+import { createOAuthHandlers } from "../../server/drive/handlers.js";
+import { createOAuthState } from "../../server/drive/oauthState.js";
+import { vercelHandler } from "../../server/drive/runtime.js";
 
 function responseRecorder() {
   return {

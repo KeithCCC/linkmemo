@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { createOAuthHandlers } from "../../api/drive/handlers.js";
+import { createOAuthHandlers } from "../../server/drive/handlers.js";
 
 const env = {
   GOOGLE_CLIENT_ID: "client-id",

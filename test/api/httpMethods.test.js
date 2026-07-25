@@ -1,8 +1,5 @@
 import { describe, expect, test } from "vitest";
-import connection from "../../api/drive/connection.js";
-import trashFile from "../../api/drive/file/trash.js";
-import createFile from "../../api/drive/file/create.js";
-import trashFolder from "../../api/drive/folder/trash.js";
+import driveHandler from "../../api/drive/[...path].js";
 
 function responseRecorder() {
   return {
@@ -17,27 +14,29 @@ function responseRecorder() {
 }
 
 describe("Drive HTTP method allow-lists", () => {
+  const request = (method, path) => ({ method, query: { path } });
+
   test("rejects GET for destructive file routes before runtime configuration", async () => {
     const res = responseRecorder();
-    await trashFile({ method: "GET" }, res);
+    await driveHandler(request("GET", ["file", "trash"]), res);
     expect(res).toMatchObject({ statusCode: 405, body: { error: { code: "METHOD_NOT_ALLOWED" } }, headers: { allow: "DELETE" } });
   });
 
   test("requires an explicit PATCH to change the selected root", async () => {
     const res = responseRecorder();
-    await connection({ method: "POST" }, res);
+    await driveHandler(request("POST", ["connection"]), res);
     expect(res).toMatchObject({ statusCode: 405, body: { error: { code: "METHOD_NOT_ALLOWED" } }, headers: { allow: "GET, PATCH" } });
   });
 
   test("rejects GET for file creation", async () => {
     const res = responseRecorder();
-    await createFile({ method: "GET" }, res);
+    await driveHandler(request("GET", ["file", "create"]), res);
     expect(res.statusCode).toBe(405);
   });
 
   test("requires DELETE for folder trash", async () => {
     const res = responseRecorder();
-    await trashFolder({ method: "POST" }, res);
+    await driveHandler(request("POST", ["folder", "trash"]), res);
     expect(res).toMatchObject({ statusCode: 405, body: { error: { code: "METHOD_NOT_ALLOWED" } }, headers: { allow: "DELETE" } });
   });
 });
