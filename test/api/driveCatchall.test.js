@@ -25,4 +25,13 @@ describe("Drive catch-all route", () => {
       body: { error: { code: "METHOD_NOT_ALLOWED" } },
     });
   });
+
+  test("derives a route from the original URL when Vercel does not populate the catch-all query", async () => {
+    const res = responseRecorder();
+
+    await driveHandler({ method: "GET", url: "/api/drive/file/create", query: {} }, res);
+
+    expect(res.statusCode).toBe(405);
+    expect(res.headers.allow).toBe("POST");
+  });
 });

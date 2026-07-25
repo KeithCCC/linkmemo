@@ -21,7 +21,9 @@ const ROUTES = {
 
 function pathFromRequest(request) {
   const value = request.query?.path;
-  return (Array.isArray(value) ? value : [value]).filter(Boolean).join("/");
+  const fromQuery = (Array.isArray(value) ? value : [value]).filter(Boolean).join("/");
+  if (fromQuery) return fromQuery;
+  return new URL(request.url ?? "/", "https://notehub.local").pathname.replace(/^\/api\/drive\/?/, "");
 }
 
 export default async function driveHandler(req, res) {
