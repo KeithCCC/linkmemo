@@ -27,4 +27,9 @@ describe("application mode", () => {
     expect(source).toContain('from "../auth.js"');
     expect(source).not.toContain("dummyAuthService");
   });
+
+  test("normalizes Firebase configuration values before creating the auth client", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/firebase.js"), "utf8");
+    expect(source).toContain("value.trim()");
+  });
 });
