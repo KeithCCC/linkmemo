@@ -21,4 +21,10 @@ describe("application mode", () => {
       }
     }
   });
+
+  test("uses the Firebase Google authentication adapter instead of the test user", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/services/authService.js"), "utf8");
+    expect(source).toContain('from "../auth.js"');
+    expect(source).not.toContain("dummyAuthService");
+  });
 });

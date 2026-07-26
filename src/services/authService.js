@@ -1,8 +1,3 @@
-import * as dummyAuthService from "./dummyAuthService";
-
-// Authentication is local-only while the Drive connection is being configured.
-// Keeping this adapter free of live imports prevents the browser from resolving
-// or contacting Supabase.
-export const loginWithGoogle = dummyAuthService.loginWithGoogle;
-export const logout = dummyAuthService.logout;
-export const subscribeToAuth = dummyAuthService.subscribeToAuth;
+// Firebase Authentication owns the browser-side Google session. Supabase is not
+// imported or contacted by this adapter.
+export { loginWithGoogle, logout, subscribeToAuth } from "../auth.js";
